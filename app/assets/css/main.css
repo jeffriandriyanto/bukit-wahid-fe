@@ -1,0 +1,49 @@
+@import "tailwindcss";
+@import "@nuxt/ui";
+
+@theme static {
+  /* ======================
+    PRIMARY – Red
+     ====================== */
+  --color-primary-50:  #fdeeed;
+  --color-primary-100: #fbdede;
+  --color-primary-200: #fbdcbb;
+  --color-primary-300: #f9c796;
+  --color-primary-400: #fb6967;
+  --color-primary-500: #fb261d;
+  --color-primary-600: #d31b13;
+  --color-primary-700: #a1120c;
+  --color-primary-800: #720906;
+  --color-primary-900: #430302;
+  --color-primary-950: #300201;
+
+  /* ======================
+    SECONDARY – Green
+     ====================== */
+  --color-secondary-50:  #e2fee0;
+  --color-secondary-100: #b4fdae;
+  --color-secondary-200: #5ef549;
+  --color-secondary-300: #55df41;
+  --color-secondary-400: #4cc93a;
+  --color-secondary-500: #43b433;
+  --color-secondary-600: #338e26;
+  --color-secondary-700: #246a1a;
+  --color-secondary-800: #16470f;
+  --color-secondary-900: #082805;
+  --color-secondary-950: #041a02;
+
+  /* ======================
+    NEUTRAL – Gray
+     ====================== */
+  --color-neutral-50:  #fafafa;
+  --color-neutral-100: #f5f5f5;
+  --color-neutral-200: #e5e5e5;
+  --color-neutral-300: #d4d4d4;
+  --color-neutral-400: #a3a3a3;
+  --color-neutral-500: #737373;
+  --color-neutral-600: #525252;
+  --color-neutral-700: #404040;
+  --color-neutral-800: #262626;
+  --color-neutral-900: #171717;
+  --color-neutral-950: #0a0a0a;
+}

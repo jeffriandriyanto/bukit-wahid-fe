@@ -1,0 +1,38 @@
+{
+  "name": "bukit-wahid-fe",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "nuxt build",
+    "dev": "nuxt dev",
+    "preview": "nuxt preview",
+    "generate": "nuxt generate",
+    "postinstall": "nuxt prepare",
+    "lint": "eslint .",
+    "typecheck": "nuxt typecheck",
+    "test": "vitest run --reporter=dot"
+  },
+  "dependencies": {
+    "@iconify-json/lucide": "^1.2.82",
+    "@iconify-json/simple-icons": "^1.2.63",
+    "@nuxt/image": "2.0.0",
+    "@nuxt/ui": "^4.3.0",
+    "@unovis/vue": "^1.6.2",
+    "@vueuse/nuxt": "14.1.0",
+    "date-fns": "^4.1.0",
+    "echarts": "^6.0.0",
+    "nuxt": "^4.2.2",
+    "nuxt-echarts": "1.0.1",
+    "vue": "^3.5.26",
+    "vue-echarts": "^8.0.1",
+    "vue3-organization-chart": "^1.9.4",
+    "zod": "^4.3.2"
+  },
+  "devDependencies": {
+    "@nuxt/eslint": "^1.12.1",
+    "eslint": "^9.39.2",
+    "typescript": "^5.9.3",
+    "vue-tsc": "^3.2.1"
+  },
+  "packageManager": "pnpm@10.26.1"
+}
