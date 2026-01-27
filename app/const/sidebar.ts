@@ -12,10 +12,16 @@ export const sidebarItems: SidebarItem[] = [
     to: '/profile-structure'
   },
   {
+    label: 'Master Data Warga',
+    icon: 'fa7-solid:people-roof',
+    to: '/master-data-citizen'
+  },
+  {
     label: 'Master Data',
     icon: 'i-lucide-database',
     to: '/master-data'
   },
+
   {
     label: 'Pengumuman & Berita',
     icon: 'i-lucide-megaphone',

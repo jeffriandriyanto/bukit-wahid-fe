@@ -111,6 +111,7 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
       </UFormField>
 
       <UButton
+        :loading="isLoading"
         type="submit"
         class="mt-4 w-full"
       >

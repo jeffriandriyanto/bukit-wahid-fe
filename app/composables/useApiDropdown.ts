@@ -2,7 +2,7 @@ import type { ApiResponse } from "~/types/api";
 
 interface Option {
   key: string;
-  lable: number | string;
+  label: string;
 }
 
 export const useApiDropdown = () => {
@@ -13,6 +13,7 @@ export const useApiDropdown = () => {
   const dropdownResidenceType = ref<Option[]>([]);
   const dropdownResidenceKavling = ref<Option[]>([]);
   const dropdownFamilyHead = ref<Option[]>([]);
+  const dropdownPosition = ref<Option[]>([]);
 
   const fetchDropdown = async (
     url: string,
@@ -48,19 +49,24 @@ export const useApiDropdown = () => {
   const getDropdownResidenceKavling = (idRT: string | number) =>
     fetchDropdown(`/dropdown/residance-kavling/${idRT}`, dropdownResidenceKavling, 'Kavling');
 
-  const getDropdownFamilyHead = (idRT: string | number) =>
-    fetchDropdown(`/dropdown/familly-head/${idRT}`, dropdownFamilyHead, 'Kepala Keluarga');
+  const getDropdownFamilyHead = () =>
+    fetchDropdown(`/dropdown/familly-head`, dropdownFamilyHead, 'Kepala Keluarga');
+
+  const getDropdownPosition = (idRT: string | number) =>
+    fetchDropdown(`/dropdown/position/${idRT}`, dropdownPosition, 'Position');
 
   return {
-    dropdownRT: dropdownRT,
-    dropdownAddress: dropdownAddress,
-    dropdownResidenceType: dropdownResidenceType,
-    dropdownResidenceKavling: dropdownResidenceKavling,
-    dropdownFamilyHead: dropdownFamilyHead,
+    dropdownRT,
+    dropdownAddress,
+    dropdownResidenceType,
+    dropdownResidenceKavling,
+    dropdownFamilyHead,
+    dropdownPosition,
     getDropdownRT,
     getDropdownAddress,
     getDropdownResidenceType,
     getDropdownResidenceKavling,
-    getDropdownFamilyHead
+    getDropdownFamilyHead,
+    getDropdownPosition
   };
 };

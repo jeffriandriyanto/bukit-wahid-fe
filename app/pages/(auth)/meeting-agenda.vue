@@ -1,71 +1,51 @@
 <script setup lang="ts">
 import type { FormSubmitEvent } from '@nuxt/ui'
-import { getPaginationRowModel } from '@tanstack/vue-table'
-import {
-  Time,
-  today,
-  getLocalTimeZone,
-  fromDate,
-  toCalendarDate
-} from '@internationalized/date'
 import { z } from 'zod'
-import { format } from 'date-fns'
 
-definePageMeta({
-  middleware: ['auth']
-})
+const { dropdownRT, getDropdownRT } = useApiDropdown()
 
-const inputDate = useTemplateRef('inputDate')
 const { reveal: confirm } = useConfirmService()
-const tableMeetingAgenda = useTemplateRef('table')
-const selectedRT = ref('RT 01')
+const toast = useToast()
+
+const selectedRT = ref()
 const isOpen = ref(false)
 const mode = ref<'add' | 'edit'>('add')
-const editingIndex = ref<number | null>(null)
-const rtItems = ['RT 01', 'RT 02', 'RT 03', 'RT 04']
-const dateObject = shallowRef(toCalendarDate(today(getLocalTimeZone())))
-const timeObject = shallowRef(new Time(0, 0))
+const editingId = ref<string | null>(null)
+const loading = ref(false)
 
-const MeetingAgendaFormSchema = z.object({
-  name: z.string().min(1, 'Nama wajib diisi'),
-  shown: z.string().min(1, 'Tujuan wajib dipilih'),
-  date: z.union([z.date(), z.string().min(1, 'Tanggal wajib diisi')]),
-  time: z.string().min(1, 'Jam wajib diisi'),
-  description: z.string().min(1, 'Deskripsi wajib diisi')
+const AgendaFormSchema = z.object({
+  title: z.string().min(1, 'Nama wajib diisi'),
+  fors: z.array(z.string()).default([]),
+  description: z.string().min(1, 'Deskripsi wajib diisi'),
+  location: z.string().optional(),
+  start_date: z.any(),
+  start_time: z.any()
 })
 
-type MeetingAgendaFormSchema = z.infer<typeof MeetingAgendaFormSchema>
+type AgendaFormSchema = z.infer<typeof AgendaFormSchema>
 
-const dataMeetingAgenda = ref<MeetingAgenda[]>([
-  {
-    name: 'Pertemuan Warga RT 1',
-    shown: 'RT 01',
-    date: new Date,
-    time: '19:00',
-    description: 'Lokasi di Rumah Bapak Suyadi'
-  }
-])
+const dataAgendaCard = ref([])
 
-const columnsFamilyTable = [
+const columnsAgendaTable = [
   {
-    accessorKey: 'name',
-    header: 'Nama Agenda'
+    accessorKey: 'title',
+    header: 'Judul'
   },
   {
-    accessorKey: 'shown',
-    header: 'Ditujukan'
+    accessorKey: 'start_date',
+    header: 'Tanggal Agenda'
   },
   {
-    accessorKey: 'date',
-    header: 'Tanggal'
+    accessorKey: 'start_time',
+    header: 'Jam Agenda'
+  },
+  {
+    accessorKey: 'location',
+    header: 'Lokasi'
   },
   {
     accessorKey: 'description',
-    header: 'Catatan',
-    cell: (info: any) => {
-      const desc = info.getValue() as string
-      return desc.length > 50 ? desc.slice(0, 50) + '...' : desc
-    }
+    header: 'Deskripsi'
   },
   {
     accessorKey: 'action',
@@ -74,72 +54,75 @@ const columnsFamilyTable = [
 ]
 
 const pagination = ref({
-  pageIndex: 0,
-  pageSize: 5
+  current_page: 1,
+  last_page: 1,
+  per_page: 10,
+  total: 0
 })
 
 /* =========================
   FORM STATE
 ========================= */
-interface MeetingAgenda {
-  name: string
-  shown: string
-  date: Date | string
-  time: string
+interface AgendaType {
+  title: string
+  fors?: []
   description: string
-  created_at?: string
+  location: string
+  start_date: any
+  start_time: any
 }
 
-const form = reactive<MeetingAgenda>({
-  name: '',
-  shown: '',
-  date: '',
-  time: '',
-  description: ''
+const form = reactive<AgendaType>({
+  title: '',
+  fors: [],
+  description: '',
+  location: '',
+  start_date: null,
+  start_time: null
 })
+
+const isUrl = (str: string) => {
+  if (!str) return false
+  const pattern = new RegExp(
+    '^(https?:\\/\\/)?' + // protocol
+      '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + // domain name
+      '((\\d{1,3}\\.){3}\\d{1,3}))' + // OR ip (v4) address
+      '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + // port and path
+      '(\\?[;&a-z\\d%_.~+=-]*)?' + // query string
+      '(\\#[-a-z\\d_]*)?$',
+    'i'
+  ) // fragment locator
+  return !!pattern.test(str)
+}
 
 const openAddModal = () => {
   resetForm()
   mode.value = 'add'
-  editingIndex.value = null
   isOpen.value = true
 }
 
-const toUIFormat = (dateInput: Date | string) => {
-  const d = new Date(dateInput)
-  const zonedDateTime = fromDate(d, getLocalTimeZone())
-  return toCalendarDate(zonedDateTime)
-}
-
-const openEditModal = (row: MeetingAgenda) => {
-  const actualIndex = dataMeetingAgenda.value.indexOf(row)
+const openEditModal = async (row: any) => {
+  const actualIndex = dataAgendaCard.value.indexOf(row)
+  resetForm()
+  mode.value = 'edit'
+  editingId.value = row.id
   if (actualIndex === -1) return
 
-  mode.value = 'edit'
-  editingIndex.value = actualIndex
-
-  form.name = row.name
-  form.shown = row.shown
-  form.description = row.description
-  dateObject.value = toUIFormat(row.date)
-
-  try {
-    const [h, m] = row.time.split(':').map(Number)
-    timeObject.value = new Time(h, m)
-  } catch {
-    timeObject.value = new Time(0, 0)
-  }
-
+  Object.assign(form, {
+    ...row,
+    start_date: parseToCalendarDate(row.start_date),
+    start_time: parseToTime(row.start_time)
+  })
   isOpen.value = true
 }
 
 const confirmDelete = async (row: any) => {
-  const actualIndex = dataMeetingAgenda.value.indexOf(row)
+  const actualIndex = dataAgendaCard.value.indexOf(row)
   if (actualIndex === -1) return
 
   const ok = await confirm({
     title: 'Hapus Data Agenda?',
-    description: `Apakah Anda yakin ingin menghapus "${row.name}"?`,
+    description: `Apakah Anda yakin ingin menghapus "${row.title}"?`,
     confirmLabel: 'Hapus',
     cancelLabel: 'Batal',
     color: 'error'
@@ -147,54 +130,109 @@ const confirmDelete = async (row: any) => {
 
   if (!ok) return
 
-  dataMeetingAgenda.value.splice(actualIndex, 1)
+  try {
+    loading.value = true
+    const res = await useApi<any>(`/agenda/${row.id}`, { method: 'DELETE' })
+    if (res.status === 1) {
+      toast.add({ title: 'Data berhasil dihapus', color: 'success' })
+      dataAgendaCard.value.splice(actualIndex, 1)
+    }
+  } catch (err: any) {
+    toast.add({ title: err?.message || 'Gagal menghapus data', color: 'error' })
+  } finally {
+    loading.value = false
+  }
 }
-
-watch([dateObject, timeObject], () => {
-  if (dateObject.value) {
-    form.date = dateObject.value.toDate(getLocalTimeZone())
-  }
-  if (timeObject.value) {
-    form.time = timeObject.value.toString().slice(0, 5)
-  }
-}, { immediate: true, deep: true })
-
 
 const resetForm = () => {
-  form.name = ''
-  form.shown = ''
+  form.title = ''
+  form.fors = []
   form.description = ''
-
-  const now = today(getLocalTimeZone())
-  dateObject.value = toCalendarDate(now)
-  timeObject.value = new Time(0, 0)
-
-  form.date = dateObject.value.toDate(getLocalTimeZone())
-  form.time = '00:00'
+  form.location = ''
+  form.start_date = null
+  form.start_time = null
 }
 
-const saveData = async (event: FormSubmitEvent<MeetingAgendaFormSchema>) => {
-  const validated = event.data
+const getData = async () => {
+  loading.value = true
+  try {
+    const res = await useApi<any>('/agenda', {
+      params: {
+        rt: selectedRT.value,
+        page: pagination.value.current_page,
+        per_page: pagination.value.per_page
+      },
+      method: 'GET'
+    })
 
-  const payload = {
-    ...validated,
-    date: dateObject.value.toDate(getLocalTimeZone()),
-    time: timeObject.value.toString().slice(0, 5)
+    if (res.status === 1) {
+      dataAgendaCard.value = res.data
+      pagination.value = {
+        ...res.pagination
+      }
+    }
+  } catch (err) {
+    console.error('Fetch error:', err)
+  } finally {
+    loading.value = false
   }
+}
 
-  if (mode.value === 'add') {
-    dataMeetingAgenda.value.unshift({
-      ...payload,
-      created_at: new Date().toISOString()
-    } as any)
-  } else if (mode.value === 'edit' && editingIndex.value !== null) {
-    const old = dataMeetingAgenda.value[editingIndex.value]
-    dataMeetingAgenda.value[editingIndex.value] = { ...old, ...payload } as any
+const saveData = async (event: FormSubmitEvent<AgendaFormSchema>) => {
+  try {
+    loading.value = true
+
+    const payload = {
+      ...event.data,
+      start_date: formatDOB(event.data.start_date),
+      start_time: formatTimeValue(event.data.start_time),
+      fors: event.data.fors || []
+    }
+
+    console.log('payload', payload)
+
+    const url = mode.value === 'add' ? '/agenda' : `/agenda/${editingId.value}`
+    const method = mode.value === 'add' ? 'POST' : 'PUT'
+
+    const res = await useApi<any>(url, { method, body: payload })
+
+    if (res.status === 1) {
+      toast.add({
+        title: `Berhasil ${
+          mode.value === 'add' ? 'menambah' : 'mengubah'
+        } data`,
+        color: 'success'
+      })
+      isOpen.value = false
+      getData()
+      resetForm()
+    }
+  } catch (err: any) {
+    toast.add({
+      title: err?.message || 'Terjadi kesalahan server',
+      color: 'error'
+    })
+  } finally {
+    loading.value = false
   }
 
   isOpen.value = false
   resetForm()
 }
+
+watch(selectedRT, () => {
+  pagination.value.current_page = 1
+  getData()
+})
+
+onMounted(() => {
+  getDropdownRT()
+  getData()
+})
+
+definePageMeta({
+  middleware: ['auth']
+})
 </script>
 
 <template>
@@ -202,7 +240,18 @@ const saveData = async (event: FormSubmitEvent<MeetingAgendaFormSchema>) => {
     <ConfirmDialog />
 
     <div class="my-4 flex w-full justify-between gap-4">
-      <USelect v-model="selectedRT" :items="rtItems" class="w-40" />
+      <USelectMenu
+        v-model="selectedRT"
+        placeholder="Pilih RT"
+        :search-input="{
+          placeholder: 'Cari nama RT'
+        }"
+        :items="dropdownRT"
+        value-key="key"
+        label-key="label"
+        searchable
+        class="w-40"
+      />
 
       <UButton
         color="neutral"
@@ -215,26 +264,28 @@ const saveData = async (event: FormSubmitEvent<MeetingAgendaFormSchema>) => {
       <UModal v-model:open="isOpen">
         <template #header>
           <span class="font-bold"
-            >{{ mode === 'add' ? 'Tambah' : 'Edit' }} Agenda</span
+            >{{ mode === 'add' ? 'Tambah' : 'Ubah' }} Agenda</span
           >
         </template>
 
         <template #body>
           <UForm
-            v-if="isOpen"
-            :schema="MeetingAgendaFormSchema"
+            :schema="AgendaFormSchema"
             :state="form"
             class="w-full space-y-6"
             @submit="saveData"
           >
-            <UFormField name="name" label="Nama Agenda" required>
-              <UInput v-model="form.name" placeholder="Nama Agenda" />
+            <UFormField name="title" label="Nama Agenda" required>
+              <UInput v-model="form.title" placeholder="Nama Agenda" />
             </UFormField>
 
-            <UFormField name="shown" label="Ditujukan Pada">
+            <UFormField name="for" label="Ditujukan Pada">
               <USelect
-                v-model="form.shown"
-                :items="rtItems"
+                v-model="form.fors"
+                :items="dropdownRT"
+                multiple
+                value-key="key"
+                value-label="label"
                 class="w-full"
                 searchable
                 placeholder="Pilih RT"
@@ -242,51 +293,33 @@ const saveData = async (event: FormSubmitEvent<MeetingAgendaFormSchema>) => {
             </UFormField>
 
             <div class="grid grid-cols-2 gap-4">
-              <UFormField name="date" label="Tanggal">
-                <UInputDate
-                  ref="inputDate"
-                  v-model="dateObject"
-                  hide-time-zone
-                >
-                  <template #trailing>
-                    <UPopover :reference="inputDate?.inputsRef[3]?.$el">
-                      <UButton
-                        color="neutral"
-                        variant="link"
-                        size="sm"
-                        icon="i-lucide-calendar"
-                        aria-label="Select a date"
-                        class="px-0"
-                      />
-
-                      <template #content>
-                        <UCalendar v-model="dateObject" />
-                      </template>
-                    </UPopover>
-                  </template>
-                </UInputDate>
+              <UFormField name="start_date" label="Tanggal">
+                <UInputDate v-model="form.start_date" />
               </UFormField>
 
               <UFormField name="time" label="Jam">
-                <UInputTime
-                  v-model="timeObject"
-                  :hour-cycle="24"
-                />
+                <UInputTime v-model="form.start_time" :hour-cycle="24" />
               </UFormField>
             </div>
+
+            <UFormField name="location" label="Lokasi">
+              <UInput v-model="form.location" placeholder="Lokasi" />
+            </UFormField>
 
             <UFormField name="description" label="Catatan">
               <UTextarea
                 v-model="form.description"
                 :rows="4"
-                placeholder="Catatan"
+                placeholder="Deskripsi"
               />
             </UFormField>
 
             <div class="flex w-full items-center justify-between gap-2">
               <UButton variant="ghost" @click="isOpen = false"> Batal </UButton>
 
-              <UButton type="submit" color="neutral"> Simpan </UButton>
+              <UButton type="submit" color="neutral" :loading="loading">
+                Simpan
+              </UButton>
             </div>
           </UForm>
         </template>
@@ -296,30 +329,44 @@ const saveData = async (event: FormSubmitEvent<MeetingAgendaFormSchema>) => {
     <div>
       <UTable
         ref="table"
-        v-model:pagination="pagination"
-        :data="dataMeetingAgenda"
-        :columns="columnsFamilyTable"
-        :pagination-options="{
-          getPaginationRowModel: getPaginationRowModel()
-        }"
+        :data="dataAgendaCard"
+        :columns="columnsAgendaTable"
         class="flex-1"
       >
-        <template #date-cell="{ row }">
-          <div class="font-medium text-gray-900">
-            {{
-              row.original.date
-                ? format(new Date(row.original.date), 'dd MMM yyyy')
-                : '-'
-            }}
-          </div>
-          <div class="text-xs text-gray-500 italic">
-            {{ row.original.time }} WIB
+        <template #start_date-cell="{ row }">
+          {{ formatDate(row.original.start_date) }}
+        </template>
+
+        <template #location-cell="{ row }">
+          <div class="max-w-50 truncate">
+            <template v-if="isUrl(row.original.location)">
+              <a
+                :href="
+                  row.original.location.startsWith('http')
+                    ? row.original.location
+                    : `https://${row.original.location}`
+                "
+                target="_blank"
+                class="text-primary-500 hover:underline flex items-center gap-1 font-medium"
+              >
+                <UIcon name="i-lucide-external-link" class="w-4 h-4" />
+                Buka Tautan
+              </a>
+            </template>
+
+            <template v-else>
+              <span class="text-gray-600">
+                {{ row.original.location || '-' }}
+              </span>
+            </template>
           </div>
         </template>
+
         <template #action-cell="{ row }">
           <UButton
             icon="i-lucide-pencil"
             variant="ghost"
+            color="neutral"
             @click="openEditModal(row.original)"
           />
           <UButton
@@ -333,19 +380,11 @@ const saveData = async (event: FormSubmitEvent<MeetingAgendaFormSchema>) => {
 
       <div class="flex justify-end border-t border-default pt-4 px-4">
         <UPagination
-          :page="
-            (tableMeetingAgenda?.tableApi?.getState().pagination.pageIndex ||
-              0) + 1
-          "
-          :items-per-page="
-            tableMeetingAgenda?.tableApi?.getState().pagination.pageSize
-          "
-          :total="
-            tableMeetingAgenda?.tableApi?.getFilteredRowModel().rows.length
-          "
-          @update:page="
-            (p) => tableMeetingAgenda?.tableApi?.setPageIndex(p - 1)
-          "
+          v-model:page="pagination.current_page"
+          :total="pagination.total"
+          :items-per-page="pagination.per_page"
+          :max="5"
+          @update:page="getData"
         />
       </div>
     </div>

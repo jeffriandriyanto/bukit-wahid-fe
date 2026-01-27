@@ -18,6 +18,18 @@ export const useAuth = () => {
     }
   }
 
+  const clearClientAuth = () => {
+    token.value = null
+    refreshToken.value = null
+    user.value = null
+
+    if (import.meta.client) {
+      localStorage.removeItem('access_token')
+      localStorage.removeItem('refresh_token')
+      localStorage.removeItem('auth_user')
+    }
+  }
+
   const setTokens = (acc: string, ref: string) => {
     token.value = acc
     refreshToken.value = ref
@@ -36,22 +48,16 @@ export const useAuth = () => {
 
   const logout = async () => {
     try {
-      await useApi('/logout', { method: 'DELETE' })
+      await useApi('/logout', {
+        method: 'DELETE',
+        _retry: true
+      })
     } catch (e) {
-      console.error(e)
-      // ignore error logout
+      console.error('Logout API failed, cleaning up client anyway...', e)
+    } finally {
+      clearClientAuth()
+      return navigateTo('/login')
     }
-
-    token.value = null
-    refreshToken.value = null
-    user.value = null
-
-    if (import.meta.client) {
-      localStorage.removeItem('access_token')
-      localStorage.removeItem('refresh_token')
-      localStorage.removeItem('auth_user')
-    }
-    return navigateTo('/login')
   }
 
   const refreshSession = async () => {
@@ -62,7 +68,7 @@ export const useAuth = () => {
         baseURL: useRuntimeConfig().public.baseUrl,
         method: 'PUT',
         headers: {
-          'Authorization': `Bearer ${refreshToken.value}`
+          Authorization: `Bearer ${refreshToken.value}`
         }
       })
 
@@ -72,7 +78,8 @@ export const useAuth = () => {
 
       return access_token
     } catch (err) {
-      await logout()
+      clearClientAuth()
+      navigateTo('/login')
       return null
     }
   }
@@ -85,6 +92,7 @@ export const useAuth = () => {
     setTokens,
     setUser,
     logout,
-    refreshSession
+    refreshSession,
+    clearClientAuth
   }
 }

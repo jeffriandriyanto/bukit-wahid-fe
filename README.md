@@ -26,3 +26,5 @@ rm build-output.tar.gz
 # Jika belum ada PM2: npm install -g pm2
 pm2 delete "bukit-wahid-fe" || true
 pm2 start .output/server/index.mjs --name "bukit-wahid-fe" --node-args="--max-old-space-size=512"
+
+kmzwa8awaa

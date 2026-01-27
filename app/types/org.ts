@@ -4,8 +4,10 @@ export type Mode = 'add' | 'edit'
 export interface OrgNode {
   id: string
   title: string
+  parent: string
   name: string
-  address: string
+  incumbent_id?: string
+  signature?: string
   children?: OrgNode[]
 }
 

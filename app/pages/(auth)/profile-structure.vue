@@ -1,37 +1,252 @@
 <script setup lang="ts">
-import { useOrgStructure } from '~/composables/useOrgStructure'
+import { z } from 'zod'
 import type { TabsItem } from '@nuxt/ui'
-import { useRtStructure } from '~/composables/structure/useRTOrg'
+import { useRtStructure } from '~/composables/structure/useRtOrg'
 import { useRwStructure } from '~/composables/structure/useRwOrg'
+import type { OrgNode, Mode, BEResponseNode } from '~/types/org'
+import type { FormSubmitEvent } from '#ui/types'
+import OrgChart from '~/components/OrgChart.vue'
+import { fileUpload } from '~/services/files'
 
-definePageMeta({
-  middleware: ['auth']
+const { selectedRT, rtData, fetchRt, addRT } = useRtStructure()
+const { rwData, fetchRw } = useRwStructure()
+const {
+  dropdownRT,
+  dropdownPosition,
+  dropdownFamilyHead,
+  getDropdownRT,
+  getDropdownPosition,
+  getDropdownFamilyHead
+} = useApiDropdown()
+
+const toast = useToast()
+const { reveal: confirm } = useConfirmService()
+
+const orgFormSchema = z.object({
+  parent: z.string().optional(),
+  name: z.string().min(1, 'Nama wajib diisi')
 })
 
-const {
-  orgFormSchema,
-  isOpen,
-  mode,
-  form,
-  StructureItems,
-  openAddModal,
-  openEditModal,
-  saveData,
-  deleteNode
-} = useOrgStructure()
+const orgFormAssignSchema = z.object({
+  position: z.string().min(1, 'Jabatan wajib diisi'),
+  person: z.string().min(1, 'Nama wajib diisi'),
+  signature: z.string().optional()
+})
 
-const { selectedRT, rtData, addRT } = useRtStructure()
-const { rwData, fetchRw } = useRwStructure()
-const { dropdownRT, getDropdownRT } = useApiDropdown()
+export type OrgFormSchema = z.infer<typeof orgFormSchema>
+export type OrgFormAssignSchema = z.infer<typeof orgFormAssignSchema>
+
+const isOpen = ref(false)
+const isOpenAssign = ref(false)
+const mode = ref<Mode>('add')
+const selectedRTForm = ref('')
+const selectedPosition = ref<OrgNode>()
+const isLoading = ref(false)
+const signatureFile = ref(null)
+const activeTab = ref('0')
+
+const form = reactive<OrgFormSchema>({
+  parent: '',
+  name: ''
+})
+
+const formAssign = reactive<OrgFormAssignSchema>({
+  position: '',
+  person: '',
+  signature: ''
+})
 
 const tabs = [
   { label: 'RW', slot: 'rw' },
   { label: 'RT', slot: 'rt' }
 ] satisfies TabsItem[]
 
+/* =========================
+  ACTIONS
+========================= */
+const clearImage = () => {
+  if (formAssign.signature?.startsWith('blob:')) {
+    URL.revokeObjectURL(formAssign.signature)
+  }
+  formAssign.signature = ''
+  signatureFile.value = null
+}
+
+const resetForm = () => {
+  form.parent = ''
+  form.name = ''
+}
+
+const resetFormAssign = () => {
+  formAssign.person = ''
+  formAssign.position = ''
+  formAssign.signature = ''
+  signatureFile.value = null
+}
+
+const openAddModal = () => {
+  mode.value = 'add'
+  resetForm()
+  isOpen.value = true
+}
+
+const openEditModal = async (node: OrgNode) => {
+  mode.value = 'edit'
+  selectedPosition.value = node
+  form.name = node.title
+  isOpen.value = true
+}
+
+const openEditAssignModal = async (node: OrgNode) => {
+  resetFormAssign()
+  await getDropdownFamilyHead()
+
+  formAssign.person = node?.incumbent_id || ''
+  formAssign.position = node.id
+  formAssign.signature = node.signature
+  isOpenAssign.value = true
+}
+
+const deletePosition = async () => {
+  isOpen.value = false
+  const ok = await confirm({
+    title: 'Hapus Data Struktur?',
+    description: `Apakah Anda yakin ingin menghapus data ini?`,
+    confirmLabel: 'Hapus',
+    cancelLabel: 'Batal',
+    color: 'error'
+  })
+
+  if (!ok) return
+
+  isLoading.value = true
+  try {
+    const response = await useApi<BEResponseNode>(
+      `/position/${selectedPosition?.value?.id}`,
+      {
+        method: 'DELETE'
+      }
+    )
+
+    if (response.status === 1) {
+      toast.add({ title: 'Berhasil menghapus data', color: 'success' })
+      if (activeTab.value === 'rw') fetchRw()
+      else fetchRt()
+    }
+  } catch (err: any) {
+    toast.add({
+      title: 'Gagal menambahkan struktur',
+      description: err?.message || 'Terjadi kesalahan sistem',
+      color: 'error'
+    })
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const saveData = async (event: FormSubmitEvent<OrgFormSchema>) => {
+  isLoading.value = true
+  try {
+    if (mode.value === 'add') {
+      const response = await useApi<BEResponseNode>('/position', {
+        method: 'POST',
+        body: {
+          parent: event.data.parent,
+          name: event.data.name
+        }
+      })
+
+      if (response.status === 1) {
+        toast.add({ title: 'Berhasil menambahkan struktur', color: 'success' })
+        if (activeTab.value === 'rw') fetchRw()
+        else fetchRt()
+
+        isOpen.value = false
+      }
+    } else {
+      const response = await useApi<BEResponseNode>(
+        `/position/${selectedPosition?.value?.id}`,
+        {
+          method: 'PUT',
+          body: {
+            name: event.data.name
+          }
+        }
+      )
+
+      if (response.status === 1) {
+        toast.add({ title: 'Berhasil merubah data struktur', color: 'success' })
+        if (activeTab.value === 'rw') fetchRw()
+        else fetchRt()
+
+        isOpen.value = false
+      }
+    }
+  } catch (err: any) {
+    toast.add({
+      title: 'Gagal menambahkan struktur',
+      description: err?.message || 'Terjadi kesalahan sistem',
+      color: 'error'
+    })
+  } finally {
+    isLoading.value = false
+  }
+}
+
+const saveAssignData = async (event: FormSubmitEvent<OrgFormSchema>) => {
+  isLoading.value = true
+  try {
+    let finalImageUrl = formAssign.signature
+    if (signatureFile.value) {
+      const uploadRes = await fileUpload(signatureFile.value)
+      if (uploadRes) finalImageUrl = uploadRes
+      else {
+        throw new Error('Gagal mengunggah gambar ke server')
+      }
+    }
+
+    const payload = {
+      ...event.data,
+      signature: finalImageUrl
+    }
+
+    const response = await useApi<BEResponseNode>('/position/assign', {
+      method: 'POST',
+      body: { ...payload }
+    })
+
+    if (response.status === 1) {
+      toast.add({ title: 'Berhasil assign pejabat', color: 'success' })
+      isOpenAssign.value = false
+      fetchRt()
+    }
+  } catch (err: any) {
+    toast.add({
+      title: 'Gagal menambahkan assign',
+      description: err?.message || 'Terjadi kesalahan sistem',
+      color: 'error'
+    })
+  } finally {
+    isLoading.value = false
+  }
+}
+
+watch(signatureFile, (newFiles) => {
+  if (newFiles) {
+    if (formAssign.signature?.startsWith('blob:')) {
+      URL.revokeObjectURL(formAssign.signature)
+    }
+    formAssign.signature = URL.createObjectURL(newFiles)
+  }
+})
+
 onMounted(() => {
   getDropdownRT()
   fetchRw()
+})
+
+definePageMeta({
+  middleware: ['auth']
 })
 </script>
 
@@ -55,40 +270,43 @@ onMounted(() => {
           @submit="saveData"
         >
           <!-- LEVEL -->
-          <UFormField name="level" required class="w-full">
-            <URadioGroup
-              v-model="form.level"
+          <UFormField v-if="mode === 'add'" name="rt" required class="w-full">
+            <USelect
+              v-model="selectedRTForm"
+              :items="dropdownRT"
               orientation="horizontal"
-              variant="list"
               class="w-full"
-              :items="StructureItems"
+              placeholder="Pilih RT"
+              value-key="key"
+              value-label="label"
+              @change="getDropdownPosition(selectedRTForm)"
             />
           </UFormField>
 
-          <!-- TITLE -->
-          <UFormField name="title" label="Jabatan" required class="w-full">
-            <UInput
-              v-model="form.title"
+          <UFormField
+            v-if="mode === 'add'"
+            name="parent"
+            label="Di Bawah Koordinasi"
+            required
+            class="w-full"
+          >
+            <USelect
+              v-model="form.parent"
+              :items="dropdownPosition"
+              :disabled="!selectedRTForm"
+              orientation="horizontal"
               class="w-full"
-              placeholder="Nama Jabatan"
+              placeholder="Pilih jabatan koordinasi"
+              value-key="key"
+              value-label="label"
             />
           </UFormField>
 
-          <!-- NAME -->
-          <UFormField name="name" label="Nama" required class="w-full">
+          <UFormField name="name" label="Nama Jabatan" required class="w-full">
             <UInput
               v-model="form.name"
               class="w-full"
-              placeholder="Nama Lengkap"
-            />
-          </UFormField>
-
-          <!-- ADDRESS -->
-          <UFormField name="address" label="Alamat" required class="w-full">
-            <UInput
-              v-model="form.address"
-              class="w-full"
-              placeholder="Alamat Lengkap"
+              placeholder="Nama Jabatan"
             />
           </UFormField>
 
@@ -96,14 +314,13 @@ onMounted(() => {
             <UButton
               v-if="mode === 'edit'"
               variant="subtle"
-              @click="deleteNode"
+              @click="deletePosition"
             >
               Hapus
             </UButton>
 
             <div class="ml-auto flex gap-2">
               <UButton variant="ghost" @click="isOpen = false"> Batal </UButton>
-
               <UButton type="submit" color="neutral"> Simpan </UButton>
             </div>
           </div>
@@ -111,8 +328,97 @@ onMounted(() => {
       </template>
     </UModal>
 
-    <!-- TABS (unchanged) -->
+    <div class="mb-4 flex w-full justify-end gap-2">
+      <UButton color="error" variant="outline" trailing-icon="mdi-download">
+        Download
+      </UButton>
+
+      <UButton
+        color="neutral"
+        icon="mdi-plus-circle-outline"
+        @click="openAddModal()"
+      >
+        Tambah Struktur
+      </UButton>
+    </div>
+
+    <!-- MODAL FORM ASSIGN -->
+    <UModal v-model:open="isOpenAssign" size="md" class="w-full">
+      <template #header>
+        <span class="font-bold">Assign Pejabat</span>
+      </template>
+
+      <template #body>
+        <UForm
+          :schema="orgFormAssignSchema"
+          :state="formAssign"
+          class="w-full space-y-4"
+          @submit="saveAssignData"
+        >
+          <!-- LEVEL -->
+          <UFormField name="person" required class="w-full">
+            <USelect
+              v-model="formAssign.person"
+              :items="dropdownFamilyHead"
+              orientation="horizontal"
+              class="w-full"
+              placeholder="Pilih Person"
+              value-key="key"
+              value-label="label"
+            />
+          </UFormField>
+
+          <UFormField name="signature">
+            <div class="w-full">
+              <div
+                v-if="formAssign.signature"
+                class="group relative aspect-video w-full overflow-hidden rounded-lg border border-gray-200 bg-gray-50"
+              >
+                <img
+                  :src="formAssign.signature"
+                  class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+                <div
+                  class="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100"
+                >
+                  <UButton
+                    color="error"
+                    variant="solid"
+                    icon="i-lucide-trash-2"
+                    label="Hapus & Ganti Gambar"
+                    @click="clearImage"
+                  />
+                </div>
+              </div>
+
+              <UFileUpload
+                v-else
+                v-model="signatureFile"
+                accept="image/*"
+                :dropzone="true"
+                class="aspect-video"
+                icon="uil:image-upload"
+                :ui="{
+                  base: 'bg-neutral-100'
+                }"
+              />
+            </div>
+          </UFormField>
+
+          <div class="flex w-full items-center justify-between gap-2">
+            <div class="ml-auto flex gap-2">
+              <UButton variant="ghost" @click="isOpenAssign = false">
+                Batal
+              </UButton>
+              <UButton type="submit" color="neutral"> Simpan </UButton>
+            </div>
+          </div>
+        </UForm>
+      </template>
+    </UModal>
+
     <UTabs
+      v-model="activeTab"
       :items="tabs"
       variant="link"
       class="mb-6 w-full"
@@ -123,33 +429,21 @@ onMounted(() => {
       }"
     >
       <template #rw>
-        <div class="my-4 flex w-full justify-end gap-2">
-          <UButton color="error" variant="outline" trailing-icon="mdi-download">
-            Download
-          </UButton>
-
-          <UButton
-            color="neutral"
-            icon="mdi-plus-circle-outline"
-            @click="openAddModal('rw')"
-          >
-            Tambah Struktur
-          </UButton>
-        </div>
-
         <div class="flex w-full justify-center">
           <div v-if="rwData">
             <OrgChart
               :datasource="rwData"
-              @node-click="(node) => openEditModal('rw', node)"
+              @node-click="openEditModal"
+              @name-click="openEditAssignModal"
             />
           </div>
-          <div v-else class="loading">Memuat Struktur RW...</div>
+          <div v-else class="loading text-neutral-400 italic text-center py-8">Memuat Struktur RW...</div>
         </div>
       </template>
 
       <template #rt>
-        <div class="my-4 flex w-full justify-between gap-4">
+        <div class="my-4 flex flex-col w-full justify-center gap-4">
+          <div class="text-sm -mb-2">Pilih RT</div>
           <USelectMenu
             v-model="selectedRT"
             placeholder="Pilih RT"
@@ -159,30 +453,11 @@ onMounted(() => {
             }"
             :items="dropdownRT"
             value-key="key"
-            label-key="lable"
             searchable
             create-item
             class="w-40"
             @create="addRT"
           />
-
-          <div class="flex gap-2">
-            <UButton
-              color="error"
-              variant="outline"
-              trailing-icon="mdi-download"
-            >
-              Download
-            </UButton>
-
-            <UButton
-              color="neutral"
-              icon="mdi-plus-circle-outline"
-              @click="openAddModal('rt')"
-            >
-              Tambah Struktur
-            </UButton>
-          </div>
         </div>
 
         <div class="flex w-full justify-center pt-8">
@@ -190,7 +465,8 @@ onMounted(() => {
             <OrgChart
               :datasource="rtData"
               accent-color="success"
-              @node-click="(node) => openEditModal('rt', node)"
+              @node-click="openEditModal"
+              @name-click="openEditAssignModal"
             />
           </div>
           <div

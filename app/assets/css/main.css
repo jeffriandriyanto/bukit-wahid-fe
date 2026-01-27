@@ -47,3 +47,30 @@
   --color-neutral-900: #171717;
   --color-neutral-950: #0a0a0a;
 }
+
+/* Warna garis horizontal dan vertikal */
+.orgchart .node::before,
+.orgchart .nodes::before,
+.orgchart .node .topEdge,
+.orgchart .node .bottomEdge,
+.orgchart .node .leftEdge,
+.orgchart .node .rightEdge {
+  background-color: #4ade80 !important; /* Ganti dengan warna pilihanmu, misal Green 400 */
+}
+
+.chartNode {
+  max-width: max-content !important;
+}
+
+.chartRightLine {
+  border-right-color: #d4d4d4;
+}
+.chartLeftLine {
+  border-left-color: #d4d4d4;
+}
+.chartTopLine {
+  border-top-color: #d4d4d4;
+}
+.chartBottomLine {
+  
+}

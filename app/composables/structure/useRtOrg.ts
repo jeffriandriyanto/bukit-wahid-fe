@@ -31,7 +31,7 @@ export const useRtStructure = () => {
       if (response.status === 1) {
         store.dropdownRT.value.push({
           key: value,
-          lable: value
+          label: value
         })
       }
     } catch (error) {

@@ -2,11 +2,10 @@ export const useApi = async <T>(url: string, options: any = {}) => {
   const { token, refreshSession } = useAuth()
   const config = useRuntimeConfig()
 
-  // Gunakan interceptor pola wrapper agar retry benar-benar mengembalikan data ke pemanggil
   const fetcher = $fetch.create({
     baseURL: config.public.baseUrl,
     headers: {
-      Accept: 'application/json',
+      Accept: 'application/json'
     },
     onRequest({ options }) {
       if (token.value) {
@@ -17,7 +16,12 @@ export const useApi = async <T>(url: string, options: any = {}) => {
       }
     },
     async onResponseError({ response, options: originalOptions }) {
-      if (url.includes('/login') || url.includes('/refresh-token') || originalOptions._retry) {
+      const isAuthAction =
+        url.includes('/login') ||
+        url.includes('/refresh-token') ||
+        url.includes('/logout')
+
+      if (isAuthAction || originalOptions._retry) {
         throw response._data
       }
 
@@ -32,7 +36,7 @@ export const useApi = async <T>(url: string, options: any = {}) => {
               ...originalOptions.headers,
               Authorization: `Bearer ${newToken}`
             }
-            return $fetch(url, originalOptions)
+            return fetcher(url, originalOptions)
           }
         } catch (refreshError) {
           throw refreshError

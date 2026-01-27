@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { sidebarItems } from '~/const/sidebar'
-const { logout } = useAuth()
-
-const toast = useToast()
+const { user, logout } = useAuth()
 const open = ref(false)
 const route = useRoute()
 const isChangePasswordOpen = ref(false)
@@ -15,12 +13,14 @@ const displayName = computed(() => {
   return displayPath
 })
 
-const userMenuItems = [
+const userActive = computed(() => user.value)
+
+const userMenuItems = computed(() => [
   [
     {
-      label: 'Name User',
+      label: user.value?.person?.name || 'Guest',
       avatar: {
-        src: 'https://github.com/benjamincanac.png'
+        src: user.value?.person?.avatar || ''
       },
       type: 'label'
     }
@@ -43,34 +43,7 @@ const userMenuItems = [
       }
     }
   ]
-]
-
-onMounted(async () => {
-  const cookie = useCookie('cookie-consent')
-  if (cookie.value === 'accepted') {
-    return
-  }
-
-  toast.add({
-    title:
-      'We use first-party cookies to enhance your experience on our website.',
-    duration: 0,
-    close: false,
-    actions: [
-      {
-        label: 'Accept',
-        variant: 'outline',
-        onClick: () => {
-          cookie.value = 'accepted'
-        }
-      },
-      {
-        label: 'Opt out',
-        variant: 'ghost'
-      }
-    ]
-  })
-})
+])
 </script>
 
 <template>
@@ -94,7 +67,7 @@ onMounted(async () => {
       </template>
 
       <template #footer>
-        <span>v.1.0.2-beta</span>
+        <span>v1.0.5-beta</span>
       </template>
     </UDashboardSidebar>
 
@@ -122,15 +95,16 @@ onMounted(async () => {
                 >
                   <div class="flex flex-col text-right leading-tight">
                     <span class="text-sm font-medium text-neutral-900">
-                      Name User
+                      {{ userActive?.person?.name || '' }}
                     </span>
                     <span class="text-xs text-neutral-500">
-                      email@user.com
+                      {{ userActive?.username || '' }}
                     </span>
                   </div>
 
                   <UAvatar
-                    src="https://github.com/benjamincanac.png"
+                    v-if="userActive?.person?.avatar"
+                    :src="userActive?.person?.avatar"
                     size="sm"
                   />
                 </button>

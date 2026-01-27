@@ -1,186 +1,127 @@
 <script setup lang="ts">
-import type { FormSubmitEvent } from '@nuxt/ui'
-import { getPaginationRowModel } from '@tanstack/vue-table'
 import { z } from 'zod'
+import type { FormSubmitEvent } from '@nuxt/ui'
 
-const { reveal: confirm } = useConfirmService()
-const tableHome = useTemplateRef('table')
-const selectedRT = ref('RT 01')
-const isOpen = ref(false)
-const mode = ref<'add' | 'edit'>('add')
-const editingIndex = ref<number | null>(null)
-const rtItems = ['RT 01', 'RT 02', 'RT 03', 'RT 04']
+const {
+  dropdownRT,
+  dropdownFamilyHead,
+  dropdownResidenceType,
+  getDropdownRT,
+  getDropdownFamilyHead,
+  getDropdownResidenceType
+} = useApiDropdown()
+
+// ===== 1. SCHEMAS =====
 
 const HomeFormSchema = z.object({
-  pic: z.string().min(1, 'Penanggung Jawab wajib diisi'),
-  pic_nik: z.string().min(16, 'NIK Penanggung Jawab wajib diisi'),
-  house_area: z.number().min(1, 'Luas Rumah wajib diisi'),
+  pic: z.string().min(1, 'Kepala keluarga wajib diisi'),
   rt: z.string().min(1, 'RT wajib diisi'),
-  address: z.string().min(1, 'Alamat wajib diisi'),
-  family_member_residents: z.array(
-    z.object({
-      name: z.string().min(1, 'Nama wajib diisi'),
-      nik: z.string().min(16, 'NIK wajib diisi')
-    })
-  ),
-  others_member_residents: z.array(
-    z.object({
-      name: z.string().optional(),
-      nik: z.string().optional(),
-      status: z.string().optional()
-    })
-  )
+  type: z.string().min(1, 'Tipe Kavling wajib diisi'),
+  kavling: z.string().min(1, 'Kavling wajib diisi'),
+  land_size: z.number(),
+  building_size: z.number()
 })
 
 type HomeFormSchema = z.infer<typeof HomeFormSchema>
 
-const dataHome = ref([
-  {
-    pic: 'Jeffery Warden',
-    address: 'Jl. Bukit Wahid Raya No. 12',
-    pic_nik: '1234567890123450',
-    house_area: 120,
-    rt: 'RT 01',
-    total: 6,
-    family_members_residents: [
-      {
-        name: 'Anna Warden',
-        nik: '1234567890123456'
-      },
-      {
-        name: 'Bobby Warden',
-        nik: '1234567890123457'
-      },
-      {
-        name: 'Cindy Warden',
-        nik: '1234567890123458'
-      }
-    ],
-    others_member_residents: [{
-      name: 'Siti Aminah',
-      status: 'ART'
-    }, {
-      name: 'Budi Santoso',
-      status: 'Supir'
-    }]
-  }
-])
+// ===== 2. STATE =====
+const { reveal: confirm } = useConfirmService()
+const toast = useToast()
 
-const columnsFamilyTable = [
-  {
-    accessorKey: 'pic',
-    header: 'Penanggung Jawab'
-  },
-  {
-    accessorKey: 'total',
-    header: 'Anggota Dalam Rumah'
-  },
-  {
-    accessorKey: 'family_members_residents',
-    header: 'Penghuni'
-  },
-  {
-    accessorKey: 'others_member_residents',
-    header: 'Pegawai'
-  },
-  {
-    id: 'action',
-    header: 'Aksi'
-  }
-]
+const isOpen = ref(false)
+const editingId = ref<string | null>(null)
+const loading = ref(false)
+const loadingEdit = ref(false)
 
+const dataHome = ref<any[]>([])
+const selectedRT = ref()
+
+const selectedKavling = ref()
 const pagination = ref({
-  pageIndex: 0,
-  pageSize: 5
+  current_page: 1,
+  last_page: 1,
+  per_page: 10,
+  total: 0
 })
 
-/* =========================
-  FORM STATE
-========================= */
-interface Home {
-  pic: string
-  pic_nik: string
-  house_area: number
-  rt: string
-  address: string
-  family_members_residents: {
-    name: string
-    nik: string
-  }[]
-  others_member_residents: {
-    name: string
-    nik: string
-    status: string
-  }[]
-}
-
-const form = reactive<Home>({
+const form = reactive<HomeFormSchema>({
   pic: '',
-  pic_nik: '',
-  house_area: 0,
   rt: '',
-  address: '',
-  family_members_residents: [
-    {
-      name: '',
-      nik: ''
-    }
-  ],
-  others_member_residents: [
-    {
-      name: '',
-      nik: '',
-      status: ''
-    }
-  ]
+  type: '',
+  kavling: '',
+  land_size: 0,
+  building_size: 0
 })
 
+// ===== 3. ACTIONS =====
 const resetForm = () => {
-  form.pic = ''
-  form.pic_nik = ''
-  form.house_area = 0
-  form.rt = ''
-  form.address = ''
-  form.family_members_residents = [
-    {
-      name: '',
-      nik: ''
-    }
-  ]
-  form.others_member_residents = [
-    {
-      name: '',
-      nik: '',
-      status: ''
-    }
-  ]
+  editingId.value = null
+  Object.assign(form, {
+    pic: '',
+    rt: '',
+    type: '',
+    kavling: '',
+    land_size: 0,
+    building_size: 0
+  })
 }
 
-const openAddModal = () => {
+const getData = async () => {
+  loading.value = true
+  try {
+    const res = await useApi<any>('/residence', {
+      params: {
+        rt: selectedRT.value,
+        type: selectedKavling.value,
+        page: pagination.value.current_page,
+        per_page: pagination.value.per_page
+      },
+      method: 'GET'
+    })
+
+    if (res.status === 1) {
+      dataHome.value = res.data
+      pagination.value = {
+        ...res.pagination
+      }
+    }
+  } catch (err) {
+    console.error('Fetch error:', err)
+  } finally {
+    loading.value = false
+  }
+}
+
+const openEditModal = async (row: any) => {
+  loadingEdit.value = true
   resetForm()
-  mode.value = 'add'
-  editingIndex.value = null
-  isOpen.value = true
+  editingId.value = row.id
+
+  try {
+    const rt = row.rt
+
+    if (rt) {
+      Object.assign(form, { ...row })
+      await getDropdownFamilyHead()
+      await getDropdownResidenceType(rt)
+      const res = await useApi<any>(`/residence/${row.id}`)
+
+      if (res.status === 1) {
+        console.log(res.data)
+      }
+    }
+  } catch (err) {
+    console.error('Error fetching detail:', err)
+    toast.add({ title: 'Gagal mengambil detail data', color: 'error' })
+  } finally {
+    isOpen.value = true
+    loadingEdit.value = false
+  }
 }
 
-const openEditModal = (row: Home, index: number) => {
-  mode.value = 'edit'
-  editingIndex.value = index
-
-  form.pic = row.pic
-  form.pic_nik = row.pic_nik
-  form.house_area = row.house_area
-  form.rt = row.rt
-  form.address = row.address
-  form.family_members_residents = JSON.parse(JSON.stringify(row.family_members_residents))
-  form.others_member_residents = JSON.parse(JSON.stringify(row.others_member_residents))
-
-  isOpen.value = true
-}
-
-const confirmDelete = async (index: number) => {
+const confirmDelete = async (id: string) => {
   const ok = await confirm({
-    title: 'Hapus Data Keluarga?',
+    title: 'Hapus Data Rumah?',
     description: 'Data yang dihapus tidak dapat dikembalikan.',
     confirmLabel: 'Hapus',
     cancelLabel: 'Batal',
@@ -189,347 +130,250 @@ const confirmDelete = async (index: number) => {
 
   if (!ok) return
 
-  dataHome.value.splice(index, 1)
+  try {
+    loading.value = true
+    const res = await useApi<any>(`/residence/${id}`, { method: 'DELETE' })
+    if (res.status === 1) {
+      toast.add({ title: 'Data berhasil dihapus', color: 'success' })
+      getData()
+    }
+  } catch (err: any) {
+    toast.add({ title: err?.message || 'Gagal menghapus data', color: 'error' })
+  } finally {
+    loading.value = false
+  }
 }
 
 const saveData = async (event: FormSubmitEvent<HomeFormSchema>) => {
-  const validated = event.data
+  try {
+    loading.value = true
+    const res = await useApi<any>(`/residence/${editingId.value}`, {
+      method: 'PUT',
+      body: { ...event.data }
+    })
 
-  const payload: Home = {
-    pic: validated.pic,
-    pic_nik: validated.pic_nik,
-    house_area: validated.house_area,
-    rt: validated.rt,
-    address: validated.address,
-    family_members_residents: JSON.parse(JSON.stringify(validated.family_member_residents)),
-    others_member_residents: JSON.parse(JSON.stringify(validated.others_member_residents))
+    if (res.status === 1) {
+      toast.add({
+        title: `Berhasil mengubah data`,
+        color: 'success'
+      })
+      isOpen.value = false
+      getData()
+    }
+  } catch (err: any) {
+    toast.add({
+      title: err?.message || 'Terjadi kesalahan server',
+      color: 'error'
+    })
+  } finally {
+    loading.value = false
   }
-
-  if (mode.value === 'add') {
-    dataHome.value.push(payload)
-  }
-
-  if (mode.value === 'edit' && editingIndex.value !== null) {
-    dataHome.value.splice(editingIndex.value, 1, payload)
-  }
-
-  resetForm()
-  isOpen.value = false
 }
+
+watch(selectedRT, () => {
+  pagination.value.current_page = 1
+  getData()
+})
+
+onMounted(() => {
+  getDropdownRT()
+  getData()
+})
+
+const columnsFamilyTable = [
+  { accessorKey: 'head', header: 'Kepala Keluarga' },
+  { accessorKey: 'type', header: 'Tipe' },
+  { accessorKey: 'kavling', header: 'Kavling' },
+  { accessorKey: 'land_size', header: 'Luas Tanah' },
+  { accessorKey: 'building_size', header: 'Luas Rumah' },
+  { id: 'action', header: 'Aksi' }
+]
 </script>
 
 <template>
-  <div>
+  <div class="space-y-4">
     <ConfirmDialog />
 
-    <div class="my-4 flex w-full justify-between gap-4">
-      <USelect
+    <div class="flex gap-4 items-center mt-4">
+      <USelectMenu
         v-model="selectedRT"
-        :items="rtItems"
+        placeholder="Pilih RT"
+        :search-input="{
+          placeholder: 'Cari RT RT'
+        }"
+        :items="dropdownRT"
+        value-key="key"
+        label-key="label"
+        searchable
         class="w-40"
+        @change="getDropdownResidenceType(selectedRT)"
       />
 
-      <UButton
-        color="neutral"
-        trailing-icon="mdi-plus-circle-outline"
-        @click="openAddModal"
-      >
-        Tambah Keluarga
-      </UButton>
-
-      <UModal
-        v-model:open="isOpen"
-        :ui="{ content: 'min-w-2xl' }"
-      >
-        <template #header>
-          <span class="font-bold">{{ mode === 'add' ? 'Tambah' : 'Edit' }} Data Warga</span>
-        </template>
-
-        <template #body>
-          <UForm
-            :schema="HomeFormSchema"
-            :state="form"
-            class="w-full space-y-6"
-            @submit="saveData"
-          >
-            <!-- Kartu Keluarga -->
-            <UFormField
-              name="pic"
-              label="Penanggung Jawab"
-              required
-            >
-              <UInput
-                v-model="form.pic"
-                placeholder="Penanggung Jawab"
-              />
-            </UFormField>
-
-            <UFormField
-              name="pic_nik"
-              label="NIK Penanggung Jawab"
-              required
-            >
-              <UInput
-                v-model="form.pic_nik"
-                placeholder="NIK Penanggung Jawab"
-              />
-            </UFormField>
-
-            <div class="flex w-full gap-4">
-              <UFormField
-                name="house_area"
-                label="Luas Rumah (m²)"
-                required
-                class="w-[25%]"
-              >
-                <UInput
-                  v-model="form.house_area"
-                  type="number"
-                  placeholder="Luas Rumah"
-                />
-              </UFormField>
-
-              <UFormField
-                name="rt"
-                label="RT"
-                required
-                class="min-w-[25%]"
-              >
-                <USelect
-                  v-model="form.rt"
-                  :items="rtItems"
-                  class="w-full"
-                  placeholder="Pilih RT"
-                />
-              </UFormField>
-
-              <UFormField
-                name="address"
-                label="Alamat"
-                required
-                class="w-[50%]"
-              >
-                <UInput
-                  v-model="form.address"
-                  placeholder="Alamat"
-                />
-              </UFormField>
-            </div>
-
-            <div class="text-2xl mt-6 mb-4">
-              Penghuni Anggota Keluarga
-            </div>
-
-            <UCard class="bg-neutral-100">
-              <div class="grid grid-cols-2 gap-2">
-                <template
-                  v-for="(family, index) in form.family_members_residents"
-                  :key="`wife-${index}`"
-                >
-                  <div class="col-span-2 grid grid-cols-12 gap-2 items-end">
-                    <UFormField
-                      :name="`family.${index}.name`"
-                      :label="`Nama ${
-                        form.family_members_residents.length > 1 ? index + 1 : ''
-                      }`"
-                      required
-                      class="col-span-6"
-                    >
-                      <UInput v-model="family.name" />
-                    </UFormField>
-
-                    <UFormField
-                      :name="`family.${index}.nik`"
-                      :label="`NIK ${
-                        form.family_members_residents.length > 1 ? index + 1 : ''
-                      }`"
-                      required
-                      class="col-span-5"
-                    >
-                      <UInput v-model="family.nik" />
-                    </UFormField>
-
-                    <UButton
-                      type="button"
-                      color="error"
-                      variant="ghost"
-                      icon="mdi-trash-can-outline"
-                      class="col-span-1"
-                      :disabled="form.family_members_residents.length === 1"
-                      @click="form.family_members_residents.splice(index, 1)"
-                    />
-                  </div>
-                </template>
-              </div>
-
-              <div class="w-full text-center mt-4">
-                <UButton
-                  type="button"
-                  variant="link"
-                  color="info"
-                  icon="mdi-plus-circle-outline"
-                  @click="form.family_members_residents.push({ name: '', nik: '' })"
-                >
-                  Tambah Penghuni Anggota Keluarga
-                </UButton>
-              </div>
-            </UCard>
-
-            <div class="text-2xl mt-6 mb-4">
-              Penghuni Lainnya
-            </div>
-
-            <UCard
-              class="bg-neutral-100"
-            >
-              <div class="grid grid-cols-2 gap-2">
-                <template
-                  v-for="(other, index) in form.others_member_residents"
-                  :key="`other-${index}`"
-                >
-                  <div class="col-span-2 grid grid-cols-12 gap-2 items-end">
-                    <UFormField
-                      :name="`other.${index}.name`"
-                      :label="`Nama ${index + 1}`"
-                      required
-                      class="col-span-4"
-                    >
-                      <UInput v-model="other.name" />
-                    </UFormField>
-
-                    <UFormField
-                      :name="`other.${index}.nik`"
-                      :label="`NIK ${index + 1}`"
-                      required
-                      class="col-span-4"
-                    >
-                      <UInput v-model="other.nik" />
-                    </UFormField>
-
-                    <UFormField
-                      :name="`other.${index}.status`"
-                      :label="`Status ${index + 1}`"
-                      required
-                      class="col-span-3"
-                    >
-                      <UInput v-model="other.status" />
-                    </UFormField>
-
-                    <UButton
-                      type="button"
-                      color="error"
-                      variant="ghost"
-                      icon="mdi-trash-can-outline"
-                      class="col-span-1 mb-1"
-                      :disabled="form.others_member_residents.length === 1"
-                      @click="form.others_member_residents.splice(index, 1)"
-                    />
-                  </div>
-                </template>
-              </div>
-
-              <div class="w-full text-center mt-4">
-                <UButton
-                  type="button"
-                  variant="link"
-                  color="info"
-                  icon="mdi-plus-circle-outline"
-                  class="col-span-2"
-                  @click="form.others_member_residents.push({ name: '', nik: '', status: '' })"
-                >
-                  Tambah Penghuni Lainnya
-                </UButton>
-              </div>
-            </UCard>
-
-            <div class="flex w-full items-center justify-between gap-2">
-              <UButton
-                variant="ghost"
-                @click="isOpen = false"
-              >
-                Batal
-              </UButton>
-
-              <UButton
-                type="submit"
-                color="neutral"
-              >
-                Simpan
-              </UButton>
-            </div>
-          </UForm>
-        </template>
-      </UModal>
+      <USelectMenu
+        v-model="selectedKavling"
+        placeholder="Pilih tipe kavling"
+        :disabled="!selectedRT"
+        :search-input="{
+          placeholder: 'Cari tipe kavling'
+        }"
+        :items="dropdownResidenceType"
+        value-key="key"
+        label-key="label"
+        searchable
+        class="w-40"
+        @change="getData"
+      />
     </div>
 
-    <div>
-      <UTable
-        ref="table"
-        v-model:pagination="pagination"
-        :data="dataHome"
-        :columns="columnsFamilyTable"
-        :pagination-options="{
-          getPaginationRowModel: getPaginationRowModel()
-        }"
-        class="flex-1"
-      >
-        <template #pic-cell="{ row }">
-          <div class="font-bold">
-            {{ row.original.pic }}
-          </div>
+    <UTable
+      ref="table"
+      :data="dataHome"
+      :columns="columnsFamilyTable"
+      :loading="loading"
+    >
+      <template #head-cell="{ row }">
+        {{ row.original.pic_profile?.name || '-' }}
+      </template>
 
-          <div class="text-xs text-neutral-400">
-            {{ row.original.address }}
-          </div>
-        </template>
-        <template #family_members_residents-cell="{ row }">
-          <div class="flex gap-1">
-            <span
-              v-for="(member, index) in row.original.family_members_residents"
-              :key="`member-${index}`"
-            >
-              {{ member.name }}<span>{{ index < row.original.family_members_residents.length - 1 ? ',' : '' }}</span>
-            </span>
-          </div>
-        </template>
-        <template #others_member_residents-cell="{ row }">
-          <div class="flex gap-1">
-            <span
-              v-for="(member, index) in row.original.others_member_residents"
-              :key="`member-${index}`"
-            >
-              {{ member.name }}<span>{{ index < row.original.others_member_residents.length - 1 ? ',' : '' }}</span>
-            </span>
-          </div>
-        </template>
-        <template #action-cell="{ row, rowIndex }">
+      <template #land_size-cell="{ row }">
+        {{ row.original.land_size }} m2
+      </template>
+
+      <template #building_size-cell="{ row }">
+        {{ row.original.building_size }} m2
+      </template>
+
+      <template #action-cell="{ row }">
+        <div class="flex gap-1">
           <UButton
             icon="i-lucide-pencil"
             variant="ghost"
-            @click="openEditModal(row.original, rowIndex)"
+            color="neutral"
+            @click="openEditModal(row.original)"
           />
           <UButton
             icon="i-lucide-trash-2"
             variant="ghost"
             color="error"
-            @click="confirmDelete(rowIndex)"
+            @click="confirmDelete(row.original.id)"
           />
-        </template>
-      </UTable>
+        </div>
+      </template>
+    </UTable>
 
-      <div class="flex justify-end border-t border-default pt-4 px-4">
-        <UPagination
-          :page="
-            (tableHome?.tableApi?.getState().pagination.pageIndex || 0)
-              + 1
-          "
-          :items-per-page="
-            tableHome?.tableApi?.getState().pagination.pageSize
-          "
-          :total="tableHome?.tableApi?.getFilteredRowModel().rows.length"
-          @update:page="(p) => tableHome?.tableApi?.setPageIndex(p - 1)"
-        />
-      </div>
+    <div class="flex justify-end border-t border-default pt-4 px-4">
+      <UPagination
+        v-model:page="pagination.current_page"
+        :total="pagination.total"
+        :items-per-page="pagination.per_page"
+        :max="5"
+        @update:page="getData"
+      />
     </div>
+
+    <UModal v-model:open="isOpen" :ui="{ content: 'min-w-3xl' }">
+      <template #header>
+        <span class="font-bold">Edit Data Rumah</span>
+      </template>
+
+      <template #body>
+        <UForm
+          :schema="HomeFormSchema"
+          :state="form"
+          class="space-y-6 w-full"
+          @submit="saveData"
+        >
+          <div class="grid grid-cols-12 gap-3 w-full">
+            <UFormField
+              name="rt_detail.name"
+              label="Pilih RT"
+              required
+              class="col-span-2"
+            >
+              <UInput
+                :value="form.rt_detail.name"
+                readonly
+                placeholder="Pilih RT"
+              />
+            </UFormField>
+
+            <UFormField
+              name="pic"
+              label="Pilih Kepala Keluarga"
+              required
+              class="col-span-10"
+            >
+              <USelect
+                v-model="form.pic"
+                :disabled="!form.rt"
+                :items="dropdownFamilyHead"
+                value-key="key"
+                label-key="label"
+                placeholder="Pilih Kepala Keluarga"
+              />
+            </UFormField>
+
+            <UFormField name="type" label="Pilih Tipe" class="col-span-3">
+              <USelect
+                v-model="form.type"
+                disabled
+                :items="dropdownResidenceType"
+                value-key="key"
+                label-key="label"
+                placeholder="Type"
+              />
+            </UFormField>
+
+            <UFormField
+              name="kavling"
+              label="Pilih Kavling"
+              required
+              class="col-span-3"
+            >
+              <UInput v-model="form.kavling" placeholder="Kavling" readonly />
+            </UFormField>
+
+            <UFormField
+              name="land_size"
+              label="Luas Tanah"
+              class="col-span-3"
+              required
+            >
+              <UInput
+                v-model.number="form.land_size"
+                placeholder="Luas Tanah"
+              />
+            </UFormField>
+
+            <UFormField
+              name="building_size"
+              label="Luas Bangunan"
+              class="col-span-3"
+              required
+            >
+              <UInput
+                v-model.number="form.building_size"
+                placeholder="Luas Bangunan"
+              />
+            </UFormField>
+          </div>
+
+          <div class="flex justify-end gap-3 pt-4 border-t">
+            <UButton
+              :loading="loadingEdit"
+              variant="ghost"
+              label="Batal"
+              @click="isOpen = false"
+            />
+            <UButton
+              type="submit"
+              color="neutral"
+              label="Simpan Data"
+              :loading="loading"
+            />
+          </div>
+        </UForm>
+      </template>
+    </UModal>
   </div>
 </template>

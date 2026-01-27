@@ -30,7 +30,8 @@ export const useConfirmService = () => {
       ...options
     })
 
-    return await dialog.reveal()
+    const { isCanceled } = await dialog.reveal()
+    return !isCanceled
   }
 
   return {

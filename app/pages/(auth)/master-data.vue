@@ -6,8 +6,8 @@ definePageMeta({
 })
 
 const tabs = [
-  { label: 'Kartu Keluarga', slot: 'family_card' },
-  { label: 'Rumah', slot: 'home' }
+  { label: 'Keluarga', slot: 'family_card' },
+  { label: 'Data Rumah', slot: 'home' }
 ] satisfies TabsItem[]
 </script>
 
