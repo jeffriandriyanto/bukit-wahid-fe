@@ -28,6 +28,23 @@ const handleNodeClick = (node: any) => {
 const handleNameClick = (node: any) => {
   emit('nameClick', node)
 }
+
+const getInitial = (name: string | null | undefined): string => {
+  if (!name || name === 'Belum diisi' || name === '-') {
+    return ''
+  }
+
+  const words = name.trim().split(/\s+/).filter(Boolean)
+
+  const firstWord = words[0]
+  if (!firstWord) return ''
+
+  if (words.length >= 2) {
+    const secondWord = words[1]
+    return (firstWord.charAt(0) + (secondWord?.charAt(0) || '')).toUpperCase()
+  }
+  return firstWord.slice(0, 2).toUpperCase()
+}
 </script>
 
 <template>
@@ -39,7 +56,15 @@ const handleNameClick = (node: any) => {
         :class="borderColorClassMap[accentColor ?? 'primary']"
         @click="handleNodeClick(nodeData)"
       >
-        <UAvatar src="https://github.com/benjamincanac.png" size="sm" />
+        <UAvatar
+          size="sm"
+          :text="getInitial(nodeData?.name)"
+          :class="!getInitial(nodeData?.name) ? 'bg-gray-100' : ''"
+        >
+          <template v-if="!getInitial(nodeData?.name)" #default>
+            <UIcon name="i-heroicons-user" class="text-gray-400" />
+          </template>
+        </UAvatar>
 
         <div class="flex flex-col gap-y-0.5 items-start">
           <span class="text-xs text-neutral-500 cursor-pointer">

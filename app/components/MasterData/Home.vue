@@ -14,7 +14,7 @@ const {
 // ===== 1. SCHEMAS =====
 
 const HomeFormSchema = z.object({
-  pic: z.string().min(1, 'Kepala keluarga wajib diisi'),
+  pic: z.string().min(1, 'Penanggung Jawab wajib diisi'),
   rt: z.string().min(1, 'RT wajib diisi'),
   type: z.string().min(1, 'Tipe Kavling wajib diisi'),
   kavling: z.string().min(1, 'Kavling wajib diisi'),
@@ -181,7 +181,7 @@ onMounted(() => {
 })
 
 const columnsFamilyTable = [
-  { accessorKey: 'head', header: 'Kepala Keluarga' },
+  { accessorKey: 'head', header: 'Penanggung Jawab' },
   { accessorKey: 'type', header: 'Tipe' },
   { accessorKey: 'kavling', header: 'Kavling' },
   { accessorKey: 'land_size', header: 'Luas Tanah' },
@@ -299,7 +299,7 @@ const columnsFamilyTable = [
 
             <UFormField
               name="pic"
-              label="Pilih Kepala Keluarga"
+              label="Pilih Penanggung Jawab"
               required
               class="col-span-10"
             >
@@ -309,7 +309,7 @@ const columnsFamilyTable = [
                 :items="dropdownFamilyHead"
                 value-key="key"
                 label-key="label"
-                placeholder="Pilih Kepala Keluarga"
+                placeholder="Pilih Penanggung Jawab"
               />
             </UFormField>
 

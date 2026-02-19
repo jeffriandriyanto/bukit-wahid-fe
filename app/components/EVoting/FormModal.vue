@@ -50,7 +50,7 @@ const onSubmit = () => {
     </template>
     <template #body>
       <UForm ref="formRef" :schema="EVotingFormSchema" :state="form" class="space-y-4" @submit="onSubmit">
-        <UStepper ref="stepper" :items="[{ title: 'Informasi', slot: 'one' }, { title: 'Kandidat', slot: 'two' }]">
+        <UStepper ref="stepper" size="xs" :items="[{ title: 'Informasi', slot: 'one' }, { title: 'Kandidat', slot: 'two' }]">
 
           <template #one>
             <EVotingStepInfo v-model="form" />

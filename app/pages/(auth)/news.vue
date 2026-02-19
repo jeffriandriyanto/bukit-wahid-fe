@@ -102,7 +102,7 @@ const confirmDelete = async (row: any) => {
   if (actualIndex === -1) return
 
   const ok = await confirm({
-    title: 'Hapus Data Pengumuman?',
+    title: 'Hapus Data Berita?',
     description: `Apakah Anda yakin ingin menghapus "${row.title}"?`,
     confirmLabel: 'Hapus',
     cancelLabel: 'Batal',
@@ -142,9 +142,9 @@ const clearImage = () => {
 
 const publishHandler = async (row: any) => {
   const ok = await confirm({
-    title: 'Tayangkan Pengumuman?',
+    title: 'Tayangkan Berita?',
     description:
-      'Pengumuman ini akan muncul dan bisa dilihat oleh warga yang dituju',
+      'Berita ini akan muncul dan bisa dilihat oleh warga yang dituju',
     confirmLabel: 'Tayangkan',
     cancelLabel: 'Batal',
     color: 'primary'
@@ -160,7 +160,7 @@ const publishHandler = async (row: any) => {
 
     if (res.status === 1) {
       toast.add({
-        title: 'Berhasil publish pengumuman',
+        title: 'Berhasil publish Berita',
         color: 'success'
       })
       getData()
@@ -174,9 +174,9 @@ const publishHandler = async (row: any) => {
 
 const unpublishHandler = async (row: any) => {
   const ok = await confirm({
-    title: 'Sembunyikan Pengumuman?',
+    title: 'Sembunyikan Berita?',
     description:
-      'Pengumuman akan ditarik dari publik dan disimpan sebagai draf',
+      'Berita akan ditarik dari publik dan disimpan sebagai draf',
     confirmLabel: 'Sembunyikan',
     cancelLabel: 'Batal',
     color: 'neutral'
@@ -192,7 +192,7 @@ const unpublishHandler = async (row: any) => {
 
     if (res.status === 1) {
       toast.add({
-        title: 'Pengumuman berhasil disembunyikan',
+        title: 'Berita berhasil disembunyikan',
         color: 'success'
       })
       getData()
@@ -304,8 +304,8 @@ definePageMeta({
   <div>
     <ConfirmDialog />
 
-    <div class="my-4 flex w-full justify-between gap-4">
-      <USelectMenu
+    <div class="my-4 flex w-full justify-end gap-4">
+      <!-- <USelectMenu
         v-model="selectedRT"
         placeholder="Pilih RT"
         :search-input="{
@@ -316,21 +316,20 @@ definePageMeta({
         label-key="label"
         searchable
         class="w-40"
-      />
+      /> -->
 
       <UButton
         color="neutral"
         trailing-icon="mdi-plus-circle-outline"
         @click="openAddModal"
       >
-        Tambah Pengumuman
+        Tambah Berita
       </UButton>
 
       <UModal v-model:open="isOpen">
         <template #header>
           <span class="font-bold"
-            >{{ mode === 'add' ? 'Tambah' : 'Edit' }} Pengumuman dan
-            Berita</span
+            >{{ mode === 'add' ? 'Tambah' : 'Edit' }} Berita</span
           >
         </template>
 
@@ -341,8 +340,8 @@ definePageMeta({
             class="w-full space-y-6"
             @submit="saveData"
           >
-            <UFormField name="title" label="Judul Pengumuman" required>
-              <UInput v-model="form.title" placeholder="Judul Pengumuman" />
+            <UFormField name="title" label="Judul Berita" required>
+              <UInput v-model="form.title" placeholder="Judul Berita" />
             </UFormField>
 
             <UFormField name="for" label="Ditujukan Pada">

@@ -8,15 +8,18 @@ import type { FormSubmitEvent } from '#ui/types'
 import OrgChart from '~/components/OrgChart.vue'
 import { fileUpload } from '~/services/files'
 
-const { selectedRT, rtData, fetchRt, addRT } = useRtStructure()
+const { selectedRT, rtData, rtOrgData, fetchRtOrg, fetchRt, addRT, deleteRT } =
+  useRtStructure()
 const { rwData, fetchRw } = useRwStructure()
 const {
   dropdownRT,
   dropdownPosition,
   dropdownFamilyHead,
+  dropdownPositionRW,
   getDropdownRT,
   getDropdownPosition,
-  getDropdownFamilyHead
+  getDropdownFamilyHead,
+  getDropdownPositionRW
 } = useApiDropdown()
 
 const toast = useToast()
@@ -33,6 +36,10 @@ const orgFormAssignSchema = z.object({
   signature: z.string().optional()
 })
 
+const orgFormRTSchema = z.object({
+  name: z.string().min(1, 'Nama organisasi wajib diisi')
+})
+
 export type OrgFormSchema = z.infer<typeof orgFormSchema>
 export type OrgFormAssignSchema = z.infer<typeof orgFormAssignSchema>
 
@@ -44,6 +51,11 @@ const selectedPosition = ref<OrgNode>()
 const isLoading = ref(false)
 const signatureFile = ref(null)
 const activeTab = ref('0')
+const isOpenOrganization = ref(false)
+
+const formOrganization = reactive<any>({
+  name: ''
+})
 
 const form = reactive<OrgFormSchema>({
   parent: '',
@@ -130,18 +142,24 @@ const deletePosition = async () => {
 
     if (response.status === 1) {
       toast.add({ title: 'Berhasil menghapus data', color: 'success' })
-      if (activeTab.value === 'rw') fetchRw()
+      if (activeTab.value === '0') fetchRw()
       else fetchRt()
     }
   } catch (err: any) {
     toast.add({
-      title: 'Gagal menambahkan struktur',
+      title: 'Gagal menghapus struktur',
       description: err?.message || 'Terjadi kesalahan sistem',
       color: 'error'
     })
   } finally {
     isLoading.value = false
   }
+}
+
+const handleOrganizationSubmit = (event: FormSubmitEvent<any>) => {
+  addRT(event.data.name)
+  toast.add({ title: 'Berhasil menambahkan struktur', color: 'success' })
+  formOrganization.name = ''
 }
 
 const saveData = async (event: FormSubmitEvent<OrgFormSchema>) => {
@@ -158,7 +176,7 @@ const saveData = async (event: FormSubmitEvent<OrgFormSchema>) => {
 
       if (response.status === 1) {
         toast.add({ title: 'Berhasil menambahkan struktur', color: 'success' })
-        if (activeTab.value === 'rw') fetchRw()
+        if (activeTab.value === '0') fetchRw()
         else fetchRt()
 
         isOpen.value = false
@@ -176,7 +194,7 @@ const saveData = async (event: FormSubmitEvent<OrgFormSchema>) => {
 
       if (response.status === 1) {
         toast.add({ title: 'Berhasil merubah data struktur', color: 'success' })
-        if (activeTab.value === 'rw') fetchRw()
+        if (activeTab.value === '0') fetchRw()
         else fetchRt()
 
         isOpen.value = false
@@ -218,7 +236,8 @@ const saveAssignData = async (event: FormSubmitEvent<OrgFormSchema>) => {
     if (response.status === 1) {
       toast.add({ title: 'Berhasil assign pejabat', color: 'success' })
       isOpenAssign.value = false
-      fetchRt()
+      if (activeTab.value === '0') fetchRw()
+      else fetchRt()
     }
   } catch (err: any) {
     toast.add({
@@ -240,9 +259,16 @@ watch(signatureFile, (newFiles) => {
   }
 })
 
+watch(isOpen, () => {
+  if (activeTab.value === '0') {
+    getDropdownPositionRW()
+  }
+})
+
 onMounted(() => {
   getDropdownRT()
   fetchRw()
+  fetchRtOrg()
 })
 
 definePageMeta({
@@ -269,8 +295,12 @@ definePageMeta({
           class="w-full space-y-4"
           @submit="saveData"
         >
-          <!-- LEVEL -->
-          <UFormField v-if="mode === 'add'" name="rt" required class="w-full">
+          <UFormField
+            v-if="mode === 'add' && activeTab === '1'"
+            name="rt"
+            required
+            class="w-full"
+          >
             <USelect
               v-model="selectedRTForm"
               :items="dropdownRT"
@@ -292,8 +322,7 @@ definePageMeta({
           >
             <USelect
               v-model="form.parent"
-              :items="dropdownPosition"
-              :disabled="!selectedRTForm"
+              :items="activeTab === '1' ? dropdownPosition : dropdownPositionRW"
               orientation="horizontal"
               class="w-full"
               placeholder="Pilih jabatan koordinasi"
@@ -329,6 +358,16 @@ definePageMeta({
     </UModal>
 
     <div class="mb-4 flex w-full justify-end gap-2">
+      <UButton
+        v-if="activeTab == '1'"
+        color="neutral"
+        variant="solid"
+        icon="mdi:account-group"
+        @click="isOpenOrganization = true"
+      >
+        Lihat Struktur
+      </UButton>
+
       <UButton color="error" variant="outline" trailing-icon="mdi-download">
         Download
       </UButton>
@@ -417,6 +456,58 @@ definePageMeta({
       </template>
     </UModal>
 
+    <UModal
+      v-model:open="isOpenOrganization"
+      size="md"
+      class="w-full"
+      close-icon="mdi-close"
+    >
+      <template #header>
+        <span class="font-bold">Management Organisasi</span>
+      </template>
+
+      <template #body>
+        <UForm
+          :schema="orgFormRTSchema"
+          :state="formOrganization"
+          class="w-full space-y-4"
+          @submit.prevent="handleOrganizationSubmit"
+        >
+          <div class="flex gap-4">
+            <UFormField name="name" required class="w-full">
+              <UInput
+                v-model="formOrganization.name"
+                class="w-full"
+                placeholder="Isi kan nama RT"
+              />
+            </UFormField>
+            <UButton type="submit" color="neutral"> Simpan </UButton>
+          </div>
+        </UForm>
+
+        <UTable
+          ref="table"
+          :data="rtOrgData"
+          :columns="[
+            { accessorKey: 'name', header: 'Nama Organisasi' },
+            { id: 'action', header: 'Aksi' }
+          ]"
+          class="my-4"
+        >
+          <template #action-cell="{ row }">
+            <div class="flex gap-1">
+              <UButton
+                icon="i-lucide-trash-2"
+                variant="ghost"
+                color="error"
+                @click="deleteRT(row.original.id)"
+              />
+            </div>
+          </template>
+        </UTable>
+      </template>
+    </UModal>
+
     <UTabs
       v-model="activeTab"
       :items="tabs"
@@ -437,26 +528,24 @@ definePageMeta({
               @name-click="openEditAssignModal"
             />
           </div>
-          <div v-else class="loading text-neutral-400 italic text-center py-8">Memuat Struktur RW...</div>
+          <div v-else class="loading text-neutral-400 italic text-center py-8">
+            Memuat Struktur RW...
+          </div>
         </div>
       </template>
 
       <template #rt>
         <div class="my-4 flex flex-col w-full justify-center gap-4">
-          <div class="text-sm -mb-2">Pilih RT</div>
           <USelectMenu
             v-model="selectedRT"
             placeholder="Pilih RT"
-            create-item-label="Tambahkan RT"
             :search-input="{
               placeholder: 'Cari nama RT'
             }"
             :items="dropdownRT"
             value-key="key"
             searchable
-            create-item
             class="w-40"
-            @create="addRT"
           />
         </div>
 

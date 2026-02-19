@@ -2,16 +2,28 @@
 import { z } from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { genderItems } from '~/const/dropdown'
+import { fileUpload } from '~/services/files' // Pastikan path ini benar sesuai contohmu
+import { watchWithFilter, debounceFilter } from '@vueuse/core'
 
 // ===== 1. SCHEMAS =====
 
 const CitizenFromSchema = z.object({
   name: z.string().min(1, 'Nama wajib diisi'),
-  phone: z.string(),
+  phone: z.string().optional().nullable(),
   gender: z.enum(['L', 'P']),
-  blood_type: z.string(),
-  dob: z.any(),
-  pob: z.string()
+  blood_type: z.string().optional().nullable(),
+  dob: z.any().optional().nullable(),
+  pob: z.string().optional().nullable(),
+  nik: z.string().optional().nullable(),
+  no_kk: z.string().optional().nullable(),
+  email: z.string().email('Format email salah').optional().nullable(),
+  avatar: z.string().optional().nullable(),
+  signature: z.string().optional().nullable(),
+  job: z.string().optional().nullable(),
+  religion: z.string().optional().nullable(),
+  nationality: z.string().optional().nullable(),
+  marital_status: z.string().optional().nullable(),
+  last_education: z.string().optional().nullable()
 })
 
 type CitizenFromSchema = z.infer<typeof CitizenFromSchema>
@@ -27,6 +39,10 @@ const editingId = ref<string | null>(null)
 const loading = ref(false)
 const loadingEdit = ref(false)
 
+// File Upload Refs
+const avatarFile = ref<File | null>(null)
+const signatureFile = ref<File | null>(null)
+const search = ref('')
 const dataCitizen = ref<any[]>([])
 const pagination = ref({
   current_page: 1,
@@ -35,35 +51,96 @@ const pagination = ref({
   total: 0
 })
 
-// const todayDate = shallowRef(toCalendarDate(today(getLocalTimeZone())))
-
 const form = reactive<CitizenFromSchema>({
   name: '',
   phone: '',
   gender: 'L',
   blood_type: '',
   pob: '',
-  dob: null
+  dob: null,
+  nik: '',
+  no_kk: '',
+  email: '',
+  avatar: '',
+  // signature: '',
+  job: '',
+  religion: '',
+  nationality: '',
+  marital_status: '',
+  last_education: ''
 })
 
 // ===== 3. ACTIONS =====
+
 const resetForm = () => {
   editingId.value = null
+  avatarFile.value = null
+  signatureFile.value = null
   Object.assign(form, {
     name: '',
     phone: '',
     gender: 'L',
     blood_type: '',
     pob: '',
-    dob: null
+    dob: null,
+    nik: '',
+    no_kk: '',
+    email: '',
+    avatar: '',
+    // signature: '',
+    job: '',
+    religion: '',
+    nationality: '',
+    marital_status: '',
+    last_education: ''
   })
 }
+
+// Logic untuk preview & bersihkan URL blob agar tidak memory leak
+const clearFile = (type: 'avatar' | 'signature') => {
+  if (type === 'avatar') {
+    if (form.avatar?.startsWith('blob:')) URL.revokeObjectURL(form.avatar)
+    form.avatar = ''
+    avatarFile.value = null
+  }
+  // else {
+  //   if (form.signature?.startsWith('blob:')) URL.revokeObjectURL(form.signature)
+  //   form.signature = ''
+  //   signatureFile.value = null
+  // }
+}
+
+watch(avatarFile, (file) => {
+  if (file) {
+    if (form.avatar?.startsWith('blob:')) URL.revokeObjectURL(form.avatar)
+    form.avatar = URL.createObjectURL(file)
+  }
+})
+
+watchWithFilter(
+  search,
+  () => {
+    pagination.value.current_page = 1
+    getData()
+  },
+  {
+    eventFilter: debounceFilter(1000)
+  }
+)
+
+// watch(signatureFile, (file) => {
+//   if (file) {
+//     if (form.signature?.startsWith('blob:')) URL.revokeObjectURL(form.signature)
+//     form.signature = URL.createObjectURL(file)
+//   }
+// })
 
 const getData = async () => {
   loading.value = true
   try {
-    const res = await useApi<any>('/citizen/get', {
+    const res = await useApi<any>('/resident', {
       params: {
+        search: search.value,
         page: pagination.value.current_page,
         per_page: pagination.value.per_page
       },
@@ -72,9 +149,7 @@ const getData = async () => {
 
     if (res.status === 1) {
       dataCitizen.value = res.data
-      pagination.value = {
-        ...res.pagination
-      }
+      pagination.value = { ...res.pagination }
     }
   } catch (err) {
     console.error('Fetch error:', err)
@@ -96,13 +171,12 @@ const openEditModal = async (row: any) => {
   editingId.value = row.id
 
   try {
-    const res = await useApi<any>(`/citizen/show/${row.id}`)
-
+    const res = await useApi<any>(`/resident/${row.id}`)
     if (res.status === 1) {
-      Object.assign(form, { ...res.data })
+      // Pastikan data dari BE masuk ke form
+      Object.assign(form, { ...res.data, dob: parseToCalendarDate(row.dob) })
     }
   } catch (err) {
-    console.error('Error fetching detail:', err)
     toast.add({ title: 'Gagal mengambil detail data', color: 'error' })
   } finally {
     isOpen.value = true
@@ -110,39 +184,37 @@ const openEditModal = async (row: any) => {
   }
 }
 
-const confirmDelete = async (id: string) => {
-  const ok = await confirm({
-    title: 'Hapus Data Warga?',
-    description: 'Data yang dihapus tidak dapat dikembalikan.',
-    confirmLabel: 'Hapus',
-    cancelLabel: 'Batal',
-    color: 'error'
-  })
-
-  if (!ok) return
-
-  try {
-    loading.value = true
-    const res = await useApi<any>(`/citizen/${id}`, { method: 'DELETE' })
-    if (res.status === 1) {
-      toast.add({ title: 'Data berhasil dihapus', color: 'success' })
-      getData()
-    }
-  } catch (err: any) {
-    toast.add({ title: err?.message || 'Gagal menghapus data', color: 'error' })
-  } finally {
-    loading.value = false
-  }
-}
-
 const saveData = async (event: FormSubmitEvent<CitizenFromSchema>) => {
   try {
     loading.value = true
+
+    // 1. Handling Upload Avatar & Signature
+    let finalAvatarUrl = form.avatar
+    // let finalSignatureUrl = form.signature
+
+    if (avatarFile.value) {
+      const uploadRes = await fileUpload(avatarFile.value)
+      if (uploadRes) finalAvatarUrl = uploadRes
+    }
+
+    // if (signatureFile.value) {
+    //   const uploadRes = await fileUpload(signatureFile.value)
+    //   if (uploadRes) finalSignatureUrl = uploadRes
+    // }
+
+    // 2. Prepare Payload
+    const payload = {
+      ...event.data,
+      dob: formatDOB(event.data.dob || ''),
+      avatar: finalAvatarUrl
+      // signature: finalSignatureUrl
+    }
+
     const url =
-      mode.value === 'add' ? '/citizen' : `/citizen/${editingId.value}`
+      mode.value === 'add' ? '/resident' : `/resident/${editingId.value}`
     const method = mode.value === 'add' ? 'POST' : 'PUT'
 
-    const res = await useApi<any>(url, { method, body: event.data })
+    const res = await useApi<any>(url, { method, body: payload })
 
     if (res.status === 1) {
       toast.add({
@@ -164,17 +236,39 @@ const saveData = async (event: FormSubmitEvent<CitizenFromSchema>) => {
   }
 }
 
+const confirmDelete = async (id: string) => {
+  const ok = await confirm({
+    title: 'Hapus Data Warga?',
+    description: 'Data yang dihapus tidak dapat dikembalikan.',
+    confirmLabel: 'Hapus',
+    cancelLabel: 'Batal',
+    color: 'error'
+  })
+
+  if (!ok) return
+
+  try {
+    loading.value = true
+    const res = await useApi<any>(`/resident/${id}`, { method: 'DELETE' })
+    if (res.status === 1) {
+      toast.add({ title: 'Data berhasil dihapus', color: 'success' })
+      getData()
+    }
+  } catch (err: any) {
+    toast.add({ title: err?.message || 'Gagal menghapus data', color: 'error' })
+  } finally {
+    loading.value = false
+  }
+}
+
 onMounted(() => {
   getData()
 })
 
 const columnsFamilyTable = [
   { accessorKey: 'name', header: 'Nama' },
-  { accessorKey: 'phone', header: 'No. Telp' },
-  { accessorKey: 'gender', header: 'Jenis Kelamin' },
-  { accessorKey: 'pob', header: 'Tempat Lahir' },
-  { accessorKey: 'dob', header: 'Tanggal Lahir' },
-  { accessorKey: 'blood_type', header: 'Gol. Darah' },
+  { accessorKey: 'gender', header: 'L/P' },
+  { accessorKey: 'blood_type', header: 'Golongan Darah' },
   { id: 'action', header: 'Aksi' }
 ]
 </script>
@@ -183,7 +277,13 @@ const columnsFamilyTable = [
   <div class="space-y-4">
     <ConfirmDialog />
 
-    <div class="flex justify-end items-center mt-4">
+    <div class="flex justify-end items-center mt-4 gap-4">
+      <UInput
+        v-model="search"
+        placeholder="Cari Data Warga"
+        size="xl"
+        class="max-w-50"
+      ></UInput>
       <UButton
         color="neutral"
         icon="i-lucide-plus-circle"
@@ -194,15 +294,13 @@ const columnsFamilyTable = [
     </div>
 
     <UTable
-      ref="table"
       :data="dataCitizen"
       :columns="columnsFamilyTable"
       :loading="loading"
     >
-      <template #head-cell="{ row }">
-        <div class="font-bold text-neutral-900">{{ row.original.head }}</div>
+      <template #blood_type-cell="{ row }">
+        {{ row.original.blood_type || '-' }}
       </template>
-
       <template #action-cell="{ row }">
         <div class="flex gap-1">
           <UButton
@@ -221,17 +319,7 @@ const columnsFamilyTable = [
       </template>
     </UTable>
 
-    <div class="flex justify-end border-t border-default pt-4 px-4">
-      <UPagination
-        v-model:page="pagination.current_page"
-        :total="pagination.total"
-        :items-per-page="pagination.per_page"
-        :max="5"
-        @update:page="getData"
-      />
-    </div>
-
-    <UModal v-model:open="isOpen" :ui="{ content: 'min-w-3xl' }">
+    <UModal v-model:open="isOpen" :ui="{ content: 'min-w-4xl' }">
       <template #header>
         <span class="font-bold"
           >{{ mode === 'add' ? 'Tambah' : 'Edit' }} Data Warga</span
@@ -242,15 +330,24 @@ const columnsFamilyTable = [
         <UForm
           :schema="CitizenFromSchema"
           :state="form"
-          class="space-y-6 w-full"
+          class="space-y-6"
           @submit="saveData"
         >
-          <div class="grid grid-cols-2 gap-3">
-            <UFormField name="name" label="Nama" required>
-              <UInput v-model="form.name" placeholder="Nama" />
+          <div class="grid grid-cols-2 gap-4">
+            <UFormField name="nik" label="NIK">
+              <UInput v-model="form.nik" placeholder="32xxxxxxxxxxxx" />
+            </UFormField>
+            <UFormField name="no_kk" label="Nomor KK">
+              <UInput v-model="form.no_kk" placeholder="32xxxxxxxxxxxx" />
+            </UFormField>
+            <UFormField name="name" label="Nama Lengkap" required>
+              <UInput v-model="form.name" />
+            </UFormField>
+            <UFormField name="email" label="Email">
+              <UInput v-model="form.email" type="email" />
             </UFormField>
             <UFormField name="phone" label="No. Telepon">
-              <UInput v-model="form.phone" placeholder="No. Telepon" />
+              <UInput v-model="form.phone" />
             </UFormField>
             <UFormField name="gender" label="Jenis Kelamin">
               <USelect
@@ -260,23 +357,55 @@ const columnsFamilyTable = [
               />
             </UFormField>
             <UFormField name="pob" label="Tempat Lahir">
-              <UInput v-model="form.pob" placeholder="Tempat Lahir" />
+              <UInput v-model="form.pob" />
             </UFormField>
             <UFormField name="dob" label="Tanggal Lahir">
               <UInputDate v-model="form.dob" />
             </UFormField>
             <UFormField name="blood_type" label="Golongan Darah">
-              <UInput v-model="form.blood_type" placeholder="Golongan Darah" />
+              <UInput v-model="form.blood_type" />
             </UFormField>
+            <UFormField name="job" label="Pekerjaan">
+              <UInput v-model="form.job" />
+            </UFormField>
+
+            <UFormField name="avatar" label="Foto Profil (Avatar)">
+              <div v-if="form.avatar" class="relative w-32 h-32 mb-2">
+                <img
+                  :src="form.avatar"
+                  class="w-full h-full object-cover rounded-lg border"
+                />
+                <UButton
+                  size="xs"
+                  color="error"
+                  icon="i-lucide-x"
+                  class="absolute -top-2 -right-2"
+                  @click="clearFile('avatar')"
+                />
+              </div>
+              <UFileUpload v-else v-model="avatarFile" accept="image/*" />
+            </UFormField>
+
+            <!-- <UFormField name="signature" label="Tanda Tangan">
+              <div v-if="form.signature" class="relative w-full h-24 mb-2">
+                <img
+                  :src="form.signature"
+                  class="w-full h-full object-contain rounded-lg border bg-gray-50"
+                />
+                <UButton
+                  size="xs"
+                  color="error"
+                  icon="i-lucide-x"
+                  class="absolute -top-2 -right-2"
+                  @click="clearFile('signature')"
+                />
+              </div>
+              <UFileUpload v-else v-model="signatureFile" accept="image/*" />
+            </UFormField> -->
           </div>
 
-          <div class="flex justify-end gap-3 pt-4">
-            <UButton
-              :loading="loadingEdit"
-              variant="ghost"
-              label="Batal"
-              @click="isOpen = false"
-            />
+          <div class="flex justify-end gap-3 pt-4 border-t">
+            <UButton variant="ghost" label="Batal" @click="isOpen = false" />
             <UButton
               type="submit"
               color="neutral"
@@ -287,5 +416,14 @@ const columnsFamilyTable = [
         </UForm>
       </template>
     </UModal>
+
+    <div class="flex justify-end border-t border-default pt-4 px-4">
+      <UPagination
+        v-model:page="pagination.current_page"
+        :total="pagination.total"
+        :items-per-page="pagination.per_page"
+        @update:page="getData"
+      />
+    </div>
   </div>
 </template>

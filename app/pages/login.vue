@@ -3,6 +3,7 @@ import { z } from 'zod'
 import type { FormSubmitEvent } from '#ui/types'
 
 const router = useRouter()
+// const { startLoading, stopLoading } = useAppLoading()
 const { setTokens, setUser } = useAuth()
 const toast = useToast()
 
@@ -19,7 +20,10 @@ const formState = reactive({
 })
 
 const schema = z.object({
-  email: z.string().min(1, 'Email wajib diisi').email('Format email tidak valid'),
+  email: z
+    .string()
+    .min(1, 'Email wajib diisi')
+    .email('Format email tidak valid'),
   password: z.string().min(5, 'Password minimal 5 karakter')
 })
 
@@ -27,6 +31,7 @@ type Schema = z.output<typeof schema>
 
 const onSubmit = async (event: FormSubmitEvent<Schema>) => {
   isLoading.value = true
+  // startLoading()
   try {
     const response = await useApi<any>('/login', {
       method: 'POST',
@@ -42,7 +47,8 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
     setUser(userData)
 
     toast.add({ title: 'Login Berhasil', color: 'success' })
-    router.push("/dashboard")
+    // stopLoading()
+    router.push('/dashboard')
   } catch (err: any) {
     toast.add({
       title: 'Login Gagal',
@@ -50,6 +56,7 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
       color: 'error'
     })
   } finally {
+    // stopLoading()
     isLoading.value = false
   }
 }
@@ -59,11 +66,11 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
   <UCard
     class="bg-white/50 text-black rounded-xl border-0 backdrop-blur-sm shadow-sm min-w-md"
   >
-    <AppLogo class="w-auto mx-auto h-14 mb-4 shrink-0" />
+    <NuxtLink to="/">
+      <AppLogo class="w-auto mx-auto h-14 mb-4 shrink-0" />
+    </NuxtLink>
 
-    <div class="text-center font-bold text-lg">
-      Masuk ke Akun Anda
-    </div>
+    <div class="text-center font-bold text-lg">Masuk ke Akun Anda</div>
     <p class="text-center text-sm text-neutral-600">
       Silahkan masukan detail login anda
     </p>
@@ -75,10 +82,7 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
       @submit="onSubmit"
     >
       <!-- EMAIL -->
-      <UFormField
-        name="email"
-        required
-      >
+      <UFormField name="email" required>
         <UInput
           v-model="formState.email"
           type="email"
@@ -88,10 +92,7 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
       </UFormField>
 
       <!-- PASSWORD -->
-      <UFormField
-        name="password"
-        required
-      >
+      <UFormField name="password" required>
         <UInput
           v-model="formState.password"
           :type="isPasswordVisible ? 'text' : 'password'"
@@ -110,11 +111,7 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
         </UInput>
       </UFormField>
 
-      <UButton
-        :loading="isLoading"
-        type="submit"
-        class="mt-4 w-full"
-      >
+      <UButton :loading="isLoading" type="submit" class="mt-4 w-full">
         <span class="mx-auto">Login</span>
       </UButton>
     </UForm>

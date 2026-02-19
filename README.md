@@ -28,3 +28,4 @@ pm2 delete "bukit-wahid-fe" || true
 pm2 start .output/server/index.mjs --name "bukit-wahid-fe" --node-args="--max-old-space-size=512"
 
 kmzwa8awaa
+13ukitWahid

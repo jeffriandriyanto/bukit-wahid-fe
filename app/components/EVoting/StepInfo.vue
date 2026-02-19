@@ -3,7 +3,6 @@ import { format } from 'date-fns'
 import {
   toCalendarDate,
   fromDate,
-  today,
   getLocalTimeZone,
   Time
 } from '@internationalized/date'

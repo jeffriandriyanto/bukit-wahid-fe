@@ -21,11 +21,15 @@ export const sidebarItems: SidebarItem[] = [
     icon: 'i-lucide-database',
     to: '/master-data'
   },
-
+  // {
+  //   label: 'Daftar Pengajuan',
+  //   icon: 'solar:document-add-broken',
+  //   to: '/submission'
+  // },
   {
-    label: 'Pengumuman & Berita',
+    label: 'Berita',
     icon: 'i-lucide-megaphone',
-    to: '/announcements-news'
+    to: '/news'
   },
   {
     label: 'Agenda Pertemuan',
@@ -47,6 +51,12 @@ export const sidebarItems: SidebarItem[] = [
     icon: 'i-lucide-message-square-warning',
     to: '/citizen-complaints'
   },
+  // {
+  //   label: 'Panic Button',
+  //   icon: 'i-lucide:triangle-alert',
+  //   to: '/panic-button'
+  // },
+
   {
     label: 'E-Voting',
     icon: 'i-lucide-vote',

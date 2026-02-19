@@ -1,323 +1,376 @@
 <script setup lang="ts">
-import type { FormSubmitEvent } from '@nuxt/ui'
-import { getPaginationRowModel } from '@tanstack/vue-table'
-import { z } from 'zod'
-import { format } from 'date-fns'
+definePageMeta({ middleware: ['auth'] })
 
-definePageMeta({
-  middleware: ['auth']
-})
-
-const { reveal: confirm } = useConfirmService()
-const tableCitizenComplaint = useTemplateRef('table')
-const selectedRT = ref('RT 01')
+// --- STATE ---
+const dataSubmission = ref([])
+const loading = ref(false)
 const isOpen = ref(false)
-const editingIndex = ref<number | null>(null)
-const rtItems = ['RT 01', 'RT 02', 'RT 03', 'RT 04']
+const selectedDetail = ref<any>(null)
 
-const CitizenComplaintFormSchema = z.object({
-  response: z.string().min(1, 'Respon wajib diisi')
-})
-
-type CitizenComplaintFormSchema = z.infer<typeof CitizenComplaintFormSchema>
-
-const dataCitizenComplaint = ref([
-  {
-    category: 'Sampah',
-    description: 'Banyak Sampah disungai karna banjir semalam',
-    response: '',
-    image: 'https://picsum.photos/150',
-    created_by: 'Anung',
-    created_at: new Date().toISOString(),
-    status: false
-  },
-  {
-    category: 'Sampah',
-    description: 'Banyak Sampah disungai karna banjir semalam',
-    response: 'Sudah dibersihkan ya pak',
-    image: 'https://picsum.photos/150',
-    created_by: 'Anung',
-    created_at: new Date().toISOString(),
-    status: true
-  }
-])
-
-const columnsCitizenComplaintTable = [
-  {
-    accessorKey: 'category',
-    header: 'Kategori'
-  },
-  {
-    accessorKey: 'description',
-    header: 'Deskripsi',
-    cell: (info: any) => {
-      const desc = info.getValue() as string
-      return desc.length > 50 ? desc.slice(0, 50) + '...' : desc
-    }
-  },
-  {
-    accessorKey: 'image',
-    header: 'Gambar'
-  },
-  {
-    accessorKey: 'created_by',
-    header: 'Pelapor'
-  },
-  {
-    accessorKey: 'status',
-    header: 'Status'
-  },
-  {
-    accessorKey: 'action',
-    header: 'Aksi'
-  }
-]
+// Filter States
+const selectedStatus = ref(null)
+const selectedCategory = ref(null)
+const statusOptions = ref<any[]>([{ key: null, label: 'Semua Status' }])
+const categoryOptions = ref<any[]>([{ key: null, label: 'Semua Kategori' }])
 
 const pagination = ref({
-  pageIndex: 0,
-  pageSize: 5
+  current_page: 1,
+  last_page: 1,
+  per_page: 10,
+  total: 0
 })
 
-/* =========================
-  FORM STATE
-========================= */
-interface CitizenComplaint {
-  category: string
-  description: string
-  response: string
-  image: string
-  created_by: string
-  created_at: string | Date
-  status: boolean
+// --- TABLE COLUMNS ---
+const submissionTable = [
+  { accessorKey: 'description', header: 'Deskripsi' },
+  { accessorKey: 'author.name', header: 'Pembuat' },
+  { accessorKey: 'created_at', header: 'Tanggal' },
+  { accessorKey: 'status', header: 'Status' },
+  { accessorKey: 'action', header: 'Aksi' }
+]
+
+// --- ACTIONS ---
+
+// Fetch Dropdown Options
+const getOptions = async () => {
+  try {
+    const [statusRes, categoryRes] = await Promise.all([
+      useApi<any>('/dropdown/complaint-status'),
+      useApi<any>('/dropdown/complaint-category')
+    ])
+
+    if (statusRes.status === 1) {
+      statusOptions.value = [
+        { key: null, label: 'Semua Status' },
+        ...(statusRes.data || [])
+      ]
+    }
+    if (categoryRes.status === 1) {
+      categoryOptions.value = [
+        { key: null, label: 'Semua Kategori' },
+        ...(categoryRes.data || [])
+      ]
+    }
+  } catch (err) {
+    console.error('Failed to fetch dropdown options:', err)
+  }
 }
 
-const form = reactive<CitizenComplaint>({
-  category: '',
-  description: '',
-  response: '',
-  image: '',
-  created_by: '',
-  created_at: '',
-  status: false
-})
+const getData = async () => {
+  loading.value = true
+  try {
+    const res = await useApi<any>('/complaint', {
+      params: {
+        page: pagination.value.current_page,
+        per_page: pagination.value.per_page,
+        status: selectedStatus.value ?? '', // Handle null to empty string for API
+        category: selectedCategory.value ?? ''
+      }
+    })
 
-const openEditModal = (row: any) => {
-  const actualIndex = dataCitizenComplaint.value.indexOf(row)
-  if (actualIndex === -1) return
+    if (res.status === 1) {
+      dataSubmission.value = res.data
+      pagination.value = { ...res.pagination }
+    }
+  } catch (err) {
+    console.error('Fetch error:', err)
+  } finally {
+    loading.value = false
+  }
+}
 
-  editingIndex.value = actualIndex
-  Object.assign(form, JSON.parse(JSON.stringify(row)))
+const handleFilterChange = () => {
+  pagination.value.current_page = 1
+  getData()
+}
 
+const openDetail = (detail: any) => {
+  selectedDetail.value = detail
   isOpen.value = true
 }
 
-const confirmDelete = async (row: any) => {
-  const actualIndex = dataCitizenComplaint.value.indexOf(row)
-  if (actualIndex === -1) return
-
-  const ok = await confirm({
-    title: 'Hapus Data Laporan?',
-    description: `Apakah Anda yakin ingin menghapus laporan ini?`,
-    confirmLabel: 'Hapus',
-    cancelLabel: 'Batal',
-    color: 'error'
-  })
-
-  if (!ok) return
-
-  dataCitizenComplaint.value.splice(actualIndex, 1)
+// --- HELPERS ---
+const isImage = (url: string) => {
+  if (!url) return false
+  const extensions = ['jpg', 'jpeg', 'png', 'webp', 'gif']
+  const ext = url.split('.').pop()?.toLowerCase()
+  return extensions.includes(ext || '')
 }
 
-const resetForm = () => {
-  Object.assign(form, {
-    category: '',
-    description: '',
-    response: '',
-    image: '',
-    created_by: '',
-    created_at: '',
-    status: false
-  })
+const openInMaps = (lat: string, lng: string) => {
+  const url = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`
+  window.open(url, '_blank')
 }
 
-const saveData = async (event: FormSubmitEvent<CitizenComplaintFormSchema>) => {
-  const { response } = event.data
-
-  if (editingIndex.value !== null) {
-    const old = dataCitizenComplaint.value[editingIndex.value]
-    dataCitizenComplaint.value[editingIndex.value] = {
-      ...old,
-      response,
-    }
-  }
-
-  isOpen.value = false
-  resetForm()
+const categoryMap: Record<string, string> = {
+  security: 'Keamanan',
+  clean: 'Kebersihan',
+  panic: 'Panic Button',
+  other: 'Lainnya'
 }
+
+// Fungsi helper untuk dipanggil di template
+const getCategoryLabel = (key: string) => {
+  return categoryMap[key] || key || '-'
+}
+
+onMounted(() => {
+  getOptions()
+  getData()
+})
 </script>
 
 <template>
-  <div>
+  <div class="p-4 space-y-4">
     <ConfirmDialog />
 
-    <div class="my-4 flex w-full justify-between gap-4">
-      <USelect v-model="selectedRT" :items="rtItems" class="w-40" />
+    <div class="flex flex-wrap gap-4 items-end">
+      <div v-if="statusOptions.length > 0" class="w-64">
+        <label class="text-[10px] font-bold text-gray-400 uppercase mb-1 block">
+          Filter Status
+        </label>
+        <USelect
+          :key="statusOptions.length"
+          v-model="selectedStatus"
+          :items="statusOptions"
+          label-key="label"
+          value-key="key"
+          placeholder="Pilih Status"
+          @update:model-value="handleFilterChange"
+        />
+      </div>
 
-      <UButton
-        color="error"
-        variant="outline"
-        trailing-icon="mdi-download"
-      >
-        Download
-      </UButton>
-
-      <UModal v-model:open="isOpen">
-        <template #header>
-          <span class="font-bold">Detail Laporan Warga</span>
-        </template>
-
-        <template #body>
-          <div v-if="isOpen" class="space-y-4">
-            <img
-              :src="form.image"
-              class="w-full aspect-video object-cover rounded-lg shadow-sm"
-              placeholder="/placeholder-image.jpg"
-            >
-
-            <div class="grid grid-cols-2 gap-4">
-              <div>
-                <div class="text-sm">Kategori</div>
-                <div class="font-bold">{{ form.category }}</div>
-              </div>
-              <div>
-                <div class="text-sm">Pelapor</div>
-                <div class="font-bold">{{ form.created_by }}</div>
-              </div>
-            </div>
-
-            <div
-              class="bg-neutral-50 p-3 rounded-md border-l-4 border-neutral-400"
-            >
-              <div class="text-xs text-neutral-500 uppercase font-semibold">
-                Isi Laporan
-              </div>
-              <p class="text-sm mt-1">{{ form.description }}</p>
-            </div>
-
-            <div
-              v-if="form.status"
-              class="bg-green-50 p-3 rounded-md border-l-4 border-green-500"
-            >
-              <div class="text-xs text-green-600 uppercase font-semibold">
-                Tanggapan Anda
-              </div>
-              <p class="text-sm mt-1">{{ form.response }}</p>
-            </div>
-
-            <UForm
-              :schema="CitizenComplaintFormSchema"
-              :state="form"
-              class=""
-              @submit="saveData"
-            >
-              <UFormField
-                v-if="!form.status"
-                name="response"
-                label="Berikan Tanggapan Resmi"
-              >
-                <UTextarea
-                  v-model="form.response"
-                  :rows="4"
-                  placeholder="Tulis tanggapan untuk warga di sini..."
-                />
-              </UFormField>
-
-              <div class="flex justify-end gap-2 mt-4">
-                <UButton variant="ghost" @click="isOpen = false">{{
-                  form.status ? 'Tutup' : 'Batal'
-                }}</UButton>
-                <UButton v-if="!form.status" type="submit" color="primary"
-                  >Kirim Tanggapan</UButton
-                >
-              </div>
-            </UForm>
-          </div>
-        </template>
-      </UModal>
-    </div>
-
-    <div>
-      <UTable
-        ref="table"
-        v-model:pagination="pagination"
-        :data="dataCitizenComplaint"
-        :columns="columnsCitizenComplaintTable"
-        :pagination-options="{
-          getPaginationRowModel: getPaginationRowModel()
-        }"
-        class="flex-1"
-      >
-        <template #image-cell="{ row }">
-          <img
-            :src="row.original.image"
-            alt="Announcement Image"
-            class="aspect-video w-32 object-cover rounded-md"
-          >
-        </template>
-        <template #created_by-cell="{ row }">
-          <div>
-            <div class="font-semibold font-lg">
-              {{ row.original.created_by }}
-            </div>
-            <div>
-              {{
-                row.original.created_at
-                  ? format(row.original.created_at, 'dd MMM yyyy')
-                  : ''
-              }}
-            </div>
-          </div>
-        </template>
-        <template #status-cell="{ row }">
-          <UBadge v-if="row.original.status" color="success" variant="outline">
-            Ditanggapi
-          </UBadge>
-          <UBadge v-if="!row.original.status" color="info" variant="outline">
-            Tanggapi Sekarang
-          </UBadge>
-        </template>
-        <template #action-cell="{ row }">
-          <UButton
-            icon="i-lucide-eye"
-            variant="ghost"
-            @click="openEditModal(row.original)"
-          />
-          <UButton
-            icon="i-lucide-trash-2"
-            variant="ghost"
-            color="error"
-            @click="confirmDelete(row.original)"
-          />
-        </template>
-      </UTable>
-
-      <div class="flex justify-end border-t border-default pt-4 px-4">
-        <UPagination
-          :page="
-            (tableCitizenComplaint?.tableApi?.getState().pagination.pageIndex ||
-              0) + 1
-          "
-          :items-per-page="
-            tableCitizenComplaint?.tableApi?.getState().pagination.pageSize
-          "
-          :total="
-            tableCitizenComplaint?.tableApi?.getFilteredRowModel().rows.length
-          "
-          @update:page="
-            (p) => tableCitizenComplaint?.tableApi?.setPageIndex(p - 1)
-          "
+      <div v-if="categoryOptions.length > 0" class="w-64">
+        <label class="text-[10px] font-bold text-gray-400 uppercase mb-1 block">
+          Filter Kategori
+        </label>
+        <USelect
+          :key="categoryOptions.length"
+          v-model="selectedCategory"
+          :items="categoryOptions"
+          label-key="label"
+          value-key="key"
+          placeholder="Pilih Kategori"
+          @update:model-value="handleFilterChange"
         />
       </div>
     </div>
+
+    <UTable
+      :data="dataSubmission"
+      :columns="submissionTable"
+      :loading="loading"
+    >
+      <template #description-cell="{ row }">
+        <div class="truncate max-w-56 font-medium">
+          {{ row.original.description }}
+        </div>
+        <div class="text-xs text-gray-400 italic">
+          {{ getCategoryLabel(row.original.category) }}
+        </div>
+      </template>
+
+      <template #created_at-cell="{ row }">
+        <div class="text-sm">{{ formatDateTime(row.original.created_at) }}</div>
+      </template>
+
+      <template #status-cell="{ row }">
+        <UBadge
+          v-if="row.original.status === 'progress'"
+          color="warning"
+          variant="subtle"
+          >Sedang ditangani</UBadge
+        >
+        <UBadge
+          v-else-if="row.original.status === 'closed'"
+          color="success"
+          variant="subtle"
+          >Selesai</UBadge
+        >
+        <UBadge
+          v-else-if="row.original.status === 'open'"
+          color="error"
+          variant="subtle"
+          >Perlu Tindakan</UBadge
+        >
+      </template>
+
+      <template #action-cell="{ row }">
+        <UButton
+          icon="i-heroicons-eye"
+          variant="ghost"
+          color="neutral"
+          @click="openDetail(row.original)"
+        />
+      </template>
+    </UTable>
+
+    <div class="flex justify-end border-t border-gray-200 pt-4 px-4">
+      <UPagination
+        v-model:page="pagination.current_page"
+        :total="pagination.total"
+        :items-per-page="pagination.per_page"
+        @update:page="getData"
+      />
+    </div>
+
+    <UModal v-model:open="isOpen" :ui="{ content: 'sm:max-w-4xl' }">
+      <template #header>
+        <div class="flex items-center justify-between w-full">
+          <h3 class="text-lg font-bold">Detail Komplain</h3>
+          <UBadge v-if="selectedDetail?.status === 'progress'" color="warning"
+            >Sedang ditangani</UBadge
+          >
+          <UBadge
+            v-else-if="selectedDetail?.status === 'closed'"
+            color="success"
+            >Selesai</UBadge
+          >
+          <UBadge v-else-if="selectedDetail?.status === 'open'" color="error"
+            >Perlu Tindakan</UBadge
+          >
+        </div>
+      </template>
+
+      <template #body>
+        <div v-if="selectedDetail" class="space-y-6">
+          <div
+            class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg border border-gray-100"
+          >
+            <div>
+              <div class="text-[10px] text-gray-500 uppercase font-bold">
+                Pelapor
+              </div>
+              <p class="font-medium">{{ selectedDetail.author.name }}</p>
+            </div>
+            <div>
+              <div class="text-[10px] text-gray-500 uppercase font-bold">
+                Kategori
+              </div>
+              <p class="font-medium capitalize">
+                {{ selectedDetail.category }}
+              </p>
+            </div>
+            <div>
+              <div class="text-[10px] text-gray-500 uppercase font-bold">
+                Waktu Kejadian
+              </div>
+              <p class="font-medium">
+                {{ formatDateTime(selectedDetail.created_at) }}
+              </p>
+            </div>
+            <div>
+              <div class="text-[10px] text-gray-500 uppercase font-bold">
+                Lokasi
+              </div>
+              <UButton
+                icon="i-heroicons-map-pin"
+                size="xs"
+                variant="solid"
+                color="neutral"
+                class="mt-1"
+                @click="
+                  openInMaps(selectedDetail.latitude, selectedDetail.longitude)
+                "
+              >
+                Buka Google Maps
+              </UButton>
+            </div>
+          </div>
+
+          <div>
+            <p class="text-sm font-bold mb-1">Deskripsi Laporan:</p>
+            <p class="text-gray-700 text-sm leading-relaxed">
+              {{ selectedDetail.description }}
+            </p>
+
+            <div class="mt-4">
+              <div class="text-xs text-gray-500 mb-2">Lampiran Laporan:</div>
+              <div
+                v-if="isImage(selectedDetail.file)"
+                class="max-w-sm rounded-lg overflow-hidden border"
+              >
+                <img
+                  :src="selectedDetail.file"
+                  class="w-full h-auto object-cover"
+                />
+              </div>
+              <UButton
+                v-else-if="selectedDetail.file"
+                icon="i-heroicons-document-arrow-down"
+                color="neutral"
+                label="Download Dokumen"
+                :to="selectedDetail.file"
+                target="_blank"
+              />
+            </div>
+          </div>
+
+          <UDivider label="Riwayat Penanganan" label-placement="center" />
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div
+              v-for="(action, index) in selectedDetail.actions"
+              :key="index"
+              class="flex flex-col p-4 border rounded-lg bg-white shadow-sm"
+            >
+              <div class="flex justify-between items-start mb-2">
+                <span class="font-bold text-sm">{{ action.officer.name }}</span>
+                <span class="text-[10px] text-gray-400">{{
+                  formatDateTime(action.created_at)
+                }}</span>
+              </div>
+              <div class="mb-2">
+                <UBadge
+                  v-if="action?.status === 'progress'"
+                  size="xs"
+                  color="warning"
+                  >Sedang ditangani</UBadge
+                >
+                <UBadge
+                  v-else-if="action?.status === 'closed'"
+                  color="success"
+                  size="xs"
+                  >Selesai</UBadge
+                >
+                <UBadge
+                  v-else-if="action?.status === 'open'"
+                  size="xs"
+                  color="error"
+                  >Perlu Tindakan</UBadge
+                >
+              </div>
+              <p class="text-xs text-gray-600 flex-1 italic">
+                "{{ action.description }}"
+              </p>
+
+              <div v-if="action.file" class="mt-3 pt-3 border-t border-gray-50">
+                <div
+                  v-if="isImage(action.file)"
+                  class="w-full h-32 rounded-md overflow-hidden border"
+                >
+                  <img
+                    :src="action.file"
+                    class="w-full h-full object-cover cursor-pointer"
+                    @click="window.open(action.file, '_blank')"
+                  />
+                </div>
+                <UButton
+                  v-else
+                  size="xs"
+                  color="neutral"
+                  variant="outline"
+                  icon="i-heroicons-paper-clip"
+                  :to="action.file"
+                  target="_blank"
+                >
+                  Lihat Dokumen
+                </UButton>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>

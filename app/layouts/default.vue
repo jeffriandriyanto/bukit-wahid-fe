@@ -67,7 +67,7 @@ const userMenuItems = computed(() => [
       </template>
 
       <template #footer>
-        <span>v1.0.5-beta</span>
+        <span>v1.1.0</span>
       </template>
     </UDashboardSidebar>
 
@@ -91,7 +91,7 @@ const userMenuItems = computed(() => [
             <template #right>
               <UDropdownMenu :items="userMenuItems" :ui="{ content: 'w-56' }">
                 <button
-                  class="flex items-center gap-3 rounded-lg px-2 py-1 transition hover:bg-neutral-100"
+                  class="flex items-center gap-3 cursor-pointer rounded-lg px-2 py-1 transition hover:bg-neutral-100"
                 >
                   <div class="flex flex-col text-right leading-tight">
                     <span class="text-sm font-medium text-neutral-900">
