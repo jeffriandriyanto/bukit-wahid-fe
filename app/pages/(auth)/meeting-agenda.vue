@@ -250,7 +250,6 @@ definePageMeta({
         value-key="key"
         label-key="label"
         searchable
-        clear
         class="w-40"
       />
 
