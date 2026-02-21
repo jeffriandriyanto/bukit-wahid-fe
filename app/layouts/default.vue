@@ -67,7 +67,7 @@ const userMenuItems = computed(() => [
       </template>
 
       <template #footer>
-        <span>v1.1.0</span>
+        <span>v1.2.0</span>
       </template>
     </UDashboardSidebar>
 

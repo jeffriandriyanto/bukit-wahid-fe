@@ -114,6 +114,7 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
       <UButton :loading="isLoading" type="submit" class="mt-4 w-full">
         <span class="mx-auto">Login</span>
       </UButton>
+      <!-- <span>v1.2.0</span> -->
     </UForm>
   </UCard>
 </template>

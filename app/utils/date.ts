@@ -9,7 +9,7 @@ export function formatDate(date?: string | Date, formatStr = "dd MMMM yyyy") {
   try {
     return format(toDate(date), formatStr, { locale: id })
   } catch (error) {
-    console.error('Invalid date passed to formatDate:', date)
+    console.error('Invalid date passed to formatDate:', error)
     return "-"
   }
 }
@@ -24,4 +24,8 @@ export function formatTime(date?: string | Date) {
 
 export function formatYearMonth(date?: string | Date) {
   return formatDate(date, "MMMM yyyy")
+}
+
+export function getYear() {
+  return formatDate(new Date(), "yyyy")
 }
