@@ -357,28 +357,36 @@ definePageMeta({
       </template>
     </UModal>
 
-    <div class="mb-4 flex w-full justify-end gap-2">
-      <UButton
-        v-if="activeTab == '1'"
-        color="neutral"
-        variant="solid"
-        icon="mdi:account-group"
-        @click="isOpenOrganization = true"
+    <div
+      class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm space-y-4 mb-4"
+    >
+      <div
+        class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4"
       >
-        Lihat Struktur
-      </UButton>
+        <div class="flex gap-2">
+          <UButton
+            v-if="activeTab == '1'"
+            color="neutral"
+            variant="solid"
+            icon="mdi:account-group"
+            @click="isOpenOrganization = true"
+          >
+            Lihat Struktur
+          </UButton>
 
-      <UButton color="error" variant="outline" trailing-icon="mdi-download">
-        Download
-      </UButton>
+          <UButton color="neutral" variant="outline" icon="i-lucide-download">
+            Download
+          </UButton>
+        </div>
 
-      <UButton
-        color="neutral"
-        icon="mdi-plus-circle-outline"
-        @click="openAddModal()"
-      >
-        Tambah Struktur
-      </UButton>
+        <UButton
+          color="neutral"
+          icon="mdi-plus-circle-outline"
+          @click="openAddModal()"
+        >
+          Tambah Struktur
+        </UButton>
+      </div>
     </div>
 
     <!-- MODAL FORM ASSIGN -->

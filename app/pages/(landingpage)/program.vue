@@ -1,16 +1,8 @@
 <template>
-  <UContainer class="py-12 md:py-20 space-y-8">
-    <header
-      class="text-center text-white p-4 max-w-3xl mx-auto space-y-2 bg-linear-to-r from-primary-600 via-primary-400 to-primary-600 rounded-2xl"
-    >
-      <h1 class="text-xl md:text-3xl font-black tracking-tight">
-        {{ pageData.title }}
-      </h1>
-      <p class="text-sm">{{ pageData.subtitle }}</p>
-    </header>
+  <UContainer class="py-12 space-y-8">
 
     <div
-      class="flex flex-col md:flex-row gap-4 justify-between items-center p-4"
+      class="flex flex-col md:flex-row gap-4 justify-between items-center"
     >
       <div class="flex items-center gap-2">
         <span class="text-2xl font-bold text-primary-500">{{
@@ -42,8 +34,8 @@
       :columns="columns"
       :loading="pending"
       :ui="{
-        root: 'relative overflow-x-auto',
-        thead: 'bg-primary-100',
+        root: 'relative overflow-x-auto rounded-xl',
+        thead: 'bg-neutral-300',
         td: 'align-top py-6 px-4 text-sm whitespace-normal',
         loading: 'text-sm text-neutral-400 w-6 h-6 text-primary-50'
       }"

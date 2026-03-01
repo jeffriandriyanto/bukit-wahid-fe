@@ -175,8 +175,7 @@ const publishHandler = async (row: any) => {
 const unpublishHandler = async (row: any) => {
   const ok = await confirm({
     title: 'Sembunyikan Berita?',
-    description:
-      'Berita akan ditarik dari publik dan disimpan sebagai draf',
+    description: 'Berita akan ditarik dari publik dan disimpan sebagai draf',
     confirmLabel: 'Sembunyikan',
     cancelLabel: 'Batal',
     color: 'neutral'
@@ -304,8 +303,13 @@ definePageMeta({
   <div>
     <ConfirmDialog />
 
-    <div class="my-4 flex w-full justify-end gap-4">
-      <!-- <USelectMenu
+    <div
+      class="bg-white p-4 mb-4 rounded-xl border border-gray-100 shadow-sm space-y-4"
+    >
+      <div
+        class="flex flex-col md:flex-row justify-end items-start md:items-end gap-4"
+      >
+        <!-- <USelectMenu
         v-model="selectedRT"
         placeholder="Pilih RT"
         :search-input="{
@@ -318,101 +322,98 @@ definePageMeta({
         class="w-40"
       /> -->
 
-      <UButton
-        color="neutral"
-        trailing-icon="mdi-plus-circle-outline"
-        @click="openAddModal"
-      >
-        Tambah Berita
-      </UButton>
-
-      <UModal v-model:open="isOpen">
-        <template #header>
-          <span class="font-bold"
-            >{{ mode === 'add' ? 'Tambah' : 'Edit' }} Berita</span
-          >
-        </template>
-
-        <template #body>
-          <UForm
-            :schema="AnnouncementFormSchema"
-            :state="form"
-            class="w-full space-y-6"
-            @submit="saveData"
-          >
-            <UFormField name="title" label="Judul Berita" required>
-              <UInput v-model="form.title" placeholder="Judul Berita" />
-            </UFormField>
-
-            <UFormField name="for" label="Ditujukan Pada">
-              <USelect
-                v-model="form.for"
-                :items="dropdownRT"
-                multiple
-                value-key="key"
-                value-label="label"
-                class="w-full"
-                searchable
-                placeholder="Pilih RT"
-              />
-            </UFormField>
-
-            <UFormField name="image">
-              <div class="w-full">
-                <div
-                  v-if="form.image"
-                  class="group relative aspect-video w-full overflow-hidden rounded-lg border border-gray-200 bg-gray-50"
-                >
-                  <img
-                    :src="form.image"
-                    class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
-                  <div
-                    class="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100"
-                  >
-                    <UButton
-                      color="error"
-                      variant="solid"
-                      icon="i-lucide-trash-2"
-                      label="Hapus & Ganti Gambar"
-                      @click="clearImage"
-                    />
-                  </div>
-                </div>
-
-                <UFileUpload
-                  v-else
-                  v-model="imageFile"
-                  accept="image/*"
-                  :dropzone="true"
-                  class="aspect-video"
-                  icon="uil:image-upload"
-                  :ui="{
-                    base: 'bg-neutral-100'
-                  }"
-                />
-              </div>
-            </UFormField>
-
-            <UFormField name="body" label="Deskripsi">
-              <UTextarea
-                v-model="form.body"
-                :rows="4"
-                placeholder="Deskripsi"
-              />
-            </UFormField>
-
-            <div class="flex w-full items-center justify-between gap-2">
-              <UButton variant="ghost" @click="isOpen = false"> Batal </UButton>
-
-              <UButton type="submit" color="neutral" :loading="loading">
-                Simpan
-              </UButton>
-            </div>
-          </UForm>
-        </template>
-      </UModal>
+        <UButton
+          color="neutral"
+          trailing-icon="mdi-plus-circle-outline"
+          @click="openAddModal"
+        >
+          Tambah Berita
+        </UButton>
+      </div>
     </div>
+
+    <UModal v-model:open="isOpen">
+      <template #header>
+        <span class="font-bold"
+          >{{ mode === 'add' ? 'Tambah' : 'Edit' }} Berita</span
+        >
+      </template>
+
+      <template #body>
+        <UForm
+          :schema="AnnouncementFormSchema"
+          :state="form"
+          class="w-full space-y-6"
+          @submit="saveData"
+        >
+          <UFormField name="title" label="Judul Berita" required>
+            <UInput v-model="form.title" placeholder="Judul Berita" />
+          </UFormField>
+
+          <UFormField name="for" label="Ditujukan Pada">
+            <USelect
+              v-model="form.for"
+              :items="dropdownRT"
+              multiple
+              value-key="key"
+              value-label="label"
+              class="w-full"
+              searchable
+              placeholder="Pilih RT"
+            />
+          </UFormField>
+
+          <UFormField name="image">
+            <div class="w-full">
+              <div
+                v-if="form.image"
+                class="group relative aspect-video w-full overflow-hidden rounded-lg border border-gray-200 bg-gray-50"
+              >
+                <img
+                  :src="form.image"
+                  class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+                <div
+                  class="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100"
+                >
+                  <UButton
+                    color="error"
+                    variant="solid"
+                    icon="i-lucide-trash-2"
+                    label="Hapus & Ganti Gambar"
+                    @click="clearImage"
+                  />
+                </div>
+              </div>
+
+              <UFileUpload
+                v-else
+                v-model="imageFile"
+                accept="image/*"
+                :dropzone="true"
+                class="aspect-video"
+                icon="uil:image-upload"
+                :ui="{
+                  base: 'bg-neutral-100'
+                }"
+              />
+            </div>
+          </UFormField>
+
+          <UFormField name="body" label="Deskripsi">
+            <UTextarea v-model="form.body" :rows="4" placeholder="Deskripsi" />
+          </UFormField>
+
+          <div class="flex w-full items-center justify-between gap-2">
+            <UButton variant="ghost" @click="isOpen = false"> Batal </UButton>
+
+            <UButton type="submit" color="neutral" :loading="loading">
+              Simpan
+            </UButton>
+          </div>
+        </UForm>
+      </template>
+    </UModal>
 
     <div>
       <UTable

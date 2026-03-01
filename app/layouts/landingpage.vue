@@ -2,7 +2,7 @@
   <div class="min-h-screen flex flex-col bg-neutral-950">
     <UHeader
       :ui="{
-        root: 'bg-neutral-900/80 backdrop-blur border-b border-neutral-800 sticky top-0 z-50',
+        root: 'bg-neutral-900/80 backdrop-blur border-b border-neutral-800 sticky top-0 z-50 ',
         container: 'max-w-7xl'
       }"
       :toggle="false"

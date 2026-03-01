@@ -1,12 +1,20 @@
 <template>
-  <UContainer class="py-12 md:py-20 space-y-8">
+  <UContainer class="py-12 space-y-12">
     <header
-      class="text-center text-white p-4 max-w-3xl mx-auto space-y-2 bg-linear-to-r from-primary-600 via-primary-400 to-primary-600 rounded-2xl"
+      class="max-w-3xl mx-auto p-8 rounded-2xl bg-neutral-50/50 border border-neutral-200/60 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]"
     >
-      <h1 class="text-xl md:text-3xl font-black tracking-tight">
-        {{ pageData.title }}
-      </h1>
-      <p class="text-sm">{{ pageData.subtitle }}</p>
+      <div class="flex flex-col items-center gap-2">
+        <div class="w-12 h-1 bg-primary-500 rounded-full mb-2"></div>
+
+        <h1
+          class="text-xl md:text-2xl font-bold text-neutral-800 uppercase tracking-wide"
+        >
+          {{ pageData.title }}
+        </h1>
+        <p class="text-neutral-500 text-sm text-center leading-snug italic">
+          "{{ pageData.subtitle }}"
+        </p>
+      </div>
     </header>
 
     <div

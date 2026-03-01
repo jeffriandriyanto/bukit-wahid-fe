@@ -179,7 +179,7 @@ const saveData = async (event: FormSubmitEvent<FamilyCardFormSchema>) => {
     const url =
       mode.value === 'add' ? '/familly' : `/familly/${editingId.value}`
     const method = mode.value === 'add' ? 'POST' : 'PUT'
-    console.log("payload", payload);
+    console.log('payload', payload)
 
     const res = await useApi<any>(url, { method, body: payload })
     if (res.status === 1) {
@@ -213,26 +213,32 @@ const columnsFamilyTable = [
 </script>
 
 <template>
-  <div class="space-y-4">
+  <div class="space-y-4 py-4">
     <ConfirmDialog />
 
-    <div class="flex justify-between items-center mt-4">
-      <USelectMenu
-        v-model="selectedRT"
-        placeholder="Filter RT"
-        :items="dropdownRT"
-        value-key="key"
-        label-key="label"
-        class="w-48"
-        @change="getData"
-      />
-      <UButton
-        color="neutral"
-        icon="i-lucide-plus-circle"
-        @click="openAddModal"
+    <div
+      class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm space-y-4"
+    >
+      <div
+        class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4"
       >
-        Tambah Keluarga
-      </UButton>
+        <USelectMenu
+          v-model="selectedRT"
+          placeholder="Filter RT"
+          :items="dropdownRT"
+          value-key="key"
+          label-key="label"
+          class="w-48"
+          @change="getData"
+        />
+        <UButton
+          color="neutral"
+          icon="i-lucide-plus-circle"
+          @click="openAddModal"
+        >
+          Tambah Keluarga
+        </UButton>
+      </div>
     </div>
 
     <UTable

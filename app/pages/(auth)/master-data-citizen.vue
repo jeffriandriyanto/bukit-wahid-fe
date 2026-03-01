@@ -261,36 +261,68 @@ const confirmDelete = async (id: string) => {
   }
 }
 
+const getAge = (dob: string | null) => {
+  if (!dob) return '-'
+  const birthDate = new Date(dob)
+  const today = new Date()
+  let age = today.getFullYear() - birthDate.getFullYear()
+  const m = today.getMonth() - birthDate.getMonth()
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--
+  return age
+}
+
+// Update Kolom Tabel
+const columnsFamilyTable = [
+  { accessorKey: 'name', header: 'Informasi Warga' },
+  { accessorKey: 'ttl', header: 'Tempat, Tgl Lahir' },
+  { accessorKey: 'gender', header: 'L/P' },
+  { accessorKey: 'blood_type', header: 'Gol. Darah', class: 'text-center' },
+  { accessorKey: 'type', header: 'Status' },
+  { id: 'action', header: 'Aksi', class: 'text-right' }
+]
+
 onMounted(() => {
   getData()
 })
-
-const columnsFamilyTable = [
-  { accessorKey: 'name', header: 'Nama' },
-  { accessorKey: 'gender', header: 'L/P' },
-  { accessorKey: 'blood_type', header: 'Golongan Darah' },
-  { id: 'action', header: 'Aksi' }
-]
 </script>
 
 <template>
   <div class="space-y-4">
     <ConfirmDialog />
 
-    <div class="flex justify-end items-center mt-4 gap-4">
-      <UInput
-        v-model="search"
-        placeholder="Cari Data Warga"
-        size="xl"
-        class="max-w-50"
-      ></UInput>
-      <UButton
-        color="neutral"
-        icon="i-lucide-plus-circle"
-        @click="openAddModal"
+    <div
+      class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm space-y-4"
+    >
+      <div
+        class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4"
       >
-        Tambah Data Warga
-      </UButton>
+        <div class="w-full md:w-80">
+          <UFormField>
+            <UInput
+              v-model="search"
+              icon="i-lucide-search"
+              placeholder="Cari Nama..."
+              size="md"
+              block
+            />
+          </UFormField>
+        </div>
+
+        <div class="flex gap-2">
+          <!-- <UButton
+            color="neutral"
+            variant="outline"
+            icon="i-lucide-download"
+            label="Export"
+          /> -->
+          <UButton
+            color="primary"
+            icon="i-lucide-plus-circle"
+            label="Tambah Warga"
+            @click="openAddModal"
+          />
+        </div>
+      </div>
     </div>
 
     <UTable
@@ -298,23 +330,92 @@ const columnsFamilyTable = [
       :columns="columnsFamilyTable"
       :loading="loading"
     >
-      <template #blood_type-cell="{ row }">
-        {{ row.original.blood_type || '-' }}
+      <template #name-cell="{ row }">
+        <div class="flex items-center gap-3 py-1">
+          <UAvatar
+            :src="row.original.avatar"
+            :alt="row.original.name"
+            size="md"
+            class="bg-gray-100"
+          />
+          <div class="flex flex-col">
+            <span class="font-bold text-gray-900 leading-tight">{{
+              row.original.name
+            }}</span>
+            <span class="text-xs text-gray-500"
+              >{{ getAge(row.original.dob) }} Tahun</span
+            >
+          </div>
+        </div>
       </template>
+
+      <template #ttl-cell="{ row }">
+        <div class="flex flex-col text-sm">
+          <span class="text-gray-700 font-medium">{{
+            row.original.pob || '-'
+          }}</span>
+          <span class="text-xs text-gray-400">
+            {{
+              row.original.dob
+                ? new Date(row.original.dob).toLocaleDateString('id-ID', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric'
+                  })
+                : '-'
+            }}
+          </span>
+        </div>
+      </template>
+
+      <template #gender-cell="{ row }">
+        <UBadge
+          v-if="row.original.gender"
+          :color="row.original.gender === 'L' ? 'primary' : 'secondary'"
+          variant="soft"
+          size="sm"
+          class="font-bold"
+        >
+          {{ row.original.gender === 'L' ? 'Laki-laki' : 'Perempuan' }}
+        </UBadge>
+        <span v-else>-</span>
+      </template>
+
+      <template #blood_type-cell="{ row }">
+        <div>
+          {{ row.original.blood_type || '-' }}
+        </div>
+      </template>
+
+      <template #type-cell="{ row }">
+        <div
+          class="flex items-center gap-1.5 capitalize text-xs font-medium text-gray-600"
+        >
+          <div class="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+          {{ row.original.type }}
+        </div>
+      </template>
+
       <template #action-cell="{ row }">
-        <div class="flex gap-1">
-          <UButton
-            icon="i-lucide-pencil"
-            variant="ghost"
-            color="neutral"
-            @click="openEditModal(row.original)"
-          />
-          <UButton
-            icon="i-lucide-trash-2"
-            variant="ghost"
-            color="error"
-            @click="confirmDelete(row.original.id)"
-          />
+        <div class="flex justify-end gap-1">
+          <UTooltip text="Edit Data">
+            <UButton
+              icon="i-lucide-pencil"
+              variant="ghost"
+              color="neutral"
+              size="sm"
+              @click="openEditModal(row.original)"
+            />
+          </UTooltip>
+          <UTooltip text="Hapus Data">
+            <UButton
+              icon="i-lucide-trash-2"
+              variant="ghost"
+              color="error"
+              size="sm"
+              @click="confirmDelete(row.original.id)"
+            />
+          </UTooltip>
         </div>
       </template>
     </UTable>

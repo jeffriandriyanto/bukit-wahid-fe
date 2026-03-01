@@ -191,38 +191,44 @@ const columnsFamilyTable = [
 </script>
 
 <template>
-  <div class="space-y-4">
+  <div class="space-y-4 py-4">
     <ConfirmDialog />
 
-    <div class="flex gap-4 items-center mt-4">
-      <USelectMenu
-        v-model="selectedRT"
-        placeholder="Pilih RT"
-        :search-input="{
-          placeholder: 'Cari RT RT'
-        }"
-        :items="dropdownRT"
-        value-key="key"
-        label-key="label"
-        searchable
-        class="w-40"
-        @change="getDropdownResidenceType(selectedRT)"
-      />
+    <div
+      class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm space-y-4"
+    >
+      <div
+        class="flex flex-col md:flex-row justify-start items-start md:items-end gap-4"
+      >
+        <USelectMenu
+          v-model="selectedRT"
+          placeholder="Pilih RT"
+          :search-input="{
+            placeholder: 'Cari RT RT'
+          }"
+          :items="dropdownRT"
+          value-key="key"
+          label-key="label"
+          searchable
+          class="w-40"
+          @change="getDropdownResidenceType(selectedRT)"
+        />
 
-      <USelectMenu
-        v-model="selectedKavling"
-        placeholder="Pilih tipe kavling"
-        :disabled="!selectedRT"
-        :search-input="{
-          placeholder: 'Cari tipe kavling'
-        }"
-        :items="dropdownResidenceType"
-        value-key="key"
-        label-key="label"
-        searchable
-        class="w-40"
-        @change="getData"
-      />
+        <USelectMenu
+          v-model="selectedKavling"
+          placeholder="Pilih tipe kavling"
+          :disabled="!selectedRT"
+          :search-input="{
+            placeholder: 'Cari tipe kavling'
+          }"
+          :items="dropdownResidenceType"
+          value-key="key"
+          label-key="label"
+          searchable
+          class="w-40"
+          @change="getData"
+        />
+      </div>
     </div>
 
     <UTable

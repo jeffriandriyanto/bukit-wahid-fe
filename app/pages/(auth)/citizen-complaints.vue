@@ -121,38 +121,48 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="p-4 space-y-4">
+  <div class="space-y-4">
     <ConfirmDialog />
 
-    <div class="flex flex-wrap gap-4 items-end">
-      <div v-if="statusOptions.length > 0" class="w-64">
-        <label class="text-[10px] font-bold text-gray-400 uppercase mb-1 block">
-          Filter Status
-        </label>
-        <USelect
-          :key="statusOptions.length"
-          v-model="selectedStatus"
-          :items="statusOptions"
-          label-key="label"
-          value-key="key"
-          placeholder="Pilih Status"
-          @update:model-value="handleFilterChange"
-        />
-      </div>
+    <div
+      class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm space-y-4"
+    >
+      <div
+        class="flex flex-col md:flex-row justify-start items-start md:items-end gap-4"
+      >
+        <div v-if="statusOptions.length > 0" class="w-64">
+          <label
+            class="text-[10px] font-bold text-gray-400 uppercase mb-1 block"
+          >
+            Filter Status
+          </label>
+          <USelect
+            :key="statusOptions.length"
+            v-model="selectedStatus"
+            :items="statusOptions"
+            label-key="label"
+            value-key="key"
+            placeholder="Pilih Status"
+            @update:model-value="handleFilterChange"
+          />
+        </div>
 
-      <div v-if="categoryOptions.length > 0" class="w-64">
-        <label class="text-[10px] font-bold text-gray-400 uppercase mb-1 block">
-          Filter Kategori
-        </label>
-        <USelect
-          :key="categoryOptions.length"
-          v-model="selectedCategory"
-          :items="categoryOptions"
-          label-key="label"
-          value-key="key"
-          placeholder="Pilih Kategori"
-          @update:model-value="handleFilterChange"
-        />
+        <div v-if="categoryOptions.length > 0" class="w-64">
+          <label
+            class="text-[10px] font-bold text-gray-400 uppercase mb-1 block"
+          >
+            Filter Kategori
+          </label>
+          <USelect
+            :key="categoryOptions.length"
+            v-model="selectedCategory"
+            :items="categoryOptions"
+            label-key="label"
+            value-key="key"
+            placeholder="Pilih Kategori"
+            @update:model-value="handleFilterChange"
+          />
+        </div>
       </div>
     </div>
 

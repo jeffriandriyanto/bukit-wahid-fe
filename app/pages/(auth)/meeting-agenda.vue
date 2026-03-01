@@ -239,92 +239,98 @@ definePageMeta({
   <div>
     <ConfirmDialog />
 
-    <div class="my-4 flex w-full justify-between gap-4">
-      <USelectMenu
-        v-model="selectedRT"
-        placeholder="Pilih RT"
-        :search-input="{
-          placeholder: 'Cari nama RT'
-        }"
-        :items="dropdownRT"
-        value-key="key"
-        label-key="label"
-        searchable
-        class="w-40"
-      />
-
-      <UButton
-        color="neutral"
-        trailing-icon="mdi-plus-circle-outline"
-        @click="openAddModal"
+    <div
+      class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm space-y-4"
+    >
+      <div
+        class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4"
       >
-        Tambah Agenda
-      </UButton>
+        <USelectMenu
+          v-model="selectedRT"
+          placeholder="Pilih RT"
+          :search-input="{
+            placeholder: 'Cari nama RT'
+          }"
+          :items="dropdownRT"
+          value-key="key"
+          label-key="label"
+          searchable
+          class="w-40"
+        />
 
-      <UModal v-model:open="isOpen">
-        <template #header>
-          <span class="font-bold"
-            >{{ mode === 'add' ? 'Tambah' : 'Ubah' }} Agenda</span
-          >
-        </template>
-
-        <template #body>
-          <UForm
-            :schema="AgendaFormSchema"
-            :state="form"
-            class="w-full space-y-6"
-            @submit="saveData"
-          >
-            <UFormField name="title" label="Nama Agenda" required>
-              <UInput v-model="form.title" placeholder="Nama Agenda" />
-            </UFormField>
-
-            <UFormField name="for" label="Ditujukan Pada">
-              <USelect
-                v-model="form.fors"
-                :items="dropdownRT"
-                multiple
-                value-key="key"
-                value-label="label"
-                class="w-full"
-                searchable
-                placeholder="Pilih RT"
-              />
-            </UFormField>
-
-            <div class="grid grid-cols-2 gap-4">
-              <UFormField name="start_date" label="Tanggal">
-                <UInputDate v-model="form.start_date" />
-              </UFormField>
-
-              <UFormField name="time" label="Jam">
-                <UInputTime v-model="form.start_time" :hour-cycle="24" />
-              </UFormField>
-            </div>
-
-            <UFormField name="location" label="Lokasi">
-              <UInput v-model="form.location" placeholder="Lokasi" />
-            </UFormField>
-
-            <UFormField name="description" label="Catatan">
-              <UTextarea
-                v-model="form.description"
-                :rows="4"
-                placeholder="Deskripsi"
-              />
-            </UFormField>
-
-            <div class="flex w-full items-center justify-between gap-2">
-              <UButton variant="ghost" @click="isOpen = false"> Batal </UButton>
-
-              <UButton type="submit" color="neutral" :loading="loading">
-                Simpan
-              </UButton>
-            </div>
-          </UForm>
-        </template>
-      </UModal>
+        <UButton
+          color="neutral"
+          trailing-icon="mdi-plus-circle-outline"
+          @click="openAddModal"
+        >
+          Tambah Agenda
+        </UButton>
+      </div>
     </div>
+
+    <UModal v-model:open="isOpen">
+      <template #header>
+        <span class="font-bold"
+          >{{ mode === 'add' ? 'Tambah' : 'Ubah' }} Agenda</span
+        >
+      </template>
+
+      <template #body>
+        <UForm
+          :schema="AgendaFormSchema"
+          :state="form"
+          class="w-full space-y-6"
+          @submit="saveData"
+        >
+          <UFormField name="title" label="Nama Agenda" required>
+            <UInput v-model="form.title" placeholder="Nama Agenda" />
+          </UFormField>
+
+          <UFormField name="for" label="Ditujukan Pada">
+            <USelect
+              v-model="form.fors"
+              :items="dropdownRT"
+              multiple
+              value-key="key"
+              value-label="label"
+              class="w-full"
+              searchable
+              placeholder="Pilih RT"
+            />
+          </UFormField>
+
+          <div class="grid grid-cols-2 gap-4">
+            <UFormField name="start_date" label="Tanggal">
+              <UInputDate v-model="form.start_date" />
+            </UFormField>
+
+            <UFormField name="time" label="Jam">
+              <UInputTime v-model="form.start_time" :hour-cycle="24" />
+            </UFormField>
+          </div>
+
+          <UFormField name="location" label="Lokasi">
+            <UInput v-model="form.location" placeholder="Lokasi" />
+          </UFormField>
+
+          <UFormField name="description" label="Catatan">
+            <UTextarea
+              v-model="form.description"
+              :rows="4"
+              placeholder="Deskripsi"
+            />
+          </UFormField>
+
+          <div class="flex w-full items-center justify-between gap-2">
+            <UButton variant="ghost" @click="isOpen = false"> Batal </UButton>
+
+            <UButton type="submit" color="neutral" :loading="loading">
+              Simpan
+            </UButton>
+          </div>
+        </UForm>
+      </template>
+    </UModal>
 
     <div>
       <UTable

@@ -290,28 +290,35 @@ onMounted(() => {
 </script>
 
 <template>
-  <div class="space-y-4 p-4">
-    <div class="flex justify-between items-end">
-      <div class="w-64">
-        <label class="text-[10px] font-bold text-gray-400 uppercase mb-1 block"
-          >Filter Status</label
-        >
-        <USelect
-          v-model="selectedStatus"
-          :items="statusOptions"
-          label-key="label"
-          value-key="key"
-          @update:model-value="
-            () => {
-              pagination.current_page = 1
-              getData()
-            }
-          "
-        />
-      </div>
-      <UButton color="primary" icon="i-lucide-plus-circle" @click="openAddModal"
-        >Tambah E-Voting</UButton
+  <div class="space-y-4">
+    <div
+      class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm space-y-4"
+    >
+      <div
+        class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4"
       >
+        <div class="w-64">
+          <USelect
+            v-model="selectedStatus"
+            :items="statusOptions"
+            placeholder="Filter Status"
+            label-key="label"
+            value-key="key"
+            @update:model-value="
+              () => {
+                pagination.current_page = 1
+                getData()
+              }
+            "
+          />
+        </div>
+        <UButton
+          color="primary"
+          icon="i-lucide-plus-circle"
+          @click="openAddModal"
+          >Tambah E-Voting</UButton
+        >
+      </div>
     </div>
 
     <UTable :data="dataVoting" :columns="votingTable" :loading="loading">

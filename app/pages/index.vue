@@ -176,12 +176,26 @@ const isUrl = (str: string) => str.startsWith('http')
     <section class="py-24 bg-white">
       <UContainer>
         <div class="grid md:grid-cols-2 gap-16 items-center">
-          <div class="relative">
+          <div class="relative group">
+            <div
+              class="absolute -bottom-6 -left-6 w-32 h-32 border-l-4 border-b-4 border-primary-500/30 rounded-bl-3xl"
+            ></div>
+            <div
+              class="absolute -top-6 -right-6 w-32 h-32 border-r-4 border-t-4 border-primary-100 rounded-tr-3xl"
+            ></div>
+
+            <div
+              class="absolute -top-4 -left-4 w-12 h-12 bg-primary-600 rounded-full flex items-center justify-center shadow-lg z-10"
+            >
+              <UIcon name="i-lucide-quote" class="text-white w-6 h-6" />
+            </div>
+
             <img
               :src="pageData.welcome.image"
-              class="rounded-3xl shadow-2xl transition-all duration-700"
+              class="relative z-0 rounded-3xl shadow-2xl"
             />
           </div>
+
           <div class="space-y-6">
             <h2 class="text-4xl font-black tracking-tight">
               {{ pageData.welcome.title }}
@@ -247,7 +261,7 @@ const isUrl = (str: string) => str.startsWith('http')
       </UContainer>
     </section>
 
-    <section class="py-24 bg-white">
+    <section class="py-24 bg-white relative overflow-hidden">
       <UContainer>
         <div class="flex justify-between items-center mb-10">
           <h2 class="text-3xl font-black tracking-tight text-neutral-900">
@@ -321,30 +335,30 @@ const isUrl = (str: string) => str.startsWith('http')
           <p class="text-neutral-400 mt-2 italic text-sm">
             Dokumentasi kegiatan di lingkungan Bukit Wahid
           </p>
-        </div>
 
+          <UButton
+            to="/warga/galeri"
+            variant="link"
+            color="primary"
+            trailing-icon="i-lucide-arrow-right"
+            >Lihat Semua</UButton
+          >
+        </div>
 
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
           <div
             v-for="(img, idx) in pageData.gallery"
             :key="idx"
-            class="aspect-square rounded-xl overflow-hidden"
+            :class="[
+              'rounded-2xl overflow-hidden shadow-lg',
+              idx % 2 === 0 ? 'md:translate-y-4' : 'md:-translate-y-4'
+            ]"
           >
             <img
               :src="img"
-              class="w-full h-full object-cover hover:scale-110 transition-transform duration-700 cursor-pointer"
+              class="w-full h-full object-cover hover:scale-110 transition-transform duration-700"
             />
           </div>
-        </div>
-
-        <div class="flex justify-end mt-4">
-        <UButton
-          to="/warga/galeri"
-          variant="link"
-          color="primary"
-          trailing-icon="i-lucide-arrow-right"
-          >Lihat Semua</UButton
-        >
         </div>
       </UContainer>
     </section>
