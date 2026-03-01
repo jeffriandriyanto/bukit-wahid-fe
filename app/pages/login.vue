@@ -15,8 +15,8 @@ const isPasswordVisible = ref(false)
 const isLoading = ref(false)
 
 const formState = reactive({
-  email: 'sa@bukitwahid.com',
-  password: 'bukitwahid@2026!'
+  email: '',
+  password: ''
 })
 
 const schema = z.object({

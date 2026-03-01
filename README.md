@@ -30,37 +30,5 @@ pm2 start .output/server/index.mjs --name "bukit-wahid-fe" --node-args="--max-ol
 kmzwa8awaa
 13ukitWahid
 
-<div
-      class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm space-y-4"
-    >
-      <div
-        class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4"
-      >
-        <div class="w-full md:w-80">
-          <UFormField>
-            <UInput
-              v-model="search"
-              icon="i-lucide-search"
-              placeholder="Cari NIK atau Nama..."
-              size="md"
-              block
-            />
-          </UFormField>
-        </div>
-
-        <div class="flex gap-2">
-          <!-- <UButton
-            color="neutral"
-            variant="outline"
-            icon="i-lucide-download"
-            label="Export"
-          /> -->
-          <UButton
-            color="primary"
-            icon="i-lucide-plus-circle"
-            label="Tambah Warga"
-            @click="openAddModal"
-          />
-        </div>
-      </div>
-    </div>
+sa@bukitwahid.com
+bukitwahid@2026!
