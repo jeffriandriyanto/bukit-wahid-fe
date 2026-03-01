@@ -232,7 +232,7 @@ const columnsFamilyTable = [
       :loading="loading"
     >
       <template #head-cell="{ row }">
-        {{ row.original.pic_profile?.name || '-' }}
+        {{ row.original.pic_profile?.name || 'PIC Belum diisi' }}
       </template>
 
       <template #land_size-cell="{ row }">

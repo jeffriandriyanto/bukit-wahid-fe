@@ -9,7 +9,7 @@
       <p class="text-sm">{{ profileData.subtitle }}</p>
     </header>
 
-    <div v-if="rwData">
+    <div v-if="rwData" class="w-full flex justify-center">
       <OrgChart :datasource="rwData" />
     </div>
     <div v-else class="loading text-sm text-neutral-400 italic text-center py-8">

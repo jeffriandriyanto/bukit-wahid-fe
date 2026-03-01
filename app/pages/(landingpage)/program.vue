@@ -125,7 +125,6 @@ const programs = ref([
   {
     id: 1,
     category: 'Jangka Pendek',
-    no: 1,
     work_program: 'Jangka Pendek',
     duration: '1 Tahun',
     pic: 'Ketua RW',
@@ -141,7 +140,6 @@ const programs = ref([
   {
     id: 2,
     category: 'Jangka Panjang',
-    no: 1,
     work_program: 'Jangka Panjang',
     duration: '2 Tahun',
     pic: 'Ketua RW',

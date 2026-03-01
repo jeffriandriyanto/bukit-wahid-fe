@@ -7,11 +7,11 @@ npm run build
 # 2. Kompres hasil build menjadi satu file archive
 # Kita gunakan tar agar symlink tetap terjaga dan ukuran upload lebih kecil
 tar -czvf build-output.tar.gz .output
-scp build-output.tar.gz bwregency@210.79.190.242:~/fe/bukit-wahid-regency-fe/
+scp build-output.tar.gz bwregency@103.67.78.150:~/frontend/bukit-wahid-fe/
 
 # 1. Masuk ke folder project
-ssh bwregency@210.79.190.242
-cd ~/fe/bukit-wahid-regency-fe/
+ssh bwregency@103.67.78.150
+cd ~/frontend/bukit-wahid-fe/
 
 # 2. Hapus folder output lama agar tidak konflik
 rm -rf .output

@@ -112,7 +112,7 @@
       </template>
     </USlideover>
 
-    <UMain class="bg-white">
+    <UMain class="bg-neutral-100">
       <slot />
     </UMain>
 
@@ -191,18 +191,6 @@
             &copy; {{ new Date().getFullYear() }} RW 11 Bukit Wahid Regency
             Semarang.
           </p>
-          <nav class="flex gap-6">
-            <NuxtLink
-              to="/privacy"
-              class="text-xs hover:text-primary-500 transition-colors uppercase font-bold tracking-widest"
-              >Privacy Policy</NuxtLink
-            >
-            <NuxtLink
-              to="/terms"
-              class="text-xs hover:text-primary-500 transition-colors uppercase font-bold tracking-widest"
-              >Terms</NuxtLink
-            >
-          </nav>
         </div>
       </UContainer>
     </footer>

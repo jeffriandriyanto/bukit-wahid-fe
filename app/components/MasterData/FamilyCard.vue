@@ -13,7 +13,7 @@ const FamilyCardFormSchema = z.object({
   address: z.string().min(1, 'Alamat wajib diisi'),
   head: z.string().min(1, 'Kepala Keluarga wajib dipilih'),
   spouse: z.string().optional().nullable(),
-  child: z.array(z.string()).default([])
+  childs: z.array(z.string()).default([])
 })
 
 type FamilyCardFormSchema = z.infer<typeof FamilyCardFormSchema>
@@ -45,7 +45,7 @@ const form = reactive<FamilyCardFormSchema>({
   address: '',
   head: '',
   spouse: '',
-  child: []
+  childs: []
 })
 
 // ===== 3. ACTIONS =====
@@ -53,7 +53,7 @@ const form = reactive<FamilyCardFormSchema>({
 const getResidentDropdown = async () => {
   try {
     // Unique=true untuk ambil orang yang belum punya keluarga
-    const res = await useApi<any>('/dropdown/resident?unique=true')
+    const res = await useApi<any>('/dropdown/resident')
     if (res.status === 1) {
       residentDropdown.value = res.data
     }
@@ -70,7 +70,7 @@ const resetForm = () => {
     address: '',
     head: '',
     spouse: '',
-    child: []
+    childs: []
   })
 }
 
@@ -155,7 +155,7 @@ const openEditModal = async (row: any) => {
       // Map data dari object ke ID saja
       form.head = d.head?.id || d.head
       form.spouse = d.spouse?.id || d.spouse_id
-      form.child = d.childs?.map((c: any) => c.id) || []
+      form.childs = d.childs?.map((c: any) => c.id) || []
     }
   } finally {
     isOpen.value = true
@@ -173,12 +173,13 @@ const saveData = async (event: FormSubmitEvent<FamilyCardFormSchema>) => {
       rt: event.data.rt,
       head: event.data.head,
       spouse: event.data.spouse || null,
-      child: event.data.child
+      childs: event.data.childs
     }
 
     const url =
       mode.value === 'add' ? '/familly' : `/familly/${editingId.value}`
     const method = mode.value === 'add' ? 'POST' : 'PUT'
+    console.log("payload", payload);
 
     const res = await useApi<any>(url, { method, body: payload })
     if (res.status === 1) {
@@ -256,6 +257,16 @@ const columnsFamilyTable = [
       </template>
     </UTable>
 
+    <div class="flex justify-end border-t border-default pt-4 px-4">
+      <UPagination
+        v-model:page="pagination.current_page"
+        :total="pagination.total"
+        :items-per-page="pagination.per_page"
+        :max="5"
+        @update:page="getData"
+      />
+    </div>
+
     <UModal v-model:open="isOpen" :ui="{ content: 'min-w-2xl' }">
       <template #header>
         <span class="font-bold"
@@ -284,9 +295,9 @@ const columnsFamilyTable = [
                 @change="addressHandler"
               />
             </UFormField>
-            <UFormField name="address_id" label="Alamat / Kavling" required>
+            <UFormField name="address" label="Alamat / Kavling" required>
               <USelect
-                v-model="form.address_id"
+                v-model="form.address"
                 :disabled="!form.rt"
                 :items="dropdownAddress"
                 value-key="key"
@@ -321,9 +332,9 @@ const columnsFamilyTable = [
               />
             </UFormField>
 
-            <UFormField name="child" label="Daftar Anak">
+            <UFormField name="childs" label="Daftar Anak">
               <USelectMenu
-                v-model="form.child"
+                v-model="form.childs"
                 :items="residentDropdown"
                 value-key="key"
                 label-key="label"
@@ -332,8 +343,8 @@ const columnsFamilyTable = [
                 placeholder="Pilih Anak..."
               >
                 <template #label>
-                  <span v-if="form.child.length"
-                    >{{ form.child.length }} Anak terpilih</span
+                  <span v-if="form.childs.length"
+                    >{{ form.childs.length }} Anak terpilih</span
                   >
                   <span v-else>Pilih Anak</span>
                 </template>
