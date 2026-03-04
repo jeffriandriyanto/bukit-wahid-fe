@@ -1,7 +1,6 @@
 <script setup lang="ts">
-/**
- * Interface sesuai mapping API Backend
- */
+const config = useRuntimeConfig()
+
 interface AgendaItem {
   id: string
   title: string
@@ -21,10 +20,6 @@ interface AnnouncementItem {
   published_at: string | null
   author: { name: string }
 }
-
-definePageMeta({
-  layout: 'landingpage'
-})
 
 const pageData = reactive({
   hero: {
@@ -46,45 +41,8 @@ const pageData = reactive({
       'Sehingga keterbukaan Informasi dan kepercayan dari Warga semakin meningkat karena saat ini tuntutan Transparansi sudah menjadi keniscayaan.'
     ]
   },
-  // Data dummy mengikuti struktur API yang kamu berikan
-  announcements: [
-    {
-      id: '019c5e9e-09b5-722d-8889-e9816d9e10a2',
-      title: 'Judul Pengumuman 1',
-      slug: 'judul-pengumuman-1',
-      image: 'https://picsum.photos/400/300?random=2',
-      published_at: '2026-02-15',
-      author: { name: 'Ridwan Wibowo' }
-    },
-    {
-      id: '019c5e9e-09b5-722d-8889-e9816d9e10a2',
-      title: 'Judul Pengumuman 2',
-      slug: 'judul-pengumuman-2',
-      image: 'https://picsum.photos/400/300?random=2',
-      published_at: '2026-02-15',
-      author: { name: 'Ridwan Wibowo' }
-    },
-    {
-      id: '019c5e9e-09b5-722d-8889-e9816d9e10a2',
-      title: 'Judul Pengumuman 3',
-      slug: 'judul-pengumuman-3',
-      image: 'https://picsum.photos/400/300?random=2',
-      published_at: '2026-02-15',
-      author: { name: 'Ridwan Wibowo' }
-    }
-  ] as AnnouncementItem[],
-
-  events: [
-    {
-      id: '019bf2d4-fbea-7220-ab04-d436e93ac999',
-      title: 'Agenda Pertama',
-      location: 'https://link.zoom.misal.com/123456789',
-      description: 'Pertemuan pertama untuk diskusi proyek baru',
-      start_date: '2026-01-25',
-      start_time: '19:00',
-      fors: [{ id: '1', name: 'RT 04' }]
-    }
-  ] as AgendaItem[],
+  announcements: [] as AnnouncementItem[],
+  events: [] as AgendaItem[],
 
   gallery: [
     'https://picsum.photos/600/600?random=10',
@@ -98,8 +56,42 @@ const carouselUi = {
   item: 'basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4 px-2'
 }
 
-// Helper untuk deteksi link (Zoom/Meet vs Alamat Fisik)
 const isUrl = (str: string) => str.startsWith('http')
+
+const { data: newsResponse } = await useFetch<any>('/news', {
+  baseURL: config.public.baseUrl,
+  query: { page: 1, limit: 8 },
+  key: 'home-news'
+})
+
+const { data: agendaResponse } = await useFetch<any>('/agenda', {
+  baseURL: config.public.baseUrl,
+  query: { page: 1, limit: 8 },
+  key: 'home-agenda'
+})
+
+// Gunakan .value karena newsResponse adalah Ref
+const announcements = computed<AnnouncementItem[]>(() => {
+  return newsResponse.value?.data || []
+})
+
+const events = computed<AgendaItem[]>(() => {
+  return agendaResponse.value?.data || []
+})
+
+useSeoMeta({
+  title: `${pageData.hero.title} - Portal Resmi Warga`,
+  ogTitle: `${pageData.hero.title} - Portal Resmi Warga`,
+  description: pageData.hero.location,
+  ogDescription: `Selamat datang di portal informasi resmi ${pageData.hero.title}. Dapatkan informasi pengumuman dan agenda kegiatan terbaru di lingkungan kami.`,
+  ogImage: pageData.hero.bgImage,
+  twitterCard: 'summary_large_image',
+  ogUrl: 'https://rw11bukitwahid.com'
+})
+
+definePageMeta({
+  layout: 'landingpage'
+})
 </script>
 
 <template>
@@ -179,10 +171,10 @@ const isUrl = (str: string) => str.startsWith('http')
           <div class="relative group">
             <div
               class="absolute -bottom-6 -left-6 w-32 h-32 border-l-4 border-b-4 border-primary-500/30 rounded-bl-3xl"
-            ></div>
+            />
             <div
               class="absolute -top-6 -right-6 w-32 h-32 border-r-4 border-t-4 border-primary-100 rounded-tr-3xl"
-            ></div>
+            />
 
             <div
               class="absolute -top-4 -left-4 w-12 h-12 bg-primary-600 rounded-full flex items-center justify-center shadow-lg z-10"
@@ -228,13 +220,10 @@ const isUrl = (str: string) => str.startsWith('http')
             >Lihat Semua</UButton
           >
         </div>
-        <UCarousel
-          v-slot="{ item }"
-          :items="pageData.announcements"
-          :ui="carouselUi"
-        >
+        <UCarousel v-slot="{ item }" :items="announcements" :ui="carouselUi">
           <div
-            class="bg-white rounded-2xl border border-neutral-200 overflow-hidden group h-full"
+            class="bg-white cursor-pointer rounded-2xl border border-neutral-200 overflow-hidden group h-full"
+            @click="navigateTo(`/warga/pengumuman/${item.id}`)"
           >
             <div class="overflow-hidden aspect-video">
               <img
@@ -275,7 +264,7 @@ const isUrl = (str: string) => str.startsWith('http')
             >Lihat Semua</UButton
           >
         </div>
-        <UCarousel v-slot="{ item }" :items="pageData.events" :ui="carouselUi">
+        <UCarousel v-slot="{ item }" :items="events" :ui="carouselUi">
           <div
             class="bg-white border-2 border-neutral-100 rounded-2xl p-6 flex flex-col justify-between h-full hover:border-primary-500 transition-colors shadow-sm"
           >

@@ -67,7 +67,7 @@ const getData = async () => {
     const res = await useApi<any>('/voting', {
       params: {
         page: pagination.value.current_page,
-        per_page: pagination.value.per_page,
+        limit: pagination.value.per_page,
         status: selectedStatus.value
       }
     })

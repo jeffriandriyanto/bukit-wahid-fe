@@ -165,7 +165,6 @@
                   :to="CONFIG.whatsapp"
                   icon="i-lucide-message-circle"
                   label="WhatsApp Admin"
-                  variant="ghost"
                   color="neutral"
                   class="-ml-2.5 text-neutral-400 hover:text-white"
                 />
@@ -175,7 +174,6 @@
                   :to="`mailto:${CONFIG.email}`"
                   icon="i-lucide-mail"
                   :label="CONFIG.email"
-                  variant="ghost"
                   color="neutral"
                   class="-ml-2.5 text-neutral-400 hover:text-white"
                 />
@@ -281,12 +279,12 @@ const navigationItems = [
         icon: 'i-lucide-calendar-clock',
         description: 'Jadwal pertemuan dan kegiatan mendatang.'
       },
-      {
-        label: 'Iuran Kas',
-        to: '/warga/kas',
-        icon: 'i-lucide-receipt-japanese-yen', // atau i-lucide-banknote
-        description: 'Pantau laporan keuangan kas secara transparan.'
-      },
+      // {
+      //   label: 'Iuran Kas',
+      //   to: '/warga/kas',
+      //   icon: 'i-lucide-receipt-japanese-yen', // atau i-lucide-banknote
+      //   description: 'Pantau laporan keuangan kas secara transparan.'
+      // },
       {
         label: 'Galeri',
         to: '/warga/galeri',

@@ -1,17 +1,13 @@
 <template>
-  <UContainer class="py-12 space-y-12">
+  <UContainer class="py-12 space-y-2">
     <header
-      class="max-w-3xl mx-auto p-8 rounded-2xl bg-neutral-50/50 border border-neutral-200/60 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]"
+      class="w-full text-white mx-auto p-4 rounded-2xl bg-primary-600 border border-neutral-200/60 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]"
     >
       <div class="flex flex-col items-center gap-2">
-        <div class="w-12 h-1 bg-primary-500 rounded-full mb-2"></div>
-
-        <h1
-          class="text-xl md:text-2xl font-bold text-neutral-800 uppercase tracking-wide"
-        >
+        <h1 class="text-xl md:text-2xl font-bold uppercase tracking-wide">
           {{ pageData.title }}
         </h1>
-        <p class="text-neutral-500 text-sm text-center leading-snug italic">
+        <p class="text-sm text-center leading-snug italic">
           "{{ pageData.subtitle }}"
         </p>
       </div>
@@ -22,9 +18,9 @@
     >
       <div class="flex items-center gap-2">
         <span class="text-2xl font-bold text-primary-500">{{
-          filteredAgendas.length
+          allAgendas.length
         }}</span>
-        <span class="text-neutral-400 font-medium">Agenda</span>
+        <span class="text-neutral-400 font-medium">Agenda Terkumpul</span>
       </div>
 
       <div class="flex gap-3 w-full md:w-auto">
@@ -34,23 +30,26 @@
           placeholder="Cari agenda..."
           color="neutral"
           class="grow md:w-64"
+          @update:model-value="onFilterChange"
         />
         <USelectMenu
-          v-model="selectedCategory"
-          :options="categories"
-          placeholder="Filter"
-          color="neutral"
-          class="w-40"
+          v-model="selectedRT"
+          placeholder="Filter RT"
+          :items="dropdownRT"
+          value-key="key"
+          label-key="label"
+          class="w-48"
+          @update:model-value="onFilterChange"
         />
       </div>
     </div>
 
     <div
-      v-if="filteredAgendas.length > 0"
+      v-if="allAgendas.length > 0"
       class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
     >
       <UCard
-        v-for="item in filteredAgendas"
+        v-for="item in allAgendas"
         :key="item.id"
         :ui="{
           root: 'overflow-hidden group hover:ring-2 hover:ring-primary-500 transition-all duration-300',
@@ -102,7 +101,7 @@
                 v-else
                 :to="item.location"
                 target="_blank"
-                class="text-neutral-600 italic"
+                class="text-primary-600 italic font-bold hover:underline"
               >
                 Klik Link Lokasi / Meeting
               </NuxtLink>
@@ -128,24 +127,36 @@
     </div>
 
     <div
-      v-else
-      class="flex flex-col items-center justify-center py-20 border-2 border-dashed border-neutral-800 rounded-3xl"
+      v-else-if="status !== 'pending'"
+      class="flex flex-col items-center justify-center py-20 border-2 border-dashed border-neutral-200 rounded-3xl"
     >
       <UIcon
         name="i-lucide-calendar-x"
-        class="w-12 h-12 text-neutral-700 mb-4"
+        class="w-12 h-12 text-neutral-300 mb-4"
       />
       <p class="text-neutral-500 font-medium">
         Tidak ada agenda yang ditemukan.
       </p>
     </div>
+
+    <div v-if="hasMore" class="flex justify-center pt-8">
+      <UButton
+        :loading="status === 'pending'"
+        variant="ghost"
+        color="primary"
+        class="px-10 py-3 rounded-full border-2 border-primary-500 font-bold hover:bg-primary-50 transition-all"
+        @click="loadMore"
+      >
+        Tampilkan Lebih Banyak
+      </UButton>
+    </div>
   </UContainer>
 </template>
 
 <script setup lang="ts">
-definePageMeta({
-  layout: 'landingpage'
-})
+const { dropdownRT, getDropdownRT } = useApiDropdown()
+
+const config = useRuntimeConfig()
 
 interface AgendaItem {
   id: string
@@ -157,9 +168,16 @@ interface AgendaItem {
   fors: { id: string; name: string }[]
 }
 
+definePageMeta({
+  layout: 'landingpage'
+})
+
+// --- State ---
+const currentPage = ref(1)
+const perPage = 6
+const allAgendas = ref<AgendaItem[]>([])
 const searchQuery = ref('')
-const selectedCategory = ref('Semua')
-const categories = ['Semua', 'RT 01', 'RT 04', 'Umum']
+const selectedRT = ref('Semua')
 
 const pageData = reactive({
   title: 'Agenda dan Kegiatan',
@@ -167,91 +185,65 @@ const pageData = reactive({
     'Jungle Toon Bukit Wahid Regency Manyaran Semarang Barat, Kota Semarang.'
 })
 
-// 5 Dummy Data
-const events = ref<AgendaItem[]>([
-  {
-    id: '1',
-    title: 'Pertemuan Rutin RT 04',
-    location: 'Rumah Bapak Ketua RT 04 (Blok A-12)',
-    description:
-      'Membahas persiapan fogging lingkungan dan iuran sampah bulanan.',
-    start_date: '2026-02-25',
-    start_time: '19:30',
-    fors: [{ id: '1', name: 'RT 04' }]
-  },
-  {
-    id: '2',
-    title: 'Rapat Koordinasi Pengurus RW',
-    location: 'https://zoom.us/j/987654321',
-    description:
-      'Finalisasi program kerja tahunan dan laporan keuangan koperasi.',
-    start_date: '2026-03-01',
-    start_time: '20:00',
-    fors: [{ id: '4', name: 'Semua Pengurus' }]
-  },
-  {
-    id: '3',
-    title: 'Kerja Bakti Massal',
-    location: 'Area Taman Utama Bukit Wahid',
-    description:
-      'Pembersihan selokan menjelang musim hujan dan penanaman pohon.',
-    start_date: '2026-03-05',
-    start_time: '07:00',
-    fors: [
-      { id: '5', name: 'Umum' },
-      { id: '1', name: 'RT 01' }
-    ]
-  },
-  {
-    id: '4',
-    title: 'Sosialisasi Keamanan Digital',
-    location: 'https://meet.google.com/abc-defg-hij',
-    description: 'Edukasi keamanan data warga dan penggunaan aplikasi RW.',
-    start_date: '2026-03-10',
-    start_time: '19:00',
-    fors: [{ id: '5', name: 'Umum' }]
-  },
-  {
-    id: '5',
-    title: 'Posyandu Balita & Lansia',
-    location: 'Balai Warga RW 11',
-    description:
-      'Pemeriksaan kesehatan gratis rutin bulanan dan pemberian vitamin.',
-    start_date: '2026-03-15',
-    start_time: '08:30',
-    fors: [{ id: '5', name: 'Umum' }]
-  }
-])
-
-// Filter Logic
-const filteredAgendas = computed(() => {
-  return events.value.filter((item) => {
-    const sQuery = searchQuery.value.toLowerCase().trim()
-
-    // Filter by Search
-    const matchSearch =
-      item.title.toLowerCase().includes(sQuery) ||
-      item.description.toLowerCase().includes(sQuery)
-
-    // Filter by Category (Target Audience / Fors)
-    const matchCategory =
-      selectedCategory.value === 'Semua' ||
-      item.fors.some((f) => f.name === selectedCategory.value)
-
-    return matchSearch && matchCategory
-  })
+// --- SEO ---
+useSeoMeta({
+  title: `${pageData.title} - RW 11 Bukit Wahid Regency`,
+  ogTitle: pageData.title,
+  description: pageData.subtitle,
+  ogDescription: pageData.subtitle,
+  twitterCard: 'summary_large_image'
 })
 
-// Helpers
-const isLink = (str: string) => {
-  return str.startsWith('http') || str.startsWith('https')
+// --- Data Fetching ---
+
+const { data: agendaResponse, status } = await useFetch<any>('/agenda', {
+  baseURL: config.public.baseUrl,
+  query: {
+    page: currentPage,
+    limit: perPage,
+    search: searchQuery,
+    rt: computed(() =>
+      selectedRT.value === 'Semua' ? '' : selectedRT.value
+    )
+  },
+  key: 'agenda-list'
+})
+
+// Update List Agenda
+watch(
+  agendaResponse,
+  (newData) => {
+    if (newData?.data) {
+      if (currentPage.value === 1) {
+        allAgendas.value = newData.data
+      } else {
+        const newItems = newData.data.filter(
+          (newItem: AgendaItem) =>
+            !allAgendas.value.some((oldItem) => oldItem.id === newItem.id)
+        )
+        allAgendas.value.push(...newItems)
+      }
+    }
+  },
+  { immediate: true }
+)
+
+const onFilterChange = () => {
+  currentPage.value = 1
 }
 
-const formatDate = (dateStr: string) => {
-  return new Date(dateStr).toLocaleDateString('id-ID', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  })
+const hasMore = computed(() => {
+  if (!agendaResponse.value) return false
+  return (agendaResponse.value?.data?.length || 0) >= perPage
+})
+
+const loadMore = () => {
+  currentPage.value++
 }
+
+// --- Helpers ---
+const isLink = (str: string) =>
+  str.startsWith('http') || str.startsWith('https')
+
+onMounted(() => getDropdownRT())
 </script>

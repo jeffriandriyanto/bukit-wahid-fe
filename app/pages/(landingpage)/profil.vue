@@ -1,5 +1,5 @@
 <template>
-  <UContainer class="py-12 space-y-12">
+  <UContainer class="py-12">
     <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
       <div class="lg:col-span-8 space-y-8">
         <UCard>

@@ -142,7 +142,7 @@ const getData = async () => {
       params: {
         search: search.value,
         page: pagination.value.current_page,
-        per_page: pagination.value.per_page
+        limit: pagination.value.per_page
       },
       method: 'GET'
     })

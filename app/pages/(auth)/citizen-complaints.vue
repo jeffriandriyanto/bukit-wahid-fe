@@ -62,7 +62,7 @@ const getData = async () => {
     const res = await useApi<any>('/complaint', {
       params: {
         page: pagination.value.current_page,
-        per_page: pagination.value.per_page,
+        limit: pagination.value.per_page,
         status: selectedStatus.value ?? '', // Handle null to empty string for API
         category: selectedCategory.value ?? ''
       }
