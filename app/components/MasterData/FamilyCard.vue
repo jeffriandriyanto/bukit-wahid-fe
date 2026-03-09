@@ -216,59 +216,58 @@ const columnsFamilyTable = [
   <div class="space-y-4 py-4">
     <ConfirmDialog />
 
-    <div
-      class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm space-y-4"
-    >
-      <div
-        class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4"
+    <SharedHeaderBg>
+      <USelectMenu
+        v-model="selectedRT"
+        placeholder="Filter RT"
+        :items="dropdownRT"
+        value-key="key"
+        label-key="label"
+        class="w-48"
+        clear
+        @change="getData"
+      />
+      <UButton
+        color="neutral"
+        icon="i-lucide-plus-circle"
+        @click="openAddModal"
       >
-        <USelectMenu
-          v-model="selectedRT"
-          placeholder="Filter RT"
-          :items="dropdownRT"
-          value-key="key"
-          label-key="label"
-          class="w-48"
-          @change="getData"
-        />
-        <UButton
-          color="neutral"
-          icon="i-lucide-plus-circle"
-          @click="openAddModal"
-        >
-          Tambah Keluarga
-        </UButton>
-      </div>
+        Tambah Keluarga
+      </UButton>
+    </SharedHeaderBg>
+
+    <div
+      class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm"
+    >
+      <UTable
+        :data="dataFamilyCard"
+        :columns="columnsFamilyTable"
+        :loading="loading"
+      >
+        <template #action-cell="{ row }">
+          <div class="flex gap-1">
+            <UButton
+              icon="i-lucide-pencil"
+              variant="ghost"
+              @click="openEditModal(row.original)"
+            />
+            <UButton
+              icon="i-lucide-trash-2"
+              variant="ghost"
+              color="error"
+              @click="confirmDelete(row.original.id)"
+            />
+          </div>
+        </template>
+      </UTable>
     </div>
 
-    <UTable
-      :data="dataFamilyCard"
-      :columns="columnsFamilyTable"
-      :loading="loading"
-    >
-      <template #action-cell="{ row }">
-        <div class="flex gap-1">
-          <UButton
-            icon="i-lucide-pencil"
-            variant="ghost"
-            @click="openEditModal(row.original)"
-          />
-          <UButton
-            icon="i-lucide-trash-2"
-            variant="ghost"
-            color="error"
-            @click="confirmDelete(row.original.id)"
-          />
-        </div>
-      </template>
-    </UTable>
-
-    <div class="flex justify-end border-t border-default pt-4 px-4">
+    <div class="flex justify-end">
       <UPagination
         v-model:page="pagination.current_page"
         :total="pagination.total"
         :items-per-page="pagination.per_page"
-        :max="5"
+        :max="10"
         @update:page="getData"
       />
     </div>

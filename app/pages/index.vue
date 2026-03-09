@@ -79,16 +79,6 @@ const events = computed<AgendaItem[]>(() => {
   return agendaResponse.value?.data || []
 })
 
-useSeoMeta({
-  title: `${pageData.hero.title} - Portal Resmi Warga`,
-  ogTitle: `${pageData.hero.title} - Portal Resmi Warga`,
-  description: pageData.hero.location,
-  ogDescription: `Selamat datang di portal informasi resmi ${pageData.hero.title}. Dapatkan informasi pengumuman dan agenda kegiatan terbaru di lingkungan kami.`,
-  ogImage: pageData.hero.bgImage,
-  twitterCard: 'summary_large_image',
-  ogUrl: 'https://rw11bukitwahid.com'
-})
-
 definePageMeta({
   layout: 'landingpage'
 })

@@ -41,22 +41,32 @@ export const sidebarItems: SidebarItem[] = [
     icon: 'i-lucide-credit-card',
     to: '/online-payment'
   },
-  {
-    label: 'Laporan Keuangan',
-    icon: 'i-lucide-banknote',
-    to: '/financial-statements'
-  },
+  // {
+  //   label: 'Laporan Keuangan',
+  //   icon: 'i-lucide-banknote',
+  //   to: '/financial-statements'
+  // },
   {
     label: 'Pengaduan Warga',
     icon: 'i-lucide-message-square-warning',
     to: '/citizen-complaints'
   },
-  // {
-  //   label: 'Panic Button',
-  //   icon: 'i-lucide:triangle-alert',
-  //   to: '/panic-button'
-  // },
-
+  {
+    label: 'Tagihan',
+    icon: 'i-lucide-receipt-text',
+    children: [
+      {
+        label: 'Laporan',
+        icon: 'i-lucide-file-text',
+        to: '/bill/report'
+      },
+      {
+        label: 'Master Tagihan',
+        icon: 'i-lucide-database',
+        to: '/bill/master'
+      }
+    ]
+  },
   {
     label: 'E-Voting',
     icon: 'i-lucide-vote',

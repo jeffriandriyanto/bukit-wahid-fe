@@ -26,3 +26,21 @@ export const fileDelete = async (file_url: string) => {
     console.error('Delete Error:', e);
   }
 }
+
+export const fileUploadFinance = async (file: File) => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const res = await useApi<any>('/finance/pdam/file', {
+      method: 'POST',
+      body: formData
+    })
+
+    if (res.status === 1) return res.data;
+    return null;
+  } catch (e) {
+    console.error('Upload Error:', e);
+    return null;
+  }
+}

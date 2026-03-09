@@ -34,6 +34,7 @@
         />
         <USelectMenu
           v-model="selectedRT"
+          clear
           placeholder="Filter RT"
           :items="dropdownRT"
           value-key="key"

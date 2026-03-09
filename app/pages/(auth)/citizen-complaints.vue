@@ -124,18 +124,9 @@ onMounted(() => {
   <div class="space-y-4">
     <ConfirmDialog />
 
-    <div
-      class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm space-y-4"
-    >
-      <div
-        class="flex flex-col md:flex-row justify-start items-start md:items-end gap-4"
-      >
+    <SharedHeaderBg>
+      <div class="flex gap-4">
         <div v-if="statusOptions.length > 0" class="w-64">
-          <label
-            class="text-[10px] font-bold text-gray-400 uppercase mb-1 block"
-          >
-            Filter Status
-          </label>
           <USelect
             :key="statusOptions.length"
             v-model="selectedStatus"
@@ -148,11 +139,9 @@ onMounted(() => {
         </div>
 
         <div v-if="categoryOptions.length > 0" class="w-64">
-          <label
-            class="text-[10px] font-bold text-gray-400 uppercase mb-1 block"
-          >
-            Filter Kategori
-          </label>
+          <!-- <label class="text-[10px] font-bold text-gray-400 uppercase mb-1 block">
+          Filter Kategori
+        </label> -->
           <USelect
             :key="categoryOptions.length"
             v-model="selectedCategory"
@@ -164,58 +153,64 @@ onMounted(() => {
           />
         </div>
       </div>
+    </SharedHeaderBg>
+
+    <div
+      class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm"
+    >
+      <UTable
+        :data="dataSubmission"
+        :columns="submissionTable"
+        :loading="loading"
+      >
+        <template #description-cell="{ row }">
+          <div class="truncate max-w-56 font-medium">
+            {{ row.original.description }}
+          </div>
+          <div class="text-xs text-gray-400 italic">
+            {{ getCategoryLabel(row.original.category) }}
+          </div>
+        </template>
+
+        <template #created_at-cell="{ row }">
+          <div class="text-sm">
+            {{ formatDateTime(row.original.created_at) }}
+          </div>
+        </template>
+
+        <template #status-cell="{ row }">
+          <UBadge
+            v-if="row.original.status === 'progress'"
+            color="warning"
+            variant="subtle"
+            >Sedang ditangani</UBadge
+          >
+          <UBadge
+            v-else-if="row.original.status === 'closed'"
+            color="success"
+            variant="subtle"
+            >Selesai</UBadge
+          >
+          <UBadge
+            v-else-if="row.original.status === 'open'"
+            color="error"
+            variant="subtle"
+            >Perlu Tindakan</UBadge
+          >
+        </template>
+
+        <template #action-cell="{ row }">
+          <UButton
+            icon="i-heroicons-eye"
+            variant="ghost"
+            color="neutral"
+            @click="openDetail(row.original)"
+          />
+        </template>
+      </UTable>
     </div>
 
-    <UTable
-      :data="dataSubmission"
-      :columns="submissionTable"
-      :loading="loading"
-    >
-      <template #description-cell="{ row }">
-        <div class="truncate max-w-56 font-medium">
-          {{ row.original.description }}
-        </div>
-        <div class="text-xs text-gray-400 italic">
-          {{ getCategoryLabel(row.original.category) }}
-        </div>
-      </template>
-
-      <template #created_at-cell="{ row }">
-        <div class="text-sm">{{ formatDateTime(row.original.created_at) }}</div>
-      </template>
-
-      <template #status-cell="{ row }">
-        <UBadge
-          v-if="row.original.status === 'progress'"
-          color="warning"
-          variant="subtle"
-          >Sedang ditangani</UBadge
-        >
-        <UBadge
-          v-else-if="row.original.status === 'closed'"
-          color="success"
-          variant="subtle"
-          >Selesai</UBadge
-        >
-        <UBadge
-          v-else-if="row.original.status === 'open'"
-          color="error"
-          variant="subtle"
-          >Perlu Tindakan</UBadge
-        >
-      </template>
-
-      <template #action-cell="{ row }">
-        <UButton
-          icon="i-heroicons-eye"
-          variant="ghost"
-          color="neutral"
-          @click="openDetail(row.original)"
-        />
-      </template>
-    </UTable>
-
-    <div class="flex justify-end border-t border-gray-200 pt-4 px-4">
+    <div class="flex justify-end">
       <UPagination
         v-model:page="pagination.current_page"
         :total="pagination.total"

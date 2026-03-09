@@ -1,5 +1,6 @@
 export interface SidebarItem {
   label: string
-  to: string
   icon: string
+  to?: string
+  children?: SidebarItem[]
 }

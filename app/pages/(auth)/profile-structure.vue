@@ -277,7 +277,7 @@ definePageMeta({
 </script>
 
 <template>
-  <div class="w-full">
+  <div class="w-full space-y-4">
     <ConfirmDialog />
 
     <!-- MODAL FORM -->
@@ -357,37 +357,31 @@ definePageMeta({
       </template>
     </UModal>
 
-    <div
-      class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm space-y-4 mb-4"
-    >
-      <div
-        class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4"
-      >
-        <div class="flex gap-2">
-          <UButton
-            v-if="activeTab == '1'"
-            color="neutral"
-            variant="solid"
-            icon="mdi:account-group"
-            @click="isOpenOrganization = true"
-          >
-            Lihat Struktur
-          </UButton>
-
-          <UButton color="neutral" variant="outline" icon="i-lucide-download">
-            Download
-          </UButton>
-        </div>
-
+    <SharedHeaderBg>
+      <div class="flex gap-2">
         <UButton
+          v-if="activeTab == '1'"
           color="neutral"
-          icon="mdi-plus-circle-outline"
-          @click="openAddModal()"
+          variant="solid"
+          icon="mdi:account-group"
+          @click="isOpenOrganization = true"
         >
-          Tambah Struktur
+          Lihat Struktur
+        </UButton>
+
+        <UButton color="neutral" variant="outline" icon="i-lucide-download">
+          Download
         </UButton>
       </div>
-    </div>
+
+      <UButton
+        color="neutral"
+        icon="mdi-plus-circle-outline"
+        @click="openAddModal()"
+      >
+        Tambah Struktur
+      </UButton>
+    </SharedHeaderBg>
 
     <!-- MODAL FORM ASSIGN -->
     <UModal v-model:open="isOpenAssign" size="md" class="w-full">
@@ -550,6 +544,7 @@ definePageMeta({
             :search-input="{
               placeholder: 'Cari nama RT'
             }"
+            clear
             :items="dropdownRT"
             value-key="key"
             searchable

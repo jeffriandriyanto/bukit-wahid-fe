@@ -194,42 +194,36 @@ const columnsFamilyTable = [
   <div class="space-y-4 py-4">
     <ConfirmDialog />
 
-    <div
-      class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm space-y-4"
-    >
-      <div
-        class="flex flex-col md:flex-row justify-start items-start md:items-end gap-4"
-      >
-        <USelectMenu
-          v-model="selectedRT"
-          placeholder="Pilih RT"
-          :search-input="{
-            placeholder: 'Cari RT RT'
-          }"
-          :items="dropdownRT"
-          value-key="key"
-          label-key="label"
-          searchable
-          class="w-40"
-          @change="getDropdownResidenceType(selectedRT)"
-        />
+    <SharedHeaderBg>
+      <USelectMenu
+        v-model="selectedRT"
+        placeholder="Pilih RT"
+        :search-input="{
+          placeholder: 'Cari RT RT'
+        }"
+        :items="dropdownRT"
+        value-key="key"
+        label-key="label"
+        clear
+        searchable
+        class="w-40"
+        @change="getDropdownResidenceType(selectedRT)" />
 
-        <USelectMenu
-          v-model="selectedKavling"
-          placeholder="Pilih tipe kavling"
-          :disabled="!selectedRT"
-          :search-input="{
-            placeholder: 'Cari tipe kavling'
-          }"
-          :items="dropdownResidenceType"
-          value-key="key"
-          label-key="label"
-          searchable
-          class="w-40"
-          @change="getData"
-        />
-      </div>
-    </div>
+      <USelectMenu
+        v-model="selectedKavling"
+        placeholder="Pilih tipe kavling"
+        :disabled="!selectedRT"
+        :search-input="{
+          placeholder: 'Cari tipe kavling'
+        }"
+        clear
+        :items="dropdownResidenceType"
+        value-key="key"
+        label-key="label"
+        searchable
+        class="w-40"
+        @change="getData"
+    /></SharedHeaderBg>
 
     <UTable
       ref="table"
@@ -272,7 +266,7 @@ const columnsFamilyTable = [
         v-model:page="pagination.current_page"
         :total="pagination.total"
         :items-per-page="pagination.per_page"
-        :max="5"
+        :max="10"
         @update:page="getData"
       />
     </div>

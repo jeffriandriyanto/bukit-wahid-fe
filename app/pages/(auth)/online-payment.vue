@@ -5,5 +5,5 @@ definePageMeta({
 </script>
 
 <template>
-  <div>Online Payment</div>
+  <div>Coming Soon</div>
 </template>

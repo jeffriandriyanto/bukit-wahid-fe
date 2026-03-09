@@ -290,135 +290,132 @@ onMounted(() => {
   <div class="space-y-4">
     <ConfirmDialog />
 
-    <div
-      class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm space-y-4"
-    >
-      <div
-        class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4"
-      >
-        <div class="w-full md:w-80">
-          <UFormField>
-            <UInput
-              v-model="search"
-              icon="i-lucide-search"
-              placeholder="Cari Nama..."
-              size="md"
-              block
-            />
-          </UFormField>
-        </div>
+    <SharedHeaderBg>
+      <div class="w-full md:w-80">
+        <UFormField>
+          <UInput
+            v-model="search"
+            icon="i-lucide-search"
+            placeholder="Cari Nama..."
+            block
+          />
+        </UFormField>
+      </div>
 
-        <div class="flex gap-2">
-          <!-- <UButton
+      <div class="flex gap-2">
+        <!-- <UButton
             color="neutral"
             variant="outline"
             icon="i-lucide-download"
             label="Export"
           /> -->
-          <UButton
-            color="primary"
-            icon="i-lucide-plus-circle"
-            label="Tambah Warga"
-            @click="openAddModal"
-          />
-        </div>
+        <UButton
+          color="primary"
+          icon="i-lucide-plus-circle"
+          label="Tambah Warga"
+          @click="openAddModal"
+        />
       </div>
-    </div>
+    </SharedHeaderBg>
 
-    <UTable
-      :data="dataCitizen"
-      :columns="columnsFamilyTable"
-      :loading="loading"
+    <div
+      class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm"
     >
-      <template #name-cell="{ row }">
-        <div class="flex items-center gap-3 py-1">
-          <UAvatar
-            :src="row.original.avatar"
-            :alt="row.original.name"
-            size="md"
-            class="bg-gray-100"
-          />
-          <div class="flex flex-col">
-            <span class="font-bold text-gray-900 leading-tight">{{
-              row.original.name
-            }}</span>
-            <span class="text-xs text-gray-500"
-              >{{ getAge(row.original.dob) }} Tahun</span
-            >
+      <UTable
+        :data="dataCitizen"
+        :columns="columnsFamilyTable"
+        :loading="loading"
+      >
+        <template #name-cell="{ row }">
+          <div class="flex items-center gap-3 py-1">
+            <UAvatar
+              :src="row.original.avatar"
+              :alt="row.original.name"
+              size="md"
+              class="bg-gray-100"
+            />
+            <div class="flex flex-col">
+              <span class="font-bold text-gray-900 leading-tight">{{
+                row.original.name
+              }}</span>
+              <span class="text-xs text-gray-500"
+                >{{ getAge(row.original.dob) }} Tahun</span
+              >
+            </div>
           </div>
-        </div>
-      </template>
+        </template>
 
-      <template #ttl-cell="{ row }">
-        <div class="flex flex-col text-sm">
-          <span class="text-gray-700 font-medium">{{
-            row.original.pob || '-'
-          }}</span>
-          <span class="text-xs text-gray-400">
-            {{
-              row.original.dob
-                ? new Date(row.original.dob).toLocaleDateString('id-ID', {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric'
-                  })
-                : '-'
-            }}
-          </span>
-        </div>
-      </template>
+        <template #ttl-cell="{ row }">
+          <div class="flex flex-col text-sm">
+            <span class="text-gray-700 font-medium">{{
+              row.original.pob || '-'
+            }}</span>
+            <span class="text-xs text-gray-400">
+              {{
+                row.original.dob
+                  ? new Date(row.original.dob).toLocaleDateString('id-ID', {
+                      day: 'numeric',
+                      month: 'short',
+                      year: 'numeric'
+                    })
+                  : '-'
+              }}
+            </span>
+          </div>
+        </template>
 
-      <template #gender-cell="{ row }">
-        <UBadge
-          v-if="row.original.gender"
-          :color="row.original.gender === 'L' ? 'primary' : 'secondary'"
-          variant="soft"
-          size="sm"
-          class="font-bold"
-        >
-          {{ row.original.gender === 'L' ? 'Laki-laki' : 'Perempuan' }}
-        </UBadge>
-        <span v-else>-</span>
-      </template>
+        <template #gender-cell="{ row }">
+          <UBadge
+            v-if="row.original.gender"
+            :color="row.original.gender === 'L' ? 'primary' : 'secondary'"
+            variant="soft"
+            size="sm"
+            class="font-bold"
+          >
+            {{ row.original.gender === 'L' ? 'Laki-laki' : 'Perempuan' }}
+          </UBadge>
+          <span v-else>-</span>
+        </template>
 
-      <template #blood_type-cell="{ row }">
-        <div>
-          {{ row.original.blood_type || '-' }}
-        </div>
-      </template>
+        <template #blood_type-cell="{ row }">
+          <div>
+            {{ row.original.blood_type || '-' }}
+          </div>
+        </template>
 
-      <template #type-cell="{ row }">
-        <div
-          class="flex items-center gap-1.5 capitalize text-xs font-medium text-gray-600"
-        >
-          <div class="w-1.5 h-1.5 rounded-full bg-green-500"></div>
-          {{ row.original.type }}
-        </div>
-      </template>
+        <template #type-cell="{ row }">
+          <div
+            class="flex items-center gap-1.5 capitalize text-xs font-medium text-gray-600"
+          >
+            <div class="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+            {{ row.original.type }}
+          </div>
+        </template>
 
-      <template #action-cell="{ row }">
-        <div class="flex justify-end gap-1">
-          <UTooltip text="Edit Data">
-            <UButton
-              icon="i-lucide-pencil"
-              variant="ghost"
-              color="neutral"
-              size="sm"
-              @click="openEditModal(row.original)"
-            />
-          </UTooltip>
-          <UTooltip text="Hapus Data">
-            <UButton
-              icon="i-lucide-trash-2"
-              variant="ghost"
-              color="error"
-              size="sm"
-              @click="confirmDelete(row.original.id)"
-            />
-          </UTooltip>
-        </div>
-      </template>
-    </UTable>
+        <template #action-cell="{ row }">
+          <div class="flex justify-end gap-1">
+            <UTooltip text="Edit Data">
+              <UButton
+                icon="i-lucide-pencil"
+                variant="ghost"
+                color="neutral"
+                size="sm"
+                @click="openEditModal(row.original)"
+              />
+            </UTooltip>
+            <UTooltip text="Hapus Data">
+              <UButton
+                icon="i-lucide-trash-2"
+                variant="ghost"
+                color="error"
+                size="sm"
+                @click="confirmDelete(row.original.id)"
+              />
+            </UTooltip>
+          </div>
+        </template>
+      </UTable>
+    </div>
 
     <UModal v-model:open="isOpen" :ui="{ content: 'min-w-4xl' }">
       <template #header>
@@ -518,7 +515,7 @@ onMounted(() => {
       </template>
     </UModal>
 
-    <div class="flex justify-end border-t border-default pt-4 px-4">
+    <div class="flex justify-end">
       <UPagination
         v-model:page="pagination.current_page"
         :total="pagination.total"

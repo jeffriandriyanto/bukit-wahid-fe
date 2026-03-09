@@ -1,9 +1,19 @@
 <template>
   <UContainer class="py-12 space-y-8">
-
-    <div
-      class="flex flex-col md:flex-row gap-4 justify-between items-center"
+    <header
+      class="w-full text-white mx-auto p-4 rounded-2xl bg-primary-600 border border-neutral-200/60 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]"
     >
+      <div class="flex flex-col items-center gap-2">
+        <h1 class="text-xl md:text-2xl font-bold uppercase tracking-wide">
+          {{ pageData.title }}
+        </h1>
+        <p class="text-sm text-center leading-snug italic">
+          "{{ pageData.subtitle }}"
+        </p>
+      </div>
+    </header>
+
+    <div class="flex flex-col md:flex-row gap-4 justify-between items-center">
       <div class="flex items-center gap-2">
         <span class="text-2xl font-bold text-primary-500">{{
           filteredRows.length
@@ -41,19 +51,22 @@
       }"
     >
       <template #category-data="{ row }">
-        <span class="font-bold text-white whitespace-nowrap">{{
-          row.original.category
-        }}</span>
+        <UBadge
+          :color="
+            row.original.category === 'Jangka Pendek' ? 'primary' : 'warning'
+          "
+          variant="subtle"
+          size="xs"
+          class="font-semibold uppercase tracking-wider"
+        >
+          {{ row.original.category }}
+        </UBadge>
       </template>
 
-      <template #duration-data="{ row }">
-        <UBadge
-          variant="subtle"
-          color="neutral"
-          class="font-mono whitespace-nowrap"
-        >
-          {{ row.original.duration }}
-        </UBadge>
+      <template #work_program-data="{ row }">
+        <div class="font-bold text-neutral-900 min-w-37.5">
+          {{ row.original.work_program }}
+        </div>
       </template>
 
       <template #details-data="{ row }">
@@ -102,44 +115,35 @@ const pageData = reactive({
     'Jungle Toon Bukit Wahid Regency Manyaran Semarang Barat, Kota Semarang.'
 })
 
-// Column Definition sesuai dokumentasi Nuxt UI
 const columns = [
-  { accessorKey: 'category', header: 'Kategori', sortable: true },
-  { accessorKey: 'no', header: 'No' },
+  { accessorKey: 'category', header: 'Kategori' },
   { accessorKey: 'work_program', header: 'Program Kerja' },
   { accessorKey: 'duration', header: 'Waktu', sortable: true },
   { accessorKey: 'pic', header: 'PJ' },
   { accessorKey: 'details', header: 'Keterangan' }
 ]
 
-// Data Utama
 const programs = ref([
   {
     id: 1,
     category: 'Jangka Pendek',
-    work_program: 'Jangka Pendek',
+    work_program: 'Penguatan Internal & Legalitas', // Judul program, bukan nama kategori
     duration: '1 Tahun',
     pic: 'Ketua RW',
     details: [
       'Konsolidasi organisasi ke RW an dan EM.',
-      'Penyamaan persepsi, konsensus dan rekonsiliasi.',
       'Penyusunan Pedoman Rukun Warga XI BWR',
-      'Penggunaan SIM ke RW dan RT an',
-      'Fasilitasi Rapat Anggota Koperasi',
-      'Meminta pengelolaan'
+      'Penggunaan SIM ke RW dan RT an'
     ]
   },
   {
     id: 2,
     category: 'Jangka Panjang',
-    work_program: 'Jangka Panjang',
+    work_program: 'Pemberdayaan Ekonomi & Lingkungan',
     duration: '2 Tahun',
     pic: 'Ketua RW',
     details: [
       'Pemberdayaan Unit Koperasi agar profit meningkat.',
-      'Perencanaan kegiatan-kegiatan yang merukunkan warga.',
-      'Tercapai Standar Pelayanan EM 1x24 jam.',
-      'Solusi penyelesaian tunggakan IPL.',
       'Terbangunnya Apotik hidup untuk semua RT.'
     ]
   }

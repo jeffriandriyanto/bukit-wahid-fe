@@ -15,6 +15,9 @@ const isEditing = ref(false)
 const optionLoading = ref(false)
 const showAddOptionForm = ref(false)
 
+const isOpenVote = ref()
+const selectedVote = ref()
+
 // Image Files State (Raw Files)
 const mainImageFile = ref<File | null>(null)
 const newOptionImageFile = ref<File | null>(null)
@@ -123,7 +126,6 @@ const saveVoting = async () => {
 }
 
 // --- API ACTIONS: OPTIONS ---
-
 const getOptions = async (votingId: string) => {
   optionLoading.value = true
   try {
@@ -283,6 +285,43 @@ const getStatusColor = (start: string, end: string) => {
   return 'success'
 }
 
+const sortedVotingOptions = computed(() => {
+  return [...votingOptions.value].sort(
+    (a, b) => (b.votes_count || 0) - (a.votes_count || 0)
+  )
+})
+
+const chartData = computed(() => {
+  return votingOptions.value.map((opt) => ({
+    title: opt.title,
+    votes: opt.votes_count || 0
+  }))
+})
+
+const chartCategories = computed(() => ({
+  votes: {
+    name: 'Perolehan Suara',
+    color: '#3b82f6' // Default Blue
+  }
+}))
+
+const xFormatter = (i: number): string => chartData.value[i]?.title || ''
+const yFormatter = (tick: number) => Math.round(tick).toString()
+
+const viewVote = async (row: any) => {
+  isOpenVote.value = true
+  votingOptions.value = []
+  selectedVote.value = row
+  await getOptions(row.id)
+}
+
+// Tabel Columns (Tanpa Deskripsi)
+const resultTableColumns = [
+  { accessorKey: 'ranking', header: 'Ranking' },
+  { accessorKey: 'title', header: 'Nama Voting' },
+  { accessorKey: 'votes_count', header: 'Perolehan' }
+]
+
 onMounted(() => {
   getDropdownRT()
   getData()
@@ -291,65 +330,78 @@ onMounted(() => {
 
 <template>
   <div class="space-y-4">
-    <div
-      class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm space-y-4"
-    >
-      <div
-        class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4"
-      >
-        <div class="w-64">
-          <USelect
-            v-model="selectedStatus"
-            :items="statusOptions"
-            placeholder="Filter Status"
-            label-key="label"
-            value-key="key"
-            @update:model-value="
-              () => {
-                pagination.current_page = 1
-                getData()
-              }
-            "
-          />
-        </div>
-        <UButton
-          color="primary"
-          icon="i-lucide-plus-circle"
-          @click="openAddModal"
-          >Tambah E-Voting</UButton
-        >
+    <SharedHeaderBg>
+      <div class="w-64">
+        <USelect
+          v-model="selectedStatus"
+          :items="statusOptions"
+          placeholder="Filter Status"
+          label-key="label"
+          value-key="key"
+          @update:model-value="
+            () => {
+              pagination.current_page = 1
+              getData()
+            }
+          "
+        />
       </div>
+      <UButton color="primary" icon="i-lucide-plus-circle" @click="openAddModal"
+        >Tambah E-Voting</UButton
+      >
+    </SharedHeaderBg>
+
+    <div
+      class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm"
+    >
+      <UTable :data="dataVoting" :columns="votingTable" :loading="loading">
+        <template #title-cell="{ row }">
+          <div class="font-medium text-gray-900">{{ row.original.title }}</div>
+          <div class="text-xs text-gray-400 truncate max-w-xs">
+            {{ row.original.description }}
+          </div>
+        </template>
+
+        <template #end_date-cell="{ row }">
+          <div
+            :class="`text-sm font-semibold text-${getStatusColor(
+              row.original.start_date,
+              row.original.end_date
+            )}-500`"
+          >
+            {{ row.original.end_date }}
+          </div>
+          <div class="text-xs text-gray-400">
+            {{ row.original.end_time }} WIB
+          </div>
+        </template>
+
+        <template #action-cell="{ row }">
+          <UButton
+            icon="i-heroicons-pencil-square"
+            variant="ghost"
+            color="neutral"
+            @click="openDetail(row.original)"
+          />
+
+          <UButton
+            icon="i-heroicons-eye"
+            variant="soft"
+            color="neutral"
+            @click="viewVote(row.original)"
+          />
+        </template>
+      </UTable>
     </div>
 
-    <UTable :data="dataVoting" :columns="votingTable" :loading="loading">
-      <template #title-cell="{ row }">
-        <div class="font-medium text-gray-900">{{ row.original.title }}</div>
-        <div class="text-xs text-gray-400 truncate max-w-xs">
-          {{ row.original.description }}
-        </div>
-      </template>
-
-      <template #end_date-cell="{ row }">
-        <div
-          :class="`text-sm font-semibold text-${getStatusColor(
-            row.original.start_date,
-            row.original.end_date
-          )}-500`"
-        >
-          {{ row.original.end_date }}
-        </div>
-        <div class="text-xs text-gray-400">{{ row.original.end_time }} WIB</div>
-      </template>
-
-      <template #action-cell="{ row }">
-        <UButton
-          icon="i-heroicons-pencil-square"
-          variant="ghost"
-          color="neutral"
-          @click="openDetail(row.original)"
-        />
-      </template>
-    </UTable>
+    <div class="flex justify-end">
+      <UPagination
+        v-model:page="pagination.current_page"
+        :total="pagination.total"
+        :items-per-page="pagination.per_page"
+        @update:page="getData"
+      />
+    </div>
 
     <UModal v-model:open="isOpen" :ui="{ content: 'sm:max-w-3xl' }">
       <template #header>
@@ -466,7 +518,7 @@ onMounted(() => {
               <div
                 class="flex flex-col md:flex-row gap-4 items-start md:items-center"
               >
-                <div class="relative group h-20 w-20 flex-shrink-0">
+                <div class="relative group h-20 w-20 shrink-0">
                   <img
                     :src="
                       newOptionPreview ||
@@ -562,7 +614,13 @@ onMounted(() => {
                         type="file"
                         class="hidden"
                         accept="image/*"
-                        @change="(e) => handleOptionImageChange((e.target as HTMLInputElement).files![0], opt)"
+                        @change="
+                          (e) =>
+                            handleOptionImageChange(
+                              (e.target as HTMLInputElement).files![0],
+                              opt
+                            )
+                        "
                       />
                       <UIcon
                         name="i-lucide-camera"
@@ -640,13 +698,141 @@ onMounted(() => {
       </template>
     </UModal>
 
-    <div class="flex justify-end pt-4">
-      <UPagination
-        v-model:page="pagination.current_page"
-        :total="pagination.total"
-        :items-per-page="pagination.per_page"
-        @update:page="getData"
-      />
-    </div>
+    <UModal v-model:open="isOpenVote" :ui="{ content: 'sm:max-w-2xl' }">
+      <template #header>
+        <div class="flex flex-col px-2">
+          <span
+            class="text-xs text-gray-400 uppercase font-extrabold tracking-wider"
+            >Laporan Hasil E-Voting</span
+          >
+          <span class="text-xl font-bold text-gray-900">{{
+            selectedVote?.title
+          }}</span>
+        </div>
+      </template>
+
+      <template #body>
+        <div class="space-y-8">
+          <p class="text-xs text-gray-600">
+            {{ selectedVote?.description }}
+          </p>
+
+          <section class="bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
+            <h3
+              class="text-sm font-bold text-gray-600 mb-4 flex items-center gap-2"
+            >
+              <UIcon name="i-lucide-bar-chart-3" /> Visualisasi Perolehan
+            </h3>
+
+            <div class="h-64 w-full">
+              <ClientOnly>
+                <BarChart
+                  v-if="votingOptions.length > 0 && !optionLoading"
+                  :data="chartData"
+                  :height="280"
+                  :categories="chartCategories"
+                  :y-axis="['votes']"
+                  :x-formatter="xFormatter"
+                  :y-formatter="yFormatter"
+                  :radius="6"
+                  :x-num-ticks="votingOptions.length"
+                  :y-grid-line="true"
+                  :hide-legend="true"
+                />
+
+                <div
+                  v-else-if="optionLoading"
+                  class="h-full flex flex-col items-center justify-center gap-2"
+                >
+                  <UIcon
+                    name="i-lucide-loader-2"
+                    class="animate-spin text-2xl text-primary-500"
+                  />
+                  <p class="text-xs text-gray-400">Menarik data voting...</p>
+                </div>
+
+                <div
+                  v-else
+                  class="h-full flex items-center justify-center border-2 border-dashed rounded-xl bg-gray-50"
+                >
+                  <p class="text-xs text-gray-400">
+                    Belum ada data suara untuk ditampilkan
+                  </p>
+                </div>
+              </ClientOnly>
+            </div>
+          </section>
+
+          <section>
+            <h3
+              class="text-sm font-bold text-gray-600 mb-4 flex items-center gap-2 px-2"
+            >
+              <UIcon name="i-lucide-trophy" /> Detail Voting
+            </h3>
+            <UTable
+              :data="sortedVotingOptions"
+              :columns="resultTableColumns"
+              class="border rounded-xl overflow-hidden"
+              :ui="{
+                thead: 'bg-gray-100/80',
+                th: 'text-gray-900 font-bold uppercase text-[10px]',
+                td: 'py-4'
+              }"
+            >
+              <template #ranking-cell="{ row }">
+                <div
+                  class="flex items-center justify-center w-8 h-8 rounded-full font-black text-sm"
+                  :class="
+                    row.index === 0
+                      ? 'bg-yellow-100 text-yellow-700'
+                      : 'bg-gray-100 text-gray-500'
+                  "
+                >
+                  {{ row.index + 1 }}
+                </div>
+              </template>
+
+              <template #title-cell="{ row }">
+                <div class="flex items-center gap-3">
+                  <UAvatar
+                    :src="row.original.image"
+                    size="sm"
+                    class="ring-2 ring-white shadow-sm"
+                  />
+                  <span class="font-bold text-gray-800">{{
+                    row.original.title
+                  }}</span>
+                </div>
+              </template>
+
+              <template #votes_count-cell="{ row }">
+                <div
+                  class="text-right pr-6 font-mono font-black text-lg text-primary-600"
+                >
+                  {{ row.original.votes_count }}
+                  <span
+                    class="text-[10px] text-gray-400 font-normal ml-1 whitespace-nowrap"
+                    >Suara</span
+                  >
+                </div>
+              </template>
+            </UTable>
+          </section>
+        </div>
+      </template>
+
+      <template #footer>
+        <div class="flex justify-between items-center w-full px-2">
+          <div />
+          <UButton
+            color="neutral"
+            variant="soft"
+            class="font-bold"
+            @click="isOpenVote = false"
+            >Tutup Laporan</UButton
+          >
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>

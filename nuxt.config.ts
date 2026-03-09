@@ -5,7 +5,7 @@ export default defineNuxtConfig({
     '@nuxt/ui',
     '@vueuse/nuxt',
     '@nuxt/image',
-    'nuxt-echarts'
+    'nuxt-charts'
   ],
   devtools: {
     enabled: true
@@ -27,12 +27,13 @@ export default defineNuxtConfig({
     '/': { prerender: true }
   },
   compatibilityDate: '2025-01-15',
-  // nitro: {
-  //   preset: 'netlify'
-  // },
   eslint: {
     config: {
       stylistic: false
     }
+  },
+  nitro: {
+    compressPublicAssets: true,
+    minify: true,
   }
 })

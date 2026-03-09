@@ -59,7 +59,7 @@ const userMenuItems = computed(() => [
       resizable
     >
       <template #header>
-        <AppLogoWhite class="w-auto mx-auto h-8 shrink-0" />
+        <AppLogoWhite class="w-auto h-8 px-4" />
       </template>
 
       <template #default>
@@ -67,7 +67,7 @@ const userMenuItems = computed(() => [
       </template>
 
       <template #footer>
-        <span>v1.2.0</span>
+        <span>v1.3.0</span>
       </template>
     </UDashboardSidebar>
 
@@ -89,26 +89,28 @@ const userMenuItems = computed(() => [
               </div>
             </template>
             <template #right>
-              <UDropdownMenu :items="userMenuItems" :ui="{ content: 'w-56' }">
-                <button
-                  class="flex items-center gap-3 cursor-pointer rounded-lg px-2 py-1 transition hover:bg-neutral-100"
-                >
-                  <div class="flex flex-col text-right leading-tight">
-                    <span class="text-sm font-medium text-neutral-900">
-                      {{ userActive?.person?.name || '' }}
-                    </span>
-                    <span class="text-xs text-neutral-500">
-                      {{ userActive?.username || '' }}
-                    </span>
-                  </div>
+              <ClientOnly>
+                <UDropdownMenu :items="userMenuItems" :ui="{ content: 'w-56' }">
+                  <button
+                    class="flex items-center gap-3 cursor-pointer rounded-lg px-2 py-1 transition hover:bg-neutral-100"
+                  >
+                    <div class="flex flex-col text-right leading-tight">
+                      <span class="text-sm font-medium text-neutral-900">
+                        {{ userActive?.person?.name || '' }}
+                      </span>
+                      <span class="text-xs text-neutral-500">
+                        {{ userActive?.username || '' }}
+                      </span>
+                    </div>
 
-                  <UAvatar
-                    v-if="userActive?.person?.avatar"
-                    :src="userActive?.person?.avatar"
-                    size="sm"
-                  />
-                </button>
-              </UDropdownMenu>
+                    <UAvatar
+                      v-if="userActive?.person?.avatar"
+                      :src="userActive?.person?.avatar"
+                      size="sm"
+                    />
+                  </button>
+                </UDropdownMenu>
+              </ClientOnly>
 
               <ChangePasswordModal v-model:open="isChangePasswordOpen" />
             </template>

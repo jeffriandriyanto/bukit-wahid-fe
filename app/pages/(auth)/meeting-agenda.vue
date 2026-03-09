@@ -236,37 +236,32 @@ definePageMeta({
 </script>
 
 <template>
-  <div>
+  <div class="space-y-4">
     <ConfirmDialog />
 
-    <div
-      class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm space-y-4"
-    >
-      <div
-        class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4"
-      >
-        <USelectMenu
-          v-model="selectedRT"
-          placeholder="Pilih RT"
-          :search-input="{
-            placeholder: 'Cari nama RT'
-          }"
-          :items="dropdownRT"
-          value-key="key"
-          label-key="label"
-          searchable
-          class="w-40"
-        />
+    <SharedHeaderBg>
+      <USelectMenu
+        v-model="selectedRT"
+        placeholder="Pilih RT"
+        :search-input="{
+          placeholder: 'Cari nama RT'
+        }"
+        clear
+        :items="dropdownRT"
+        value-key="key"
+        label-key="label"
+        searchable
+        class="w-40"
+      />
 
-        <UButton
-          color="neutral"
-          trailing-icon="mdi-plus-circle-outline"
-          @click="openAddModal"
-        >
-          Tambah Agenda
-        </UButton>
-      </div>
-    </div>
+      <UButton
+        color="neutral"
+        trailing-icon="mdi-plus-circle-outline"
+        @click="openAddModal"
+      >
+        Tambah Agenda
+      </UButton>
+    </SharedHeaderBg>
 
     <UModal v-model:open="isOpen">
       <template #header>
@@ -332,7 +327,9 @@ definePageMeta({
       </template>
     </UModal>
 
-    <div>
+    <div
+      class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm"
+    >
       <UTable
         ref="table"
         :data="dataAgendaCard"
@@ -383,16 +380,16 @@ definePageMeta({
           />
         </template>
       </UTable>
+    </div>
 
-      <div class="flex justify-end border-t border-default pt-4 px-4">
-        <UPagination
-          v-model:page="pagination.current_page"
-          :total="pagination.total"
-          :items-per-page="pagination.per_page"
-          :max="5"
-          @update:page="getData"
-        />
-      </div>
+    <div class="flex justify-end">
+      <UPagination
+        v-model:page="pagination.current_page"
+        :total="pagination.total"
+        :items-per-page="pagination.per_page"
+        :max="10"
+        @update:page="getData"
+      />
     </div>
   </div>
 </template>
