@@ -64,11 +64,10 @@ const userMenuItems = computed(() => [
       id="default"
       v-model:open="open"
       :ui="{
-        root: 'bg-neutral-900 text-white',
+        root: 'bg-neutral-900 text-white min-w-[275px]',
         content: 'bg-neutral-900 text-white'
       }"
       collapsible
-      resizable
     >
       <template #header>
         <AppLogoWhite class="w-auto h-8 px-4" />
