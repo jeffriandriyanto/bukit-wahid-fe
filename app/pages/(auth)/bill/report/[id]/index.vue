@@ -15,13 +15,12 @@ const detailData = ref<any[]>([])
 const filterType = ref('Semua')
 const filterMonth = ref()
 
-// State untuk Modal & Seleksi (Nuxt UI v3 Style)
 const isOpen = ref(false)
-const rowSelection = ref({}) // State untuk v-model:row-selection (index-based)
-const targetBills = ref<any[]>([]) // Menampung bill yang akan dibayar di dalam modal
+const rowSelection = ref({})
+const targetBills = ref<any[]>([])
 
-const evidenceFile = ref(null)
 const tableRef = useTemplateRef('table')
+const proofFile = ref(null)
 
 const pagination = ref({
   current_page: 1,
@@ -33,14 +32,16 @@ const pagination = ref({
 // Schema Zod
 const BillFormSchema = z.object({
   nominal: z.number().min(1, 'Nominal wajib diisi'),
-  evidence: z.string().min(1, 'Bukti bayar wajib diunggah')
+  description: z.string().optional(),
+  proof: z.string().min(1, 'Bukti bayar wajib diunggah')
 })
 
 type BillFormSchema = z.infer<typeof BillFormSchema>
 
 const form = reactive({
   nominal: 0,
-  evidence: ''
+  proof: '',
+  description: ''
 })
 
 // --- TABLE COLUMNS ---
@@ -58,7 +59,6 @@ const columns = [
       }),
     cell: ({ row }) =>
       h(UCheckbox, {
-        // Hanya munculkan checkbox jika belum lunas
         disabled: row.original.status !== 'unpaid',
         modelValue: row.getIsSelected(),
         'onUpdate:modelValue': (value: boolean | 'indeterminate') =>
@@ -73,8 +73,8 @@ const columns = [
   { accessorKey: 'amount', header: 'Tagihan' },
   { accessorKey: 'status', header: 'Status' },
   { accessorKey: 'payment_date', header: 'Tanggal Bayar' },
-  { accessorKey: 'payment_type', header: 'Pembayaran' },
-  { accessorKey: 'action', header: 'Action' }
+  { accessorKey: 'payment_type', header: 'Metode' },
+  { accessorKey: 'action', header: 'Aksi' }
 ]
 
 // --- API ACTIONS ---
@@ -90,9 +90,7 @@ const fetchDetail = async () => {
     })
     if (res.status === 1) {
       detailData.value = res.data
-      pagination.value = {
-        ...res.pagination
-      }
+      pagination.value = { ...res.pagination }
     }
   } catch (err) {
     console.error('Fetch error:', err)
@@ -104,36 +102,66 @@ const fetchDetail = async () => {
 const saveBill = async (event: FormSubmitEvent<BillFormSchema>) => {
   try {
     loading.value = true
-    let finalImageUrl = form.evidence
 
-    if (evidenceFile.value) {
-      const uploadRes = await fileUpload(evidenceFile.value)
+    const checkoutRes = await useApi<any>('/finance/payment/checkout', {
+      method: 'POST',
+      body: {
+        person_id: userId,
+        bills: targetBills.value.map((b) => b.id)
+      }
+    })
+    if (checkoutRes.status !== 1) throw new Error('Gagal melakukan checkout')
+
+    const paymentId = checkoutRes.data.id
+
+    let finalImageUrl = form.proof
+    if (proofFile.value) {
+      const uploadRes = await fileUpload(proofFile.value)
       if (uploadRes) finalImageUrl = uploadRes
-      else throw new Error('Gagal mengunggah gambar')
+      else throw new Error('Gagal mengunggah gambar ke server')
     }
 
     const payload = {
-      ...event.data,
-      bill_ids: targetBills.value.map((b) => b.id),
-      evidence: finalImageUrl,
-      change: returnAmount.value
+      amount: form.nominal, // Koreksi typo ammount -> amount
+      proof: finalImageUrl,
+      description: form.description || ''
     }
 
-    console.log('Payload Bayar:', payload)
+    const cashRes = await useApi<any>(`/finance/payment/cash/${paymentId}`, {
+      method: 'POST',
+      body: payload
+    })
 
-    toast.add({ title: 'Pembayaran Berhasil', color: 'success' })
-    isOpen.value = false
-    rowSelection.value = {} // Reset seleksi setelah bayar
-    fetchDetail()
+    if (cashRes.status === 1) {
+      toast.add({ title: 'Berhasil menyimpan pembayaran', color: 'success' })
+      isOpen.value = false
+      fetchDetail()
+      resetForm()
+    } else {
+      toast.add({ title: cashRes?.message || 'Error server', color: 'error' })
+    }
   } catch (err: any) {
-    toast.add({ title: err?.message || 'Error', color: 'error' })
+    toast.add({ title: err?.message || 'Error server', color: 'error' })
   } finally {
     loading.value = false
   }
 }
 
 // --- UTILS & COMPUTED ---
-// Mengonversi rowSelection (index) menjadi data object asli
+const resetForm = () => {
+  form.nominal = 0
+  form.description = ''
+  clearImage()
+}
+
+const clearImage = () => {
+  if (form.proof?.startsWith('blob:')) {
+    URL.revokeObjectURL(form.proof)
+  }
+  form.proof = ''
+  proofFile.value = null
+}
+
 const selectedRowsData: any = computed(() => {
   if (!tableRef.value?.tableApi) return []
   return tableRef.value.tableApi
@@ -157,18 +185,6 @@ const returnAmount = computed(() => {
 })
 
 // --- HANDLERS ---
-const clearImage = () => {
-  form.evidence = ''
-  evidenceFile.value = null
-}
-
-const onFileChange = (file: any) => {
-  if (file) {
-    evidenceFile.value = file
-    form.evidence = URL.createObjectURL(file)
-  }
-}
-
 const handlePay = (row: any) => {
   targetBills.value = [row]
   form.nominal = Number(row.amount)
@@ -176,7 +192,6 @@ const handlePay = (row: any) => {
 }
 
 const handlePaySelected = () => {
-  // Hanya ambil yang statusnya unpaid untuk dibayar
   const unpaidSelection = selectedRowsData.value.filter(
     (r) => r.status === 'unpaid'
   )
@@ -186,6 +201,15 @@ const handlePaySelected = () => {
   form.nominal = totalSelectedAmount.value
   isOpen.value = true
 }
+
+watch(proofFile, (newFiles) => {
+  if (newFiles) {
+    if (form.proof?.startsWith('blob:')) {
+      URL.revokeObjectURL(form.proof)
+    }
+    form.proof = URL.createObjectURL(newFiles)
+  }
+})
 
 onMounted(() => {
   fetchDetail()
@@ -301,30 +325,43 @@ onMounted(() => {
             </UFormField>
           </div>
 
-          <UFormField name="evidence" label="Bukti Bayar">
+          <UFormField name="description" label="Keterangan (Opsional)">
+            <UTextarea
+              v-model="form.description"
+              placeholder="Tambahkan catatan jika perlu..."
+            />
+          </UFormField>
+
+          <UFormField name="proof" label="Bukti Bayar" required>
             <div class="w-full">
               <div
-                v-if="form.evidence"
-                class="group relative aspect-video w-full overflow-hidden rounded-lg border"
+                v-if="form.proof"
+                class="group relative aspect-video w-full overflow-hidden rounded-lg border border-gray-200 bg-gray-50"
               >
-                <img :src="form.evidence" class="h-full w-full object-cover" />
+                <img
+                  :src="form.proof"
+                  class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
                 <div
-                  class="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity"
+                  class="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100"
                 >
                   <UButton
                     color="error"
                     variant="solid"
                     icon="i-lucide-trash-2"
+                    label="Hapus & Ganti"
                     @click="clearImage"
                   />
                 </div>
               </div>
               <UFileUpload
                 v-else
-                @change="onFileChange"
+                v-model="proofFile"
                 accept="image/*"
                 :dropzone="true"
                 class="aspect-video"
+                icon="uil:image-upload"
+                :ui="{ base: 'bg-neutral-100' }"
               />
             </div>
           </UFormField>
@@ -357,27 +394,59 @@ onMounted(() => {
         <template #category-cell="{ row }">
           <div class="flex flex-col">
             <span class="font-bold text-gray-900">{{
-              row.original.category.toUpperCase()
+              row.original.category?.toUpperCase()
             }}</span>
-            <span class="text-[10px] text-gray-400">(Rose B11)</span>
+            <span class="text-[10px] text-gray-400"
+              >ID: {{ row.original.id.slice(0, 8) }}</span
+            >
           </div>
+        </template>
+
+        <template #bill_date-cell="{ row }">
+          {{ formatDate(row.original.bill_date) }}
         </template>
 
         <template #amount-cell="{ row }">
-          {{ formatCurrency(row.original.amount) }}
+          <span class="font-semibold">{{
+            formatCurrency(row.original.amount)
+          }}</span>
         </template>
 
         <template #status-cell="{ row }">
-          <div
-            class="px-3 py-1 rounded text-center text-[11px] font-bold uppercase max-w-max mx-auto"
-            :class="
-              row.original.status === 'unpaid'
-                ? 'bg-red-600 text-white'
-                : 'bg-green-500 text-white'
-            "
+          <UBadge
+            :color="row.original.status === 'unpaid' ? 'error' : 'success'"
+            variant="subtle"
+            class="font-bold uppercase"
           >
             {{ row.original.status === 'unpaid' ? 'Belum Lunas' : 'Lunas' }}
-          </div>
+          </UBadge>
+        </template>
+
+        <template #payment_date-cell="{ row }">
+          <span v-if="row.original.payment_date" class="text-gray-600">
+            {{ formatDate(row.original.payment_date) }}
+          </span>
+          <span v-else class="text-gray-300 italic">-</span>
+        </template>
+
+        <template #payment_type-cell="{ row }">
+          <UBadge
+            v-if="row.original.payment_type"
+            color="neutral"
+            variant="outline"
+            class="capitalize"
+          >
+            <UIcon
+              :name="
+                row.original.payment_type === 'cash'
+                  ? 'i-lucide-banknote'
+                  : 'i-lucide-credit-card'
+              "
+              class="mr-1"
+            />
+            {{ row.original.payment_type }}
+          </UBadge>
+          <span v-else>-</span>
         </template>
 
         <template #action-cell="{ row }">
@@ -385,18 +454,14 @@ onMounted(() => {
             v-if="row.original.status === 'unpaid'"
             label="Bayar"
             color="success"
-            size="xs"
-            class="w-full font-bold uppercase"
+            icon="i-lucide-receipt"
             @click="handlePay(row.original)"
           />
           <UButton
             v-else
-            label="Bayar"
+            icon="i-lucide-check"
             color="neutral"
-            variant="soft"
-            size="xs"
             disabled
-            class="w-full opacity-50"
           />
         </template>
       </UTable>
@@ -407,7 +472,6 @@ onMounted(() => {
         v-model:page="pagination.current_page"
         :total="pagination.total"
         :items-per-page="pagination.per_page"
-        :max="10"
         @update:page="fetchDetail"
       />
     </div>

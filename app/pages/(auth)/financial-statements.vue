@@ -26,21 +26,26 @@ const typeItems = ['Uang Masuk', 'Uang Keluar']
 
 const dateObject = shallowRef(toCalendarDate(today(getLocalTimeZone())))
 
-const FinancialStatementsFormSchema = z.object({
-  name: z.string().min(1, 'Nama wajib diisi'),
-  for_rt: z.boolean().default(false),
-  target_rt: z.string().optional(),
-  nominal: z.coerce.number().min(1, 'Nominal wajib diisi'),
-  date: z.union([z.date(), z.string().min(1, 'Tanggal wajib diisi')]),
-  type: z.string().min(1, 'Pilih jenis laporan'),
-  description: z.string().min(1, 'Deskripsi wajib diisi')
-}).refine((data) => {
-  if (data.for_rt && !data.target_rt) return false
-  return true
-}, {
-  message: "RT tujuan wajib dipilih",
-  path: ["target_rt"]
-})
+const FinancialStatementsFormSchema = z
+  .object({
+    name: z.string().min(1, 'Nama wajib diisi'),
+    for_rt: z.boolean().default(false),
+    target_rt: z.string().optional(),
+    nominal: z.coerce.number().min(1, 'Nominal wajib diisi'),
+    date: z.union([z.date(), z.string().min(1, 'Tanggal wajib diisi')]),
+    type: z.string().min(1, 'Pilih jenis laporan'),
+    description: z.string().min(1, 'Deskripsi wajib diisi')
+  })
+  .refine(
+    (data) => {
+      if (data.for_rt && !data.target_rt) return false
+      return true
+    },
+    {
+      message: 'RT tujuan wajib dipilih',
+      path: ['target_rt']
+    }
+  )
 
 type FinancialStatementsFormSchema = z.infer<
   typeof FinancialStatementsFormSchema
@@ -276,13 +281,10 @@ const saveData = async (
       <USelect v-model="selectedRT" :items="rtItems" class="w-40" />
 
       <div class="flex gap-4">
-        <UButton
-          color="error"
-          variant="outline"
-          trailing-icon="mdi-download"
-        >
+        <!-- <UButton color="error" variant="outline" trailing-icon="mdi-download">
           Download
-        </UButton>
+        </UButton> -->
+        <div />
 
         <UButton
           color="neutral"
@@ -314,7 +316,10 @@ const saveData = async (
 
             <div class="space-y-4">
               <div class="flex items-center gap-2">
-                <UCheckbox v-model="form.for_rt" label="Laporan khusus untuk RT tertentu?" />
+                <UCheckbox
+                  v-model="form.for_rt"
+                  label="Laporan khusus untuk RT tertentu?"
+                />
               </div>
 
               <Transition
@@ -322,7 +327,12 @@ const saveData = async (
                 enter-from-class="transform scale-95 opacity-0"
                 enter-to-class="transform scale-100 opacity-100"
               >
-                <UFormField v-if="form.for_rt" name="target_rt" label="Pilih RT Tujuan" required>
+                <UFormField
+                  v-if="form.for_rt"
+                  name="target_rt"
+                  label="Pilih RT Tujuan"
+                  required
+                >
                   <USelect
                     v-model="form.target_rt"
                     :items="rtItems"
@@ -393,8 +403,13 @@ const saveData = async (
     </div>
 
     <div>
-      <div class="flex items-center gap-4 mb-4 border border-secondary rounded-2xl bg-secondary-50 max-w-max p-4">
-        <UIcon name="mdi:account-balance-wallet" class="size-8 text-secondary" />
+      <div
+        class="flex items-center gap-4 mb-4 border border-secondary rounded-2xl bg-secondary-50 max-w-max p-4"
+      >
+        <UIcon
+          name="mdi:account-balance-wallet"
+          class="size-8 text-secondary"
+        />
         <div>
           <div class="text-xs">Saldo Akhir RW</div>
           <div class="font-bold text-2xl">Rp. 23.000.000</div>
@@ -418,7 +433,11 @@ const saveData = async (
               variant="subtle"
               size="sm"
             >
-              {{ row.original.for_rt ? `Unit: ${row.original.target_rt}` : 'Unit: RW' }}
+              {{
+                row.original.for_rt
+                  ? `Unit: ${row.original.target_rt}`
+                  : 'Unit: RW'
+              }}
             </UBadge>
           </div>
         </template>
@@ -435,7 +454,9 @@ const saveData = async (
           <div
             :class="[
               'font-bold',
-              row.original.type === 'Uang Masuk' ? 'text-info-600' : 'text-red-600'
+              row.original.type === 'Uang Masuk'
+                ? 'text-info-600'
+                : 'text-red-600'
             ]"
           >
             {{ row.original.type === 'Uang Masuk' ? '+' : '-' }}
@@ -462,12 +483,15 @@ const saveData = async (
           <UButton
             icon="i-lucide-pencil"
             variant="ghost"
+            color="neutral"
+            size="sm"
             @click="openEditModal(row.original)"
           />
           <UButton
             icon="i-lucide-trash-2"
             variant="ghost"
             color="error"
+            size="sm"
             @click="confirmDelete(row.original)"
           />
         </template>

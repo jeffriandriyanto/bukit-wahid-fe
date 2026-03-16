@@ -32,7 +32,6 @@ const getData = async () => {
   try {
     const res = await useApi<any>('/finance/environment', { method: 'GET' })
     if (res.status === 1 && res.data) {
-      // Isi form dengan data dari backend
       Object.assign(form, res.data)
     }
   } catch (err) {
@@ -46,7 +45,6 @@ const getData = async () => {
 const updateData = async (event: any) => {
   loading.value = true
   try {
-    // Sesuai request: Method POST ke /finance/environment
     const res = await useApi<any>('/finance/environment', {
       method: 'POST',
       body: event.data

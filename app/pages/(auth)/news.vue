@@ -467,12 +467,14 @@ definePageMeta({
             icon="i-lucide-pencil"
             variant="ghost"
             color="neutral"
+            size="sm"
             @click="openEditModal(row.original)"
           />
           <UButton
             icon="i-lucide-trash-2"
             variant="ghost"
             color="error"
+            size="sm"
             @click="confirmDelete(row.original)"
           />
         </template>

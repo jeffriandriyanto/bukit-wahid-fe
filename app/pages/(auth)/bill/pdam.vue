@@ -262,7 +262,7 @@ onMounted(() => {
         :model-value="pagination.current_page"
         :total="pagination.total"
         :items-per-page="pagination.per_page"
-        @update:model-value="handlePageChange"
+        @update:page="handlePageChange"
       />
     </div>
   </div>

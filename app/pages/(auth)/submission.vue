@@ -168,13 +168,15 @@ const openResultModal = (row: any) => {
               <UButton
                 icon="i-lucide-pencil"
                 variant="ghost"
-                color="error"
+                color="neutral"
+                size="sm"
                 @click="openEditModal(row.original)"
               />
               <UButton
                 icon="i-lucide-trash-2"
                 variant="ghost"
                 color="error"
+                size="sm"
                 @click="confirmDelete(row.original)"
               />
             </div>

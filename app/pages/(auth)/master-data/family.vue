@@ -249,12 +249,15 @@ const columnsFamilyTable = [
             <UButton
               icon="i-lucide-pencil"
               variant="ghost"
+              color="neutral"
+              size="sm"
               @click="openEditModal(row.original)"
             />
             <UButton
               icon="i-lucide-trash-2"
               variant="ghost"
               color="error"
+              size="sm"
               @click="confirmDelete(row.original.id)"
             />
           </div>
@@ -267,7 +270,6 @@ const columnsFamilyTable = [
         v-model:page="pagination.current_page"
         :total="pagination.total"
         :items-per-page="pagination.per_page"
-        :max="10"
         @update:page="getData"
       />
     </div>

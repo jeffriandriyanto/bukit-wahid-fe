@@ -6,11 +6,23 @@ const route = useRoute()
 const isChangePasswordOpen = ref(false)
 
 const displayName = computed(() => {
-  if (!route.name) return ''
+  const currentPath = route.path
 
-  const displayPath =
-    sidebarItems.find((sidebar) => sidebar.to === route.path)?.label || ''
-  return displayPath
+  const findLabel = (items: any[]): string | undefined => {
+    for (const item of items) {
+      if (item.to && (currentPath === item.to || (item.to !== '/' && currentPath.startsWith(item.to)))) {
+        return item.label
+      }
+
+      if (item.children) {
+        const foundInChild = findLabel(item.children)
+        if (foundInChild) return foundInChild
+      }
+    }
+    return undefined
+  }
+
+  return findLabel(sidebarItems) || 'Home'
 })
 
 const userActive = computed(() => user.value)
@@ -67,7 +79,7 @@ const userMenuItems = computed(() => [
       </template>
 
       <template #footer>
-        <span>v1.3.0</span>
+        <span>v1.3.2</span>
       </template>
     </UDashboardSidebar>
 

@@ -369,9 +369,10 @@ definePageMeta({
           Lihat Struktur
         </UButton>
 
-        <UButton color="neutral" variant="outline" icon="i-lucide-download">
+        <!-- <UButton color="neutral" variant="outline" icon="i-lucide-download">
           Download
-        </UButton>
+        </UButton> -->
+        <div />
       </div>
 
       <UButton
