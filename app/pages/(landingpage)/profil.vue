@@ -83,7 +83,7 @@
           <UCard>
             <template #header>
               <div class="font-bold text-primary-500 flex items-center gap-2">
-                <UIcon name="i-lucide-component" /> BAB IV : Potensi
+                <UIcon name="i-lucide-component" /> BAB III : Potensi
               </div>
             </template>
             <div class="space-y-4">
@@ -136,26 +136,7 @@
           >
         </div>
 
-        <UCard>
-          <template #header>
-            <div class="font-bold text-primary-500 flex items-center gap-2">
-              <UIcon name="i-lucide-sitemap" /> BAB III : Pengurus
-            </div>
-          </template>
-          <div class="space-y-4">
-            <div
-              v-for="member in profileData.sections.organization"
-              :key="member.role"
-            >
-              <p
-                class="text-[10px] uppercase text-primary font-black tracking-tighter"
-              >
-                {{ member.role }}
-              </p>
-              <p class="font-medium transition-colors">{{ member.name }}</p>
-            </div>
-          </div>
-        </UCard>
+
       </div>
     </div>
 

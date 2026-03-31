@@ -90,5 +90,10 @@ export const sidebarItems: SidebarItem[] = [
         to: '/e-voting'
       }
     ]
-  }
+  },
+  {
+    label: 'Pengaturan',
+    icon: 'i-lucide-cog',
+    to: '/settings'
+  },
 ]

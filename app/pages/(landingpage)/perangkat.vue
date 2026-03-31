@@ -13,9 +13,12 @@
       </div>
     </header>
 
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 md:gap-8">
+    <div
+      v-if="rwDataList.length > 0"
+      class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 md:gap-8"
+    >
       <div
-        v-for="(member, index) in managementData.members"
+        v-for="(member, index) in rwDataList"
         :key="index"
         class="group space-y-4 text-center"
       >
@@ -23,7 +26,7 @@
           class="aspect-3/4 overflow-hidden rounded-2xl bg-neutral-900 border border-neutral-800 transition-all duration-300 group-hover:border-primary-500/50 group-hover:shadow-2xl group-hover:shadow-primary-500/10"
         >
           <img
-            :src="member.photo"
+            :src="member?.incumbent?.avatar"
             :alt="member.name"
             class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500 scale-105 group-hover:scale-100"
           />
@@ -33,12 +36,12 @@
           <h3
             class="text-neutral-800 font-bold text-sm md:text-base leading-tight transition-colors"
           >
-            {{ member.name }}
+            {{ member?.incumbent?.name }}
           </h3>
           <p
             class="text-neutral-500 text-xs uppercase font-medium tracking-wider"
           >
-            {{ member.role }}
+            {{ member.name }}
           </p>
         </div>
       </div>
@@ -54,52 +57,20 @@
 </template>
 
 <script setup lang="ts">
-definePageMeta({
-  layout: 'landingpage'
-})
+import { useRwStructure } from '~/composables/structure/useRwOrg'
+const { rwDataList, fetchRwList } = useRwStructure()
+const dataPerangkat = computed(() => rwDataList)
 
-// Data Variable (Siap diisi dari fetch API)
+onMounted(fetchRwList)
+
 const managementData = reactive({
   page_title: 'Pengurus RW.11',
   page_subtitle:
-    'Jungle Toon Bukit Wahid Regency Manyaran Semarang Barat, Kota Semarang.',
-  members: [
-    {
-      name: 'Sri Wiharnanto',
-      role: 'Ketua RW',
-      photo: 'https://i.pravatar.cc/400?u=sri'
-    },
-    {
-      name: 'Berlia Adi Nata',
-      role: 'Sekretaris',
-      photo: 'https://i.pravatar.cc/400?u=berlia'
-    },
-    {
-      name: 'Fajar Pambudi',
-      role: 'Bendahara I',
-      photo: 'https://i.pravatar.cc/400?u=fajar'
-    },
-    {
-      name: 'Budi Chandra',
-      role: 'Bendahara II',
-      photo: 'https://i.pravatar.cc/400?u=budi'
-    },
-    {
-      name: 'Riris Very Sulistiyani',
-      role: 'Seksi Umum',
-      photo: 'https://i.pravatar.cc/400?u=riris'
-    },
-    {
-      name: 'Vita Nurhapsari',
-      role: 'Seksi Pemberdayaan',
-      photo: 'https://i.pravatar.cc/400?u=vita'
-    },
-    {
-      name: 'Herlina Putri',
-      role: 'Seksi Sosial',
-      photo: 'https://i.pravatar.cc/400?u=herlina'
-    }
-  ]
+    'Jungle Toon Bukit Wahid Regency Manyaran Semarang Barat, Kota Semarang.'
+})
+
+definePageMeta({
+  layout: 'landingpage'
 })
 </script>
 

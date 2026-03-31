@@ -1,7 +1,9 @@
-import type { OrgNode, BEWrapper } from "~/types/org"
+import type { OrgNode, BEWrapper } from '~/types/org'
 
 export const useRwStructure = () => {
   const rwData = ref<OrgNode | null>(null)
+  const rwDataList = ref([])
+
   const toast = useToast()
 
   const fetchRw = async () => {
@@ -15,5 +17,16 @@ export const useRwStructure = () => {
     }
   }
 
-  return { rwData, fetchRw }
+  const fetchRwList = async () => {
+    try {
+      const res = await useApi<BEWrapper>('/position/get/rw')
+      if (res.status === 1 && res.data) {
+        rwDataList.value = res.data
+      }
+    } catch (e: any) {
+      toast.add({ title: e?.message || 'Gagal load RW', color: 'error' })
+    }
+  }
+
+  return { rwData, rwDataList, fetchRw, fetchRwList }
 }
