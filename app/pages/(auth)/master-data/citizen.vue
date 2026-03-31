@@ -2,7 +2,7 @@
 import { z } from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { genderItems } from '~/const/dropdown'
-import { fileUpload } from '~/services/files' // Pastikan path ini benar sesuai contohmu
+import { fileUpload, fileUploadResidence } from '~/services/files' // Pastikan path ini benar sesuai contohmu
 import { watchWithFilter, debounceFilter } from '@vueuse/core'
 import { perPageLimit } from '~/const/utils'
 
@@ -135,6 +135,42 @@ watchWithFilter(
 //     form.signature = URL.createObjectURL(file)
 //   }
 // })
+
+// --- EXCEL ACTIONS ---
+const excelInput = ref<HTMLInputElement | null>(null)
+const loadingExcel = ref(false)
+
+const downloadTemplateHandler = () => {
+  const config = useRuntimeConfig()
+  const url = `${config.public.baseUrl}resident/excel/template`
+  window.open(url, '_blank')
+}
+
+const triggerExcelUpload = () => excelInput.value?.click()
+
+const handleExcelChange = async (event: Event) => {
+  const target = event.target as HTMLInputElement
+  const file = target.files?.[0]
+  if (!file) return
+
+  try {
+    loadingExcel.value = true
+    const res = await fileUploadResidence(file)
+
+    if (res?.status === 1) {
+      toast.add({ title: 'Data berhasil diunggah', color: 'success' })
+      getData()
+    }
+  } catch (err: any) {
+    toast.add({
+      title: err?.message || 'Gagal mengunggah data',
+      color: 'error'
+    })
+  } finally {
+    loadingExcel.value = false
+    if (excelInput.value) excelInput.value.value = ''
+  }
+}
 
 const getData = async () => {
   loading.value = true
@@ -296,6 +332,14 @@ onMounted(() => {
   <div class="space-y-4">
     <ConfirmDialog />
 
+    <input
+      ref="excelInput"
+      type="file"
+      accept=".xlsx, .xls"
+      class="hidden"
+      @change="handleExcelChange"
+    >
+
     <SharedHeaderBg>
       <div class="w-full md:w-80">
         <UFormField>
@@ -308,13 +352,26 @@ onMounted(() => {
         </UFormField>
       </div>
 
-      <div class="flex gap-2">
-        <!-- <UButton
-            color="neutral"
-            variant="outline"
-            icon="i-lucide-download"
-            label="Export"
-          /> -->
+      <div class="flex flex-wrap gap-2">
+        <UButton
+          color="neutral"
+          variant="subtle"
+          icon="i-mdi-download"
+          @click="downloadTemplateHandler"
+        >
+          Template
+        </UButton>
+
+        <UButton
+          color="neutral"
+          variant="subtle"
+          icon="i-mdi-upload"
+          :loading="loadingExcel"
+          @click="triggerExcelUpload"
+        >
+          Upload Data
+        </UButton>
+
         <UButton
           color="primary"
           icon="i-lucide-plus-circle"

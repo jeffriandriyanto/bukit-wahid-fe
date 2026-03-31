@@ -44,3 +44,21 @@ export const fileUploadFinance = async (file: File) => {
     return null;
   }
 }
+
+export const fileUploadResidence = async (file: File) => {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  try {
+    const res = await useApi<any>('/resident/excel/upload', {
+      method: 'POST',
+      body: formData
+    })
+
+    if (res.status === 1) return res.data;
+    return null;
+  } catch (e) {
+    console.error('Upload Error:', e);
+    return null;
+  }
+}
