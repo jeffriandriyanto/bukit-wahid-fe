@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { perPageLimit } from '~/const/utils'
+
 definePageMeta({ middleware: ['auth'] })
 
 // --- STATE ---
@@ -114,6 +116,11 @@ const getCategoryLabel = (key: string) => {
   return categoryMap[key] || key || '-'
 }
 
+watch(() => pagination.value.per_page, () => {
+  pagination.value.current_page = 1
+  getData()
+})
+
 onMounted(() => {
   getOptions()
   getData()
@@ -210,7 +217,18 @@ onMounted(() => {
       </UTable>
     </div>
 
-    <div class="flex justify-end">
+    <div class="flex justify-between">
+      <div class="flex items-center gap-2 text-sm text-gray-600">
+        <span>Tampilkan</span>
+        <USelect
+          v-model.number="pagination.per_page"
+          :items="perPageLimit"
+          value-attribute="value"
+          option-attribute="label"
+          class="w-24"
+        />
+      </div>
+
       <UPagination
         v-model:page="pagination.current_page"
         :total="pagination.total"
@@ -310,8 +328,6 @@ onMounted(() => {
               />
             </div>
           </div>
-
-          <UDivider label="Riwayat Penanganan" label-placement="center" />
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div

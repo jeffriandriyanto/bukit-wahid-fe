@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { watchWithFilter, debounceFilter } from '@vueuse/core'
+import { perPageLimit } from '~/const/utils'
 const { dropdownRT, getDropdownRT } = useApiDropdown()
 
 definePageMeta({
@@ -18,6 +19,10 @@ const pagination = ref({
   per_page: 10,
   total: 0
 })
+
+const bill = ref({
+  unpaid: 0
+});
 
 // --- TABLE COLUMNS ---
 // Disesuaikan dengan payload dari /finance/bill
@@ -48,6 +53,23 @@ const getData = async () => {
     if (res.status === 1) {
       dataFinancialStatements.value = res.data
       pagination.value = { ...res.pagination }
+    }
+  } catch (err) {
+    console.error('Fetch error:', err)
+  } finally {
+    loading.value = false
+  }
+}
+
+const getDataBill = async () => {
+  loading.value = true
+  try {
+    const res = await useApi<any>('/finance/my-bill-detail', {
+      method: 'GET'
+    })
+
+    if (res.status === 1) {
+      bill.value.unpaid = res.data.unpaid
     }
   } catch (err) {
     console.error('Fetch error:', err)
@@ -89,7 +111,13 @@ watchWithFilter(
   }
 )
 
+watch(() => pagination.value.per_page, () => {
+  pagination.value.current_page = 1
+  getData()
+})
+
 onMounted(() => {
+  getDataBill()
   getDropdownRT()
   getData()
 })
@@ -143,30 +171,30 @@ onMounted(() => {
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
       <div
-        class="flex items-center gap-4 p-6 border border-success-200 rounded-2xl bg-success-50/50"
+        class="flex items-center gap-4 p-6 border border-primary-200 rounded-2xl bg-primary-50/50"
       >
-        <div class="p-2 flex items-center bg-success-500 rounded-xl text-white">
+        <div class="p-2 flex items-center bg-primary-500 rounded-xl text-white">
           <UIcon name="i-material-symbols-money-bag" class="size-8" />
         </div>
         <div>
-          <div class="text-sm text-success-600 font-medium">
+          <div class="text-sm text-primary-600 font-medium">
             Total Tagihan Bulan Ini
           </div>
-          <div class="font-bold text-2xl text-success-900">Rp 45.200.000</div>
+          <div class="font-bold text-2xl text-primary-900">{{ formatCurrency(bill.unpaid) }}</div>
         </div>
       </div>
 
       <div
-        class="flex items-center gap-4 p-6 border border-primary-100 rounded-2xl bg-primary-50/50"
+        class="flex items-center gap-4 p-6 border border-success-100 rounded-2xl bg-success-50/50"
       >
-        <div class="p-2 flex items-center bg-primary-500 rounded-xl text-white">
+        <div class="p-2 flex items-center bg-success-500 rounded-xl text-white">
           <UIcon name="i-material-symbols-money-bag-outline" class="size-8" />
         </div>
         <div>
-          <div class="text-sm text-primary-600 font-medium">
+          <div class="text-sm text-success-600 font-medium">
             Estimasi Revenue Keseluruhan
           </div>
-          <div class="font-bold text-2xl text-primary-900">Rp 120.450.000</div>
+          <div class="font-bold text-2xl text-success-900">Rp 120.450.000</div>
         </div>
       </div>
     </div>
@@ -230,7 +258,18 @@ onMounted(() => {
       </UTable>
     </div>
 
-    <div class="flex justify-end">
+    <div class="flex justify-between">
+      <div class="flex items-center gap-2 text-sm text-gray-600">
+        <span>Tampilkan</span>
+        <USelect
+          v-model.number="pagination.per_page"
+          :items="perPageLimit"
+          value-attribute="value"
+          option-attribute="label"
+          class="w-24"
+        />
+      </div>
+
       <UPagination
         v-model="pagination.current_page"
         :total="pagination.total"

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { z } from 'zod'
+import { perPageLimit } from '~/const/utils'
 
 const { dropdownRT, getDropdownRT } = useApiDropdown()
 
@@ -225,6 +226,11 @@ watch(selectedRT, () => {
   getData()
 })
 
+watch(() => pagination.value.per_page, () => {
+  pagination.value.current_page = 1
+  getData()
+})
+
 onMounted(() => {
   getDropdownRT()
   getData()
@@ -384,7 +390,18 @@ definePageMeta({
       </UTable>
     </div>
 
-    <div class="flex justify-end">
+    <div class="flex justify-between">
+      <div class="flex items-center gap-2 text-sm text-gray-600">
+        <span>Tampilkan</span>
+        <USelect
+          v-model.number="pagination.per_page"
+          :items="perPageLimit"
+          value-attribute="value"
+          option-attribute="label"
+          class="w-24"
+        />
+      </div>
+
       <UPagination
         v-model:page="pagination.current_page"
         :total="pagination.total"

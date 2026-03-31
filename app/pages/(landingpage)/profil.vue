@@ -159,7 +159,7 @@
       </div>
     </div>
 
-    <div class="pt-12 border-t border-neutral-800 text-center">
+    <div class="pt-6 mt-12 border-t border-neutral-800 text-center">
       <p class="text-neutral-500 italic text-sm">
         "{{ profileData.sections.closing }}"
       </p>

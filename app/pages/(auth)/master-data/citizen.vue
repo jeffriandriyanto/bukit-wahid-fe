@@ -4,6 +4,7 @@ import type { FormSubmitEvent } from '@nuxt/ui'
 import { genderItems } from '~/const/dropdown'
 import { fileUpload } from '~/services/files' // Pastikan path ini benar sesuai contohmu
 import { watchWithFilter, debounceFilter } from '@vueuse/core'
+import { perPageLimit } from '~/const/utils'
 
 // ===== 1. SCHEMAS =====
 
@@ -281,6 +282,11 @@ const columnsFamilyTable = [
   { id: 'action', header: 'Aksi', class: 'text-right' }
 ]
 
+watch(() => pagination.value.per_page, () => {
+  pagination.value.current_page = 1
+  getData()
+})
+
 onMounted(() => {
   getData()
 })
@@ -515,7 +521,18 @@ onMounted(() => {
       </template>
     </UModal>
 
-    <div class="flex justify-end">
+    <div class="flex justify-between">
+      <div class="flex items-center gap-2 text-sm text-gray-600">
+        <span>Tampilkan</span>
+        <USelect
+          v-model.number="pagination.per_page"
+          :items="perPageLimit"
+          value-attribute="value"
+          option-attribute="label"
+          class="w-24"
+        />
+      </div>
+
       <UPagination
         v-model:page="pagination.current_page"
         :total="pagination.total"

@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { perPageLimit } from '~/const/utils'
 import { fileUpload } from '~/services/files'
 
 definePageMeta({ middleware: ['auth'] })
@@ -315,12 +316,16 @@ const viewVote = async (row: any) => {
   await getOptions(row.id)
 }
 
-// Tabel Columns (Tanpa Deskripsi)
 const resultTableColumns = [
   { accessorKey: 'ranking', header: 'Ranking' },
   { accessorKey: 'title', header: 'Nama Voting' },
   { accessorKey: 'votes_count', header: 'Perolehan' }
 ]
+
+watch(() => pagination.value.per_page, () => {
+  pagination.value.current_page = 1
+  getData()
+})
 
 onMounted(() => {
   getDropdownRT()
@@ -394,7 +399,18 @@ onMounted(() => {
       </UTable>
     </div>
 
-    <div class="flex justify-end">
+    <div class="flex justify-between">
+      <div class="flex items-center gap-2 text-sm text-gray-600">
+        <span>Tampilkan</span>
+        <USelect
+          v-model.number="pagination.per_page"
+          :items="perPageLimit"
+          value-attribute="value"
+          option-attribute="label"
+          class="w-24"
+        />
+      </div>
+
       <UPagination
         v-model:page="pagination.current_page"
         :total="pagination.total"
@@ -495,8 +511,6 @@ onMounted(() => {
               {{ isEditing ? 'Update Detail Voting' : 'Simpan & Lanjutkan' }}
             </UButton>
           </div>
-
-          <UDivider label="Daftar Opsi Pilihan" />
 
           <div v-if="form.id" class="space-y-4">
             <div class="flex justify-between items-center">

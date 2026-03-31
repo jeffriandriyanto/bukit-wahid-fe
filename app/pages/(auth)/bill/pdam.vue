@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { perPageLimit } from '~/const/utils'
 import { fileUploadFinance } from '~/services/files'
 
 definePageMeta({
@@ -135,6 +136,11 @@ const handlePageChange = (page: number) => {
   getData()
 }
 
+watch(() => pagination.value.per_page, () => {
+  pagination.value.current_page = 1
+  getData()
+})
+
 onMounted(() => {
   getDropdownRT()
   getData()
@@ -257,7 +263,18 @@ onMounted(() => {
       </UTable>
     </div>
 
-    <div class="flex justify-end">
+    <div class="flex justify-between">
+      <div class="flex items-center gap-2 text-sm text-gray-600">
+        <span>Tampilkan</span>
+        <USelect
+          v-model.number="pagination.per_page"
+          :items="perPageLimit"
+          value-attribute="value"
+          option-attribute="label"
+          class="w-24"
+        />
+      </div>
+
       <UPagination
         :model-value="pagination.current_page"
         :total="pagination.total"

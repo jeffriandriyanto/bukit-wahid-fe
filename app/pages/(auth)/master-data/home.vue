@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { z } from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
+import { perPageLimit } from '~/const/utils'
 
 const {
   dropdownRT,
@@ -175,6 +176,11 @@ watch(selectedRT, () => {
   getData()
 })
 
+watch(() => pagination.value.per_page, () => {
+  pagination.value.current_page = 1
+  getData()
+})
+
 onMounted(() => {
   getDropdownRT()
   getData()
@@ -263,7 +269,18 @@ const columnsFamilyTable = [
       </template>
     </UTable>
 
-    <div class="flex justify-end border-t border-default pt-4 px-4">
+    <div class="flex justify-between border-t border-default pt-4 px-4">
+      <div class="flex items-center gap-2 text-sm text-gray-600">
+        <span>Tampilkan</span>
+        <USelect
+          v-model.number="pagination.per_page"
+          :items="perPageLimit"
+          value-attribute="value"
+          option-attribute="label"
+          class="w-24"
+        />
+      </div>
+
       <UPagination
         v-model:page="pagination.current_page"
         :total="pagination.total"

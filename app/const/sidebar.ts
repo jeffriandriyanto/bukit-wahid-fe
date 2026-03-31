@@ -46,11 +46,11 @@ export const sidebarItems: SidebarItem[] = [
         icon: 'i-lucide-file-bar-chart',
         to: '/bill/report'
       },
-      // {
-      //   label: 'Pembayaran Online',
-      //   icon: 'i-lucide-credit-card',
-      //   to: '/online-payment'
-      // },
+      {
+        label: 'Master COA',
+        icon: 'i-lucide-file-bar-chart',
+        to: '/bill/coa'
+      },
       {
         label: 'Pembayaran PDAM',
         icon: 'i-lucide-credit-card',

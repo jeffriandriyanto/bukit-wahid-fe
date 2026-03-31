@@ -4,13 +4,18 @@ const { user, logout } = useAuth()
 const open = ref(false)
 const route = useRoute()
 const isChangePasswordOpen = ref(false)
+const config = useRuntimeConfig()
 
 const displayName = computed(() => {
   const currentPath = route.path
 
   const findLabel = (items: any[]): string | undefined => {
     for (const item of items) {
-      if (item.to && (currentPath === item.to || (item.to !== '/' && currentPath.startsWith(item.to)))) {
+      if (
+        item.to &&
+        (currentPath === item.to ||
+          (item.to !== '/' && currentPath.startsWith(item.to)))
+      ) {
         return item.label
       }
 
@@ -70,7 +75,9 @@ const userMenuItems = computed(() => [
       collapsible
     >
       <template #header>
-        <AppLogoWhite class="w-auto h-8 px-4" />
+        <NuxtLink to="/">
+          <AppLogoWhite class="w-auto h-8 px-4" />
+        </NuxtLink>
       </template>
 
       <template #default>
@@ -78,7 +85,7 @@ const userMenuItems = computed(() => [
       </template>
 
       <template #footer>
-        <span>v1.3.2</span>
+        <span>{{ config.public.version }}</span>
       </template>
     </UDashboardSidebar>
 
@@ -103,7 +110,7 @@ const userMenuItems = computed(() => [
               <ClientOnly>
                 <UDropdownMenu :items="userMenuItems" :ui="{ content: 'w-56' }">
                   <button
-                    class="flex items-center gap-3 cursor-pointer rounded-lg px-2 py-1 transition hover:bg-neutral-100"
+                    class="flex items-center gap-3 cursor-pointer rounded-lg px-2 py-1 transition hover:bg-white"
                   >
                     <div class="flex flex-col text-right leading-tight">
                       <span class="text-sm font-medium text-neutral-900">
