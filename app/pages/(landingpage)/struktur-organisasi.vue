@@ -1,40 +1,59 @@
 <template>
-  <UContainer class="py-12 space-y-8">
-    <header
-      class="w-full text-white mx-auto p-4 rounded-2xl bg-primary-600 border border-neutral-200/60 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]"
-    >
-      <div class="flex flex-col items-center gap-2">
-        <h1 class="text-xl md:text-2xl font-bold uppercase tracking-wide">
-          {{ profileData.title }}
-        </h1>
-        <p class="text-sm text-center leading-snug italic">
-          "{{ profileData.subtitle }}"
+  <div class="bg-neutral-50/50 min-h-screen pb-24 overflow-hidden">
+    <SharedLandingHeader
+      badge="Bagan Organisasi"
+      title="Struktur"
+      highlight="Kepengurusan"
+      :subtitle="profileData.subtitle"
+    />
+
+    <UContainer class="py-4">
+      <div
+        v-if="rwData"
+        class="relative bg-white border border-neutral-100 shadow-premium rounded-[3rem] p-8 md:p-16 overflow-x-auto intersect-once intersect:animate-fade-in-up"
+      >
+        <div class="absolute top-8 right-8 flex items-center gap-2 text-neutral-400">
+          <UIcon name="i-lucide-mouse-pointer-2" class="w-4 h-4" />
+          <span class="text-[10px] font-black uppercase tracking-widest italic">Geser untuk melihat detail</span>
+        </div>
+
+        <div class="min-w-max flex justify-center py-10">
+          <OrgChart :datasource="rwData" />
+        </div>
+      </div>
+
+      <div
+        v-else
+        class="flex flex-col items-center justify-center py-32 space-y-4"
+      >
+        <UIcon name="i-lucide-loader-2" class="w-10 h-10 text-primary-500 animate-spin" />
+        <p class="text-sm text-neutral-400 font-bold uppercase tracking-[0.2em] animate-pulse">
+          Menyusun Bagan Organisasi...
         </p>
       </div>
-    </header>
 
-    <div v-if="rwData" class="w-full flex justify-center">
-      <OrgChart :datasource="rwData" />
-    </div>
-    <div
-      v-else
-      class="loading text-sm text-neutral-400 italic text-center py-8"
-    >
-      Memuat Struktur RW...
-    </div>
-  </UContainer>
+      <div class="max-w-2xl mx-auto text-center pt-20 border-t border-neutral-200 mt-16">
+        <p class="text-neutral-400 text-xs leading-relaxed font-medium italic">
+          "Bagan ini merepresentasikan alur koordinasi dan tanggung jawab setiap bidang untuk pelayanan warga Bukit Wahid Regency yang lebih terukur."
+        </p>
+      </div>
+    </UContainer>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { useRwStructure } from '~/composables/structure/useRwOrg'
-import OrgChart from '~/components/OrgChart.vue'
 
 const { rwData, fetchRw } = useRwStructure()
 
+useSeoMeta({
+  title: 'Struktur Organisasi RW 11 - Bukit Wahid Regency',
+  description: 'Visualisasi alur koordinasi dan tanggung jawab pengurus RW 11 Bukit Wahid Regency.',
+  ogImage: '/images/landingpage.png'
+})
+
 const profileData = reactive({
-  title: 'Struktur Organisasi',
-  subtitle:
-    'Jungle Toon Bukit Wahid Regency Manyaran Semarang Barat, Kota Semarang.'
+  subtitle: 'Alur koordinasi transparan demi mewujudkan lingkungan yang harmonis dan terorganisir.'
 })
 
 definePageMeta({

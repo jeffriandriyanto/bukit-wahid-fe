@@ -318,10 +318,13 @@ const columnsFamilyTable = [
   { id: 'action', header: 'Aksi', class: 'text-right' }
 ]
 
-watch(() => pagination.value.per_page, () => {
-  pagination.value.current_page = 1
-  getData()
-})
+watch(
+  () => pagination.value.per_page,
+  () => {
+    pagination.value.current_page = 1
+    getData()
+  }
+)
 
 onMounted(() => {
   getData()
@@ -338,46 +341,88 @@ onMounted(() => {
       accept=".xlsx, .xls"
       class="hidden"
       @change="handleExcelChange"
-    >
+    />
 
     <SharedHeaderBg>
-      <div class="w-full md:w-80">
-        <UFormField>
-          <UInput
-            v-model="search"
-            icon="i-lucide-search"
-            placeholder="Cari Nama..."
-            block
-          />
-        </UFormField>
-      </div>
+      <div
+        class="flex flex-col xl:flex-row xl:items-center justify-between gap-6 w-full py-2"
+      >
+        <div class="flex items-center gap-4 shrink-0">
+          <div
+            class="p-3 bg-primary-50 rounded-2xl shadow-sm border border-primary-100/50"
+          >
+            <UIcon
+              name="i-lucide-user-circle-2"
+              class="w-6 h-6 text-primary-600 block"
+            />
+          </div>
+          <div class="flex flex-col">
+            <h2
+              class="text-xl font-black text-neutral-900 tracking-tight leading-none"
+            >
+              Manajemen Data Penduduk
+            </h2>
+            <span
+              class="text-[10px] text-neutral-400 uppercase font-black tracking-widest mt-1.5"
+            >
+              Bukit Wahid Regency
+            </span>
+          </div>
+        </div>
 
-      <div class="flex flex-wrap gap-2">
-        <UButton
-          color="neutral"
-          variant="subtle"
-          icon="i-mdi-download"
-          @click="downloadTemplateHandler"
-        >
-          Template
-        </UButton>
+        <div class="flex-1 max-w-2xl w-full">
+          <UFormField>
+            <UInput
+              v-model="search"
+              icon="i-lucide-search"
+              placeholder="Cari Nama Warga .."
+              size="lg"
+              class="w-full"
+              :ui="{ root: 'rounded-full' }"
+            />
+          </UFormField>
+        </div>
 
-        <UButton
-          color="neutral"
-          variant="subtle"
-          icon="i-mdi-upload"
-          :loading="loadingExcel"
-          @click="triggerExcelUpload"
-        >
-          Upload Data
-        </UButton>
+        <div class="flex flex-wrap items-center gap-3 shrink-0">
+          <div
+            class="flex items-center bg-neutral-100 p-1 rounded-full border border-neutral-200"
+          >
+            <UButton
+              color="neutral"
+              variant="ghost"
+              icon="i-lucide-download"
+              size="sm"
+              class="rounded-full px-4 hover:bg-white"
+              @click="downloadTemplateHandler"
+            >
+              Template
+            </UButton>
 
-        <UButton
-          color="primary"
-          icon="i-lucide-plus-circle"
-          label="Tambah Warga"
-          @click="openAddModal"
-        />
+            <div class="w-px h-4 bg-neutral-300 mx-1" />
+
+            <UButton
+              color="neutral"
+              variant="ghost"
+              icon="i-lucide-upload"
+              size="sm"
+              :loading="loadingExcel"
+              class="rounded-full px-4 hover:bg-white"
+              @click="triggerExcelUpload"
+            >
+              Upload
+            </UButton>
+          </div>
+
+          <UButton
+            color="primary"
+            icon="i-lucide-plus-circle"
+            size="lg"
+            class="rounded-full px-8 shadow-lg shadow-primary-500/20 font-bold tracking-wide"
+            @click="openAddModal"
+          >
+            Tambah Warga
+          </UButton>
+        </div>
       </div>
     </SharedHeaderBg>
 
@@ -450,7 +495,7 @@ onMounted(() => {
           <div
             class="flex items-center gap-1.5 capitalize text-xs font-medium text-gray-600"
           >
-            <div class="w-1.5 h-1.5 rounded-full bg-green-500"></div>
+            <div class="w-1.5 h-1.5 rounded-full bg-green-500" />
             {{ row.original.type }}
           </div>
         </template>

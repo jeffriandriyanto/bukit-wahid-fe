@@ -19,12 +19,14 @@ interface CoaItem {
 
 // Schema Zod disesuaikan dengan COA
 const CoaFormSchema = z.object({
-  tag: z.number({
-    error: (issue) => {
-      if (issue.input === undefined) return 'Tag wajib diisi'
-      return 'Tag harus berupa angka'
-    }
-  }).min(1, { error: 'Tag minimal bernilai 1' }),
+  tag: z
+    .number({
+      error: (issue) => {
+        if (issue.input === undefined) return 'Tag wajib diisi'
+        return 'Tag harus berupa angka'
+      }
+    })
+    .min(1, { error: 'Tag minimal bernilai 1' }),
   name: z.string().min(1, 'Nama wajib diisi')
 })
 
@@ -104,7 +106,9 @@ const confirmDelete = async (row: any) => {
   try {
     loading.value = true
     // Menggunakan tag sebagai parameter delete sesuai instruksi
-    const res = await useApi<any>(`/finance/coa/${row.tag}`, { method: 'DELETE' })
+    const res = await useApi<any>(`/finance/coa/${row.tag}`, {
+      method: 'DELETE'
+    })
     if (res.status === 1) {
       toast.add({ title: 'Data berhasil dihapus', color: 'success' })
       getData() // Refresh data
@@ -180,10 +184,13 @@ const saveData = async (event: FormSubmitEvent<CoaFormSchema>) => {
   }
 }
 
-watch(() => pagination.value.per_page, () => {
-  pagination.value.current_page = 1
-  getData()
-})
+watch(
+  () => pagination.value.per_page,
+  () => {
+    pagination.value.current_page = 1
+    getData()
+  }
+)
 
 onMounted(getData)
 
@@ -197,7 +204,18 @@ definePageMeta({
     <ConfirmDialog />
 
     <SharedHeaderBg>
-      <div />
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-primary-50 rounded-lg">
+          <UIcon
+            name="i-lucide-receipt-text"
+            class="w-5 h-5 text-primary-600"
+          />
+        </div>
+        <h2 class="text-lg font-bold text-gray-900">
+          Manajemen Kode Akun (COA)
+        </h2>
+      </div>
+
       <UButton
         color="neutral"
         trailing-icon="mdi-plus-circle-outline"
@@ -209,7 +227,9 @@ definePageMeta({
 
     <UModal v-model:open="isOpen">
       <template #header>
-        <span class="font-bold">{{ mode === 'add' ? 'Tambah' : 'Edit' }} Akun</span>
+        <span class="font-bold"
+          >{{ mode === 'add' ? 'Tambah' : 'Edit' }} Akun</span
+        >
       </template>
 
       <template #body>
@@ -229,7 +249,10 @@ definePageMeta({
           </UFormField>
 
           <UFormField name="name" label="Nama Akun" required>
-            <UInput v-model="form.name" placeholder="Nama Akun (e.g. Bank Mandiri)" />
+            <UInput
+              v-model="form.name"
+              placeholder="Nama Akun (e.g. Bank Mandiri)"
+            />
           </UFormField>
 
           <div class="flex w-full items-center justify-between gap-2">
@@ -243,12 +266,10 @@ definePageMeta({
       </template>
     </UModal>
 
-    <div class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm">
-      <UTable
-        :data="dataCoa"
-        :columns="columnsCoaTable"
-        class="flex-1"
-      >
+    <div
+      class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm"
+    >
+      <UTable :data="dataCoa" :columns="columnsCoaTable" class="flex-1">
         <template #is_default-cell="{ row }">
           <UBadge
             v-if="row.original.is_default"

@@ -1,83 +1,148 @@
 <template>
-  <UContainer class="py-12 space-y-8">
-    <header
-      class="w-full text-white mx-auto p-4 rounded-2xl bg-primary-600 border border-neutral-200/60 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.05)]"
-    >
-      <div class="flex flex-col items-center gap-2">
-        <h1 class="text-xl md:text-2xl font-bold uppercase tracking-wide">
-          {{ managementData.page_title }}
-        </h1>
-        <p class="text-sm text-center leading-snug italic">
-          "{{ managementData.page_subtitle }}"
+  <div class="bg-neutral-50/50 min-h-screen pb-24">
+    <SharedLandingHeader
+      badge="Struktur Organisasi"
+      title="Jajaran"
+      highlight="Pengurus"
+      :subtitle="managementData.page_subtitle"
+    />
+
+    <UContainer class="py-12">
+      <div v-if="rwDataList.length > 0" class="space-y-20">
+        <div
+          class="flex justify-center intersect-once intersect:animate-fade-in-up"
+        >
+          <div
+            v-for="leader in leaderData"
+            :key="leader.name"
+            class="group max-w-sm w-full text-center space-y-6"
+          >
+            <div class="relative p-2">
+              <div
+                class="absolute inset-0 bg-primary-500/20 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-700"
+              ></div>
+
+              <div
+                class="aspect-3/4 overflow-hidden rounded-[3rem] bg-neutral-900 border-4 border-white shadow-2xl relative z-10"
+              >
+                <NuxtImg
+                  :src="
+                    leader?.incumbent?.avatar ||
+                    'https://i.pravatar.cc/400?u=ketua'
+                  "
+                  :alt="leader?.incumbent?.name"
+                  class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-1000 scale-105 group-hover:scale-100"
+                  loading="eager"
+                  format="avif,webp"
+                />
+              </div>
+            </div>
+            <div class="space-y-2 relative z-10">
+              <p
+                class="text-primary-600 text-xs font-black uppercase tracking-[0.3em]"
+              >
+                {{ leader.name }}
+              </p>
+              <h3
+                class="text-3xl font-black text-neutral-900 tracking-tighter uppercase italic"
+              >
+                {{ leader?.incumbent?.name }}
+              </h3>
+              <div class="w-12 h-1 bg-primary-500 mx-auto rounded-full"></div>
+            </div>
+          </div>
+        </div>
+
+        <div
+          class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-12"
+        >
+          <div
+            v-for="(member, index) in staffData"
+            :key="index"
+            class="group space-y-5 text-center intersect-once intersect:animate-fade-in-up"
+            :style="{ 'animation-delay': index * 0.1 + 's' }"
+          >
+            <div class="relative px-4">
+              <div
+                class="aspect-3/4 overflow-hidden rounded-[2.5rem] bg-neutral-100 border border-neutral-200 transition-all duration-500 group-hover:border-primary-500/30 group-hover:shadow-premium-hover group-hover:-translate-y-2"
+              >
+                <NuxtImg
+                  :src="
+                    member?.incumbent?.avatar ||
+                    'https://i.pravatar.cc/400?u=' + index
+                  "
+                  :alt="member?.incumbent?.name"
+                  class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
+                  format="avif,webp"
+                  loading="lazy"
+                />
+              </div>
+            </div>
+
+            <div class="space-y-1">
+              <p
+                class="text-primary-500 text-[10px] uppercase font-black tracking-[0.2em]"
+              >
+                {{ member.name }}
+              </p>
+              <h3
+                class="text-neutral-900 font-extrabold text-lg tracking-tight group-hover:text-primary-600 transition-colors"
+              >
+                {{ member?.incumbent?.name }}
+              </h3>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="max-w-2xl mx-auto text-center pt-20 border-t border-neutral-200 mt-20"
+      >
+        <UIcon name="i-lucide-info" class="w-8 h-8 text-primary-500/20 mb-4" />
+        <p class="text-neutral-500 text-sm leading-relaxed italic font-medium">
+          "Struktur organisasi ini dibentuk berdasarkan hasil musyawarah mufakat
+          warga demi mewujudkan tata kelola lingkungan RW 11 yang transparan,
+          akuntabel, dan harmonis."
         </p>
       </div>
-    </header>
-
-    <div
-      v-if="rwDataList.length > 0"
-      class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 md:gap-8"
-    >
-      <div
-        v-for="(member, index) in rwDataList"
-        :key="index"
-        class="group space-y-4 text-center"
-      >
-        <div
-          class="aspect-3/4 overflow-hidden rounded-2xl bg-neutral-900 border border-neutral-800 transition-all duration-300 group-hover:border-primary-500/50 group-hover:shadow-2xl group-hover:shadow-primary-500/10"
-        >
-          <img
-            :src="member?.incumbent?.avatar"
-            :alt="member.name"
-            class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-500 scale-105 group-hover:scale-100"
-          />
-        </div>
-
-        <div class="space-y-1">
-          <h3
-            class="text-neutral-800 font-bold text-sm md:text-base leading-tight transition-colors"
-          >
-            {{ member?.incumbent?.name }}
-          </h3>
-          <p
-            class="text-neutral-500 text-xs uppercase font-medium tracking-wider"
-          >
-            {{ member.name }}
-          </p>
-        </div>
-      </div>
-    </div>
-
-    <div class="max-w-xl mx-auto text-center pt-10">
-      <p class="text-neutral-400 text-sm leading-relaxed">
-        Struktur organisasi ini dibentuk berdasarkan hasil musyawarah warga demi
-        mewujudkan lingkungan RW 11 yang lebih baik.
-      </p>
-    </div>
-  </UContainer>
+    </UContainer>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { useRwStructure } from '~/composables/structure/useRwOrg'
 const { rwDataList, fetchRwList } = useRwStructure()
-const dataPerangkat = computed(() => rwDataList)
+
+// [SEO]
+useSeoMeta({
+  title: 'Jajaran Pengurus RW 11 - Bukit Wahid Regency',
+  description:
+    'Kenali lebih dekat pengurus lingkungan RW 11 Bukit Wahid Regency yang berdedikasi melayani warga.',
+  ogImage: '/images/landingpage.png'
+})
+
+// [Logic] Memisahkan Ketua dari Staff untuk Hierarchy
+const leaderData = computed(() => {
+  return rwDataList.value.filter((m) =>
+    m.name.toLowerCase().includes('ketua rw')
+  )
+})
+
+const staffData = computed(() => {
+  return rwDataList.value.filter(
+    (m) => !m.name.toLowerCase().includes('ketua rw')
+  )
+})
 
 onMounted(fetchRwList)
 
 const managementData = reactive({
   page_title: 'Pengurus RW.11',
   page_subtitle:
-    'Jungle Toon Bukit Wahid Regency Manyaran Semarang Barat, Kota Semarang.'
+    'Dedikasi melayani dan mengayomi warga Bukit Wahid Regency dengan semangat transparansi.'
 })
 
 definePageMeta({
   layout: 'landingpage'
 })
 </script>
-
-<style scoped>
-/* Menambahkan efek smooth pada gambar */
-img {
-  backface-visibility: hidden;
-  -webkit-font-smoothing: subpixel-antialiased;
-}
-</style>

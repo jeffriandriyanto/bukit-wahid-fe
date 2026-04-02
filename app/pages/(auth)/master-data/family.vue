@@ -200,10 +200,13 @@ const addressHandler = () => {
   getDropdownAddress(form.rt)
 }
 
-watch(() => pagination.value.per_page, () => {
-  pagination.value.current_page = 1
-  getData()
-})
+watch(
+  () => pagination.value.per_page,
+  () => {
+    pagination.value.current_page = 1
+    getData()
+  }
+)
 
 onMounted(() => {
   getDropdownRT()
@@ -223,23 +226,32 @@ const columnsFamilyTable = [
     <ConfirmDialog />
 
     <SharedHeaderBg>
-      <USelectMenu
-        v-model="selectedRT"
-        placeholder="Filter RT"
-        :items="dropdownRT"
-        value-key="key"
-        label-key="label"
-        class="w-48"
-        clear
-        @change="getData"
-      />
-      <UButton
-        color="neutral"
-        icon="i-lucide-plus-circle"
-        @click="openAddModal"
-      >
-        Tambah Keluarga
-      </UButton>
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-primary-50 rounded-lg">
+          <UIcon name="i-lucide-users-round" class="w-5 h-5 text-primary-600" />
+        </div>
+        <h2 class="text-lg font-bold text-gray-900">Manajemen Data Keluarga</h2>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <USelectMenu
+          v-model="selectedRT"
+          placeholder="Filter RT"
+          :items="dropdownRT"
+          value-key="key"
+          label-key="label"
+          class="w-48"
+          clear
+          @change="getData"
+        />
+        <UButton
+          color="neutral"
+          icon="i-lucide-plus-circle"
+          @click="openAddModal"
+        >
+          Tambah Keluarga
+        </UButton>
+      </div>
     </SharedHeaderBg>
 
     <div

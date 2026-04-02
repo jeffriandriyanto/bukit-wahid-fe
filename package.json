@@ -32,6 +32,7 @@
   "devDependencies": {
     "@nuxt/eslint": "^1.12.1",
     "eslint": "^9.39.2",
+    "tailwindcss-intersect": "^2.2.0",
     "typescript": "^5.9.3",
     "vue-tsc": "^3.2.1"
   },

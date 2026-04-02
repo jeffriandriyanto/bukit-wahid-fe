@@ -35,10 +35,10 @@ const columnsNewsTable = [
     accessorKey: 'title',
     header: 'Judul'
   },
-  {
-    accessorKey: 'for',
-    header: 'Ditujukan Pada'
-  },
+  // {
+  //   accessorKey: 'for',
+  //   header: 'Ditujukan Pada'
+  // },
   {
     accessorKey: 'created_at',
     header: 'Tanggal Dibuat'
@@ -290,10 +290,13 @@ watch(selectedRT, () => {
   getData()
 })
 
-watch(() => pagination.value.per_page, () => {
-  pagination.value.current_page = 1
-  getData()
-})
+watch(
+  () => pagination.value.per_page,
+  () => {
+    pagination.value.current_page = 1
+    getData()
+  }
+)
 
 onMounted(() => {
   getDropdownRT()
@@ -310,27 +313,30 @@ definePageMeta({
     <ConfirmDialog />
 
     <SharedHeaderBg>
-      <!-- <USelectMenu
-        v-model="selectedRT"
-        placeholder="Pilih RT"
-        :search-input="{
-          placeholder: 'Cari nama RT'
-        }"
-        :items="dropdownRT"
-        value-key="key"
-        label-key="label"
-        searchable
-        class="w-40"
-      /> -->
-      <div />
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-primary-50 rounded-lg">
+          <UIcon name="i-lucide-newspaper" class="w-5 h-5 text-primary-600" />
+        </div>
+        <h2 class="text-lg font-bold text-gray-900">Manajemen Berita</h2>
+      </div>
 
-      <UButton
-        color="neutral"
-        trailing-icon="mdi-plus-circle-outline"
-        @click="openAddModal"
-      >
-        Tambah Berita
-      </UButton>
+      <div class="flex items-center gap-3">
+        <USelectMenu
+          v-model="selectedRT"
+          placeholder="Filter RT"
+          :items="dropdownRT"
+          value-key="key"
+          label-key="label"
+          class="w-44"
+        />
+        <UButton
+          color="neutral"
+          trailing-icon="mdi-plus-circle-outline"
+          @click="openAddModal"
+        >
+          Tambah Berita
+        </UButton>
+      </div>
     </SharedHeaderBg>
 
     <UModal v-model:open="isOpen">
@@ -453,36 +459,36 @@ definePageMeta({
           }}</span>
         </template>
         <template #action-cell="{ row }">
-          <UButton
-            v-if="!row.original.published_at"
-            icon="mdi:eye"
-            variant="ghost"
-            color="success"
-            @click="publishHandler(row.original)"
-          />
+          <div class="flex gap-2">
+            <UButton
+              v-if="!row.original.published_at"
+              icon="i-lucide-eye"
+              color="success"
+              @click="publishHandler(row.original)"
+            />
 
-          <UButton
-            v-if="row.original.published_at"
-            icon="mdi:eye-off"
-            variant="ghost"
-            color="error"
-            @click="unpublishHandler(row.original)"
-          />
+            <UButton
+              v-if="row.original.published_at"
+              icon="i-lucide-eye-off"
+              color="error"
+              @click="unpublishHandler(row.original)"
+            />
 
-          <UButton
-            icon="i-lucide-pencil"
-            variant="ghost"
-            color="neutral"
-            size="sm"
-            @click="openEditModal(row.original)"
-          />
-          <UButton
-            icon="i-lucide-trash-2"
-            variant="ghost"
-            color="error"
-            size="sm"
-            @click="confirmDelete(row.original)"
-          />
+            <UButton
+              icon="i-lucide-pencil"
+              variant="ghost"
+              color="neutral"
+              size="sm"
+              @click="openEditModal(row.original)"
+            />
+            <UButton
+              icon="i-lucide-trash-2"
+              variant="ghost"
+              color="error"
+              size="sm"
+              @click="confirmDelete(row.original)"
+            />
+          </div>
         </template>
       </UTable>
     </div>

@@ -92,6 +92,11 @@ export const sidebarItems: SidebarItem[] = [
     ]
   },
   {
+    label: 'Galeri',
+    icon: 'i-lucide-images',
+    to: '/galleries'
+  },
+  {
     label: 'Pengaturan',
     icon: 'i-lucide-cog',
     to: '/settings'

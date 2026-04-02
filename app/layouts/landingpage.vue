@@ -214,17 +214,6 @@ const CONFIG = {
   email: 'admin@bukitwahid.com'
 }
 
-// Logic Computed untuk Tombol Auth
-const authButton = computed(() => {
-  return token.value
-    ? {
-        label: 'Dashboard',
-        to: '/dashboard',
-        icon: 'i-lucide-layout-dashboard'
-      }
-    : { label: 'Masuk', to: '/login', icon: 'i-lucide-log-in' }
-})
-
 const socials = [
   {
     icon: 'i-simple-icons-instagram',
@@ -249,16 +238,10 @@ const navigationItems = [
         description: 'Visi, misi, dan sejarah Bukit Wahid Regency.'
       },
       {
-        label: 'Struktur Organisasi',
-        to: '/struktur-organisasi',
-        icon: 'i-lucide-network',
-        description: 'Bagan kepengurusan dan tupoksi pengurus.'
-      },
-      {
         label: 'Perangkat RW 11',
         to: '/perangkat',
         icon: 'i-lucide-users',
-        description: 'Daftar Ketua RT dan seksi-seksi bidang.'
+        description: 'Daftar Ketua RW dan seksi-seksi bidang.'
       }
     ]
   },

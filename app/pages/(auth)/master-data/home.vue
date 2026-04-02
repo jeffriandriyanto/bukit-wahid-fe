@@ -176,10 +176,13 @@ watch(selectedRT, () => {
   getData()
 })
 
-watch(() => pagination.value.per_page, () => {
-  pagination.value.current_page = 1
-  getData()
-})
+watch(
+  () => pagination.value.per_page,
+  () => {
+    pagination.value.current_page = 1
+    getData()
+  }
+)
 
 onMounted(() => {
   getDropdownRT()
@@ -201,35 +204,45 @@ const columnsFamilyTable = [
     <ConfirmDialog />
 
     <SharedHeaderBg>
-      <USelectMenu
-        v-model="selectedRT"
-        placeholder="Pilih RT"
-        :search-input="{
-          placeholder: 'Cari RT RT'
-        }"
-        :items="dropdownRT"
-        value-key="key"
-        label-key="label"
-        clear
-        searchable
-        class="w-40"
-        @change="getDropdownResidenceType(selectedRT)" />
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-primary-50 rounded-lg">
+          <UIcon name="i-lucide-home" class="w-5 h-5 text-primary-600" />
+        </div>
+        <h2 class="text-lg font-bold text-gray-900">Manajemen Data Hunian</h2>
+      </div>
 
-      <USelectMenu
-        v-model="selectedKavling"
-        placeholder="Pilih tipe kavling"
-        :disabled="!selectedRT"
-        :search-input="{
-          placeholder: 'Cari tipe kavling'
-        }"
-        clear
-        :items="dropdownResidenceType"
-        value-key="key"
-        label-key="label"
-        searchable
-        class="w-40"
-        @change="getData"
-    /></SharedHeaderBg>
+      <div class="flex items-center gap-3">
+        <USelectMenu
+          v-model="selectedRT"
+          placeholder="Pilih RT"
+          :search-input="{
+            placeholder: 'Cari RT RT'
+          }"
+          :items="dropdownRT"
+          value-key="key"
+          label-key="label"
+          clear
+          searchable
+          class="w-40"
+          @change="getDropdownResidenceType(selectedRT)"
+        />
+
+        <USelectMenu
+          v-model="selectedKavling"
+          placeholder="Pilih tipe kavling"
+          :disabled="!selectedRT"
+          :search-input="{
+            placeholder: 'Cari tipe kavling'
+          }"
+          clear
+          :items="dropdownResidenceType"
+          value-key="key"
+          label-key="label"
+          searchable
+          class="w-40"
+          @change="getData"
+        /></div
+    ></SharedHeaderBg>
 
     <UTable
       ref="table"

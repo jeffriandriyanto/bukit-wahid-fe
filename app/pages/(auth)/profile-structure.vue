@@ -358,7 +358,16 @@ definePageMeta({
     </UModal>
 
     <SharedHeaderBg>
-      <div class="flex gap-2">
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-primary-50 rounded-lg">
+          <UIcon name="i-lucide-git-graph" class="w-5 h-5 text-primary-600" />
+        </div>
+        <h2 class="text-lg font-bold text-gray-900">
+          Struktur Organisasi & Profil
+        </h2>
+      </div>
+
+      <div class="flex gap-3">
         <UButton
           v-if="activeTab == '1'"
           color="neutral"
@@ -369,19 +378,14 @@ definePageMeta({
           Lihat Struktur
         </UButton>
 
-        <!-- <UButton color="neutral" variant="outline" icon="i-lucide-download">
-          Download
-        </UButton> -->
-        <div />
+        <UButton
+          color="neutral"
+          icon="mdi-plus-circle-outline"
+          @click="openAddModal()"
+        >
+          Tambah Struktur
+        </UButton>
       </div>
-
-      <UButton
-        color="neutral"
-        icon="mdi-plus-circle-outline"
-        @click="openAddModal()"
-      >
-        Tambah Struktur
-      </UButton>
     </SharedHeaderBg>
 
     <!-- MODAL FORM ASSIGN -->

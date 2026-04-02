@@ -322,10 +322,13 @@ const resultTableColumns = [
   { accessorKey: 'votes_count', header: 'Perolehan' }
 ]
 
-watch(() => pagination.value.per_page, () => {
-  pagination.value.current_page = 1
-  getData()
-})
+watch(
+  () => pagination.value.per_page,
+  () => {
+    pagination.value.current_page = 1
+    getData()
+  }
+)
 
 onMounted(() => {
   getDropdownRT()
@@ -336,6 +339,15 @@ onMounted(() => {
 <template>
   <div class="space-y-4">
     <SharedHeaderBg>
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-primary-50 rounded-lg">
+          <UIcon name="i-lucide-vote" class="w-5 h-5 text-primary-600" />
+        </div>
+        <h2 class="text-lg font-bold text-gray-900">
+          Manajemen E-Voting Warga
+        </h2>
+      </div>
+
       <div class="w-64">
         <USelect
           v-model="selectedStatus"

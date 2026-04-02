@@ -1,6 +1,37 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
+@plugin "tailwindcss-intersect";
+
+@theme {
+  --animate-fade-in-up: fade-in-up 0.8s cubic-bezier(0.21, 0.45, 0.32, 0.9) forwards;
+  --animate-ken-burns: ken-burns 20s ease-in-out infinite;
+
+  @keyframes fade-in-up {
+    0% {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes ken-burns {
+    0% { transform: scale(1.05) translate(0, 0); }
+    50% { transform: scale(1.15) translate(-1%, -1%); }
+    100% { transform: scale(1.05) translate(0, 0); }
+  }
+}
+
+/* [UX Update] Fallback: Jika JS gagal, konten tetap muncul (Safety First) */
+@media (prefers-reduced-motion: reduce) {
+  .opacity-0 {
+    opacity: 1 !important;
+  }
+}
+
 @theme static {
   /* ======================
     PRIMARY – Red
@@ -55,7 +86,7 @@
 .orgchart .node .bottomEdge,
 .orgchart .node .leftEdge,
 .orgchart .node .rightEdge {
-  background-color: #4ade80 !important; /* Ganti dengan warna pilihanmu, misal Green 400 */
+  background-color: snow !important; /* Ganti dengan warna pilihanmu, misal Green 400 */
 }
 
 .chartNode {
@@ -63,14 +94,14 @@
 }
 
 .chartRightLine {
-  border-right-color: #d4d4d4;
+  border-right-color: snow !important;
 }
 .chartLeftLine {
-  border-left-color: #d4d4d4;
+  border-left-color: snow !important;
 }
 .chartTopLine {
-  border-top-color: #d4d4d4;
+  border-top-color: snow !important;
 }
 .chartBottomLine {
-  
+  border-bottom-color: snow !important;
 }

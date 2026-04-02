@@ -15,12 +15,14 @@ const editingId = ref<string | null>(null)
 const loading = ref(false)
 
 const AgendaFormSchema = z.object({
-  title: z.string().min(1, 'Nama wajib diisi'),
+  title: z.string().min(1, 'Judul agenda wajib diisi'),
   fors: z.array(z.string()).default([]),
   description: z.string().min(1, 'Deskripsi wajib diisi'),
   location: z.string().optional(),
-  start_date: z.any(),
-  start_time: z.any()
+  start_date: z.any().refine((val) => !!val, 'Tanggal mulai wajib diisi'),
+  start_time: z.any().refine((val) => !!val, 'Jam mulai wajib diisi'),
+  end_date: z.any().optional(),
+  end_time: z.any().optional()
 })
 
 type AgendaFormSchema = z.infer<typeof AgendaFormSchema>
@@ -28,30 +30,10 @@ type AgendaFormSchema = z.infer<typeof AgendaFormSchema>
 const dataAgendaCard = ref([])
 
 const columnsAgendaTable = [
-  {
-    accessorKey: 'title',
-    header: 'Judul'
-  },
-  {
-    accessorKey: 'start_date',
-    header: 'Tanggal Agenda'
-  },
-  {
-    accessorKey: 'start_time',
-    header: 'Jam Agenda'
-  },
-  {
-    accessorKey: 'location',
-    header: 'Lokasi'
-  },
-  {
-    accessorKey: 'description',
-    header: 'Deskripsi'
-  },
-  {
-    accessorKey: 'action',
-    header: 'Aksi'
-  }
+  { accessorKey: 'title', header: 'Agenda' },
+  { accessorKey: 'start_date', header: 'Waktu Pelaksanaan' },
+  { accessorKey: 'location', header: 'Lokasi' },
+  { accessorKey: 'action', header: 'Aksi' }
 ]
 
 const pagination = ref({
@@ -64,36 +46,21 @@ const pagination = ref({
 /* =========================
   FORM STATE
 ========================= */
-interface AgendaType {
-  title: string
-  fors?: []
-  description: string
-  location: string
-  start_date: any
-  start_time: any
-}
-
-const form = reactive<AgendaType>({
+const form = reactive({
   title: '',
   fors: [],
   description: '',
   location: '',
   start_date: null,
-  start_time: null
+  start_time: null,
+  end_date: null,
+  end_time: null
 })
 
 const isUrl = (str: string) => {
   if (!str) return false
-  const pattern = new RegExp(
-    '^(https?:\\/\\/)?' + // protocol
-      '((([a-z\\d]([a-z\\d-]*[a-z\\d])*)\\.)+[a-z]{2,}|' + // domain name
-      '((\\d{1,3}\\.){3}\\d{1,3}))' + // OR ip (v4) address
-      '(\\:\\d+)?(\\/[-a-z\\d%_.~+]*)*' + // port and path
-      '(\\?[;&a-z\\d%_.~+=-]*)?' + // query string
-      '(\\#[-a-z\\d_]*)?$',
-    'i'
-  ) // fragment locator
-  return !!pattern.test(str)
+  const pattern = /^(https?:\/\/)?([\da-z.-]+)\.([a-z.]{2,6})([/\w .-]*)*\/?$/
+  return pattern.test(str)
 }
 
 const openAddModal = () => {
@@ -112,7 +79,10 @@ const openEditModal = async (row: any) => {
   Object.assign(form, {
     ...row,
     start_date: parseToCalendarDate(row.start_date),
-    start_time: parseToTime(row.start_time)
+    start_time: parseToTime(row.start_time),
+    end_date: row.end_date ? parseToCalendarDate(row.end_date) : null,
+    end_time: row.end_time ? parseToTime(row.end_time) : null,
+    fors: Array.isArray(row.fors) ? row.fors.map((f: any) => f.id || f) : []
   })
   isOpen.value = true
 }
@@ -146,12 +116,16 @@ const confirmDelete = async (row: any) => {
 }
 
 const resetForm = () => {
-  form.title = ''
-  form.fors = []
-  form.description = ''
-  form.location = ''
-  form.start_date = null
-  form.start_time = null
+  Object.assign(form, {
+    title: '',
+    fors: [],
+    description: '',
+    location: '',
+    start_date: null,
+    start_time: null,
+    end_date: null,
+    end_time: null
+  })
 }
 
 const getData = async () => {
@@ -187,9 +161,12 @@ const saveData = async (event: FormSubmitEvent<AgendaFormSchema>) => {
       ...event.data,
       start_date: formatDOB(event.data.start_date),
       start_time: formatTimeValue(event.data.start_time),
+      end_date: event.data.end_date ? formatDOB(event.data.end_date) : null,
+      end_time: event.data.end_time
+        ? formatTimeValue(event.data.end_time)
+        : null,
       fors: event.data.fors || []
     }
-
     console.log('payload', payload)
 
     const url = mode.value === 'add' ? '/agenda' : `/agenda/${editingId.value}`
@@ -226,10 +203,13 @@ watch(selectedRT, () => {
   getData()
 })
 
-watch(() => pagination.value.per_page, () => {
-  pagination.value.current_page = 1
-  getData()
-})
+watch(
+  () => pagination.value.per_page,
+  () => {
+    pagination.value.current_page = 1
+    getData()
+  }
+)
 
 onMounted(() => {
   getDropdownRT()
@@ -242,91 +222,137 @@ definePageMeta({
 </script>
 
 <template>
-  <div class="space-y-4">
+  <div class="space-y-6">
     <ConfirmDialog />
 
     <SharedHeaderBg>
-      <USelectMenu
-        v-model="selectedRT"
-        placeholder="Pilih RT"
-        :search-input="{
-          placeholder: 'Cari nama RT'
-        }"
-        clear
-        :items="dropdownRT"
-        value-key="key"
-        label-key="label"
-        searchable
-        class="w-40"
-      />
+      <div class="flex items-center gap-3">
+        <div class="p-2 bg-primary-50 rounded-lg">
+          <UIcon
+            name="i-lucide-calendar-days"
+            class="w-5 h-5 text-primary-600"
+          />
+        </div>
+        <h2 class="text-lg font-bold text-gray-900">Manajemen Agenda</h2>
+      </div>
 
-      <UButton
-        color="neutral"
-        trailing-icon="mdi-plus-circle-outline"
-        @click="openAddModal"
-      >
-        Tambah Agenda
-      </UButton>
+      <div class="flex items-center gap-3">
+        <USelectMenu
+          v-model="selectedRT"
+          placeholder="Filter RT"
+          :items="dropdownRT"
+          value-key="key"
+          label-key="label"
+          class="w-44"
+        />
+        <UButton
+          color="primary"
+          icon="i-lucide-plus-circle"
+          class="rounded-full px-6"
+          @click="openAddModal"
+        >
+          Tambah Agenda
+        </UButton>
+      </div>
     </SharedHeaderBg>
 
-    <UModal v-model:open="isOpen">
+    <UModal v-model:open="isOpen" :ui="{ width: 'sm:max-w-xl' }">
       <template #header>
-        <span class="font-bold"
-          >{{ mode === 'add' ? 'Tambah' : 'Ubah' }} Agenda</span
-        >
+        <div class="flex flex-col">
+          <span class="text-lg font-bold"
+            >{{ mode === 'add' ? 'Buat' : 'Perbarui' }} Agenda</span
+          >
+          <span
+            class="text-xs text-gray-500 font-medium uppercase tracking-wider"
+            >Lengkapi rincian kegiatan warga</span
+          >
+        </div>
       </template>
 
       <template #body>
         <UForm
           :schema="AgendaFormSchema"
           :state="form"
-          class="w-full space-y-6"
+          class="space-y-6 py-2"
           @submit="saveData"
         >
-          <UFormField name="title" label="Nama Agenda" required>
-            <UInput v-model="form.title" placeholder="Nama Agenda" />
+          <UFormField name="title" label="Judul Agenda" required>
+            <UInput
+              v-model="form.title"
+              placeholder="Contoh: Kerja Bakti Bulanan"
+              size="lg"
+            />
           </UFormField>
 
-          <UFormField name="for" label="Ditujukan Pada">
+          <UFormField
+            name="fors"
+            label="Ditujukan Untuk"
+            help="Pilih RT atau biarkan kosong untuk seluruh warga"
+          >
             <USelect
               v-model="form.fors"
               :items="dropdownRT"
               multiple
               value-key="key"
-              value-label="label"
-              class="w-full"
-              searchable
+              label-key="label"
               placeholder="Pilih RT"
+              size="lg"
             />
           </UFormField>
 
-          <div class="grid grid-cols-2 gap-4">
-            <UFormField name="start_date" label="Tanggal">
+          <div
+            class="grid grid-cols-2 gap-x-4 gap-y-6 p-4 bg-gray-50 rounded-2xl border border-gray-100"
+          >
+            <UFormField name="start_date" label="Tanggal Mulai" required>
               <UInputDate v-model="form.start_date" />
             </UFormField>
-
-            <UFormField name="time" label="Jam">
+            <UFormField name="start_time" label="Jam Mulai" required>
               <UInputTime v-model="form.start_time" :hour-cycle="24" />
+            </UFormField>
+
+            <UFormField name="end_date" label="Tanggal Selesai (Opsional)">
+              <UInputDate v-model="form.end_date" />
+            </UFormField>
+            <UFormField name="end_time" label="Jam Selesai (Opsional)">
+              <UInputTime v-model="form.end_time" :hour-cycle="24" />
             </UFormField>
           </div>
 
-          <UFormField name="location" label="Lokasi">
-            <UInput v-model="form.location" placeholder="Lokasi" />
+          <UFormField name="location" label="Lokasi / Tautan">
+            <UInput
+              v-model="form.location"
+              placeholder="Alamat fisik atau Link Zoom/Meet"
+              size="lg"
+            >
+              <template #leading>
+                <UIcon
+                  :name="
+                    isUrl(form.location) ? 'i-lucide-link' : 'i-lucide-map-pin'
+                  "
+                />
+              </template>
+            </UInput>
           </UFormField>
 
-          <UFormField name="description" label="Catatan">
+          <UFormField name="description" label="Detail Kegiatan" required>
             <UTextarea
               v-model="form.description"
               :rows="4"
-              placeholder="Deskripsi"
+              placeholder="Tuliskan detail agenda di sini..."
             />
           </UFormField>
 
-          <div class="flex w-full items-center justify-between gap-2">
-            <UButton variant="ghost" @click="isOpen = false"> Batal </UButton>
-
-            <UButton type="submit" color="neutral" :loading="loading">
-              Simpan
+          <div class="flex justify-end gap-3 pt-4">
+            <UButton variant="ghost" color="neutral" @click="isOpen = false">
+              Batal
+            </UButton>
+            <UButton
+              type="submit"
+              color="primary"
+              :loading="loading"
+              class="px-8 rounded-full"
+            >
+              Simpan Agenda
             </UButton>
           </div>
         </UForm>
@@ -334,20 +360,22 @@ definePageMeta({
     </UModal>
 
     <div
-      class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm"
+      class="bg-white border border-gray-100 rounded-3xl overflow-hidden shadow-sm"
     >
-      <UTable
-        ref="table"
-        :data="dataAgendaCard"
-        :columns="columnsAgendaTable"
-        class="flex-1"
-      >
+      <UTable :data="dataAgendaCard" :columns="columnsAgendaTable">
         <template #start_date-cell="{ row }">
-          {{ formatDate(row.original.start_date) }}
+          <div class="flex flex-col">
+            <span class="font-bold text-gray-900">{{
+              formatDate(row.original.start_date)
+            }}</span>
+            <span class="text-xs text-gray-500"
+              >{{ row.original.start_time }} WIB</span
+            >
+          </div>
         </template>
 
         <template #location-cell="{ row }">
-          <div class="max-w-50 truncate">
+          <div class="max-w-64">
             <template v-if="isUrl(row.original.location)">
               <a
                 :href="
@@ -356,36 +384,36 @@ definePageMeta({
                     : `https://${row.original.location}`
                 "
                 target="_blank"
-                class="text-primary-500 hover:underline flex items-center gap-1 font-medium"
+                class="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-xs font-bold hover:bg-blue-100 transition-colors"
               >
-                <UIcon name="i-lucide-external-link" class="w-4 h-4" />
-                Buka Tautan
+                <UIcon name="i-lucide-video" class="w-3.5 h-3.5" />
+                Buka Link Meeting
               </a>
             </template>
-
             <template v-else>
-              <span class="text-gray-600">
+              <div class="flex items-center gap-2 text-gray-600 text-sm italic">
+                <UIcon name="i-lucide-map-pin" class="w-3.5 h-3.5 opacity-50" />
                 {{ row.original.location || '-' }}
-              </span>
+              </div>
             </template>
           </div>
         </template>
 
         <template #action-cell="{ row }">
-          <UButton
-            icon="i-lucide-pencil"
-            variant="ghost"
-            color="neutral"
-            size="sm"
-            @click="openEditModal(row.original)"
-          />
-          <UButton
-            icon="i-lucide-trash-2"
-            variant="ghost"
-            color="error"
-            size="sm"
-            @click="confirmDelete(row.original)"
-          />
+          <div class="flex gap-1">
+            <UButton
+              icon="i-lucide-pencil"
+              variant="ghost"
+              color="neutral"
+              @click="openEditModal(row.original)"
+            />
+            <UButton
+              icon="i-lucide-trash-2"
+              variant="ghost"
+              color="error"
+              @click="confirmDelete(row.original)"
+            />
+          </div>
         </template>
       </UTable>
     </div>

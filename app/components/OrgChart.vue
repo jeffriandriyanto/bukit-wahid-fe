@@ -1,4 +1,3 @@
-<!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <script setup lang="ts">
 type AccentColor = 'primary' | 'success' | 'warning' | 'error' | 'neutral'
 
@@ -7,7 +6,6 @@ defineProps<{
   accentColor?: AccentColor
 }>()
 
-// 1. Definisikan emits
 const emit = defineEmits<{
   (e: 'nodeClick', node: any): void
   (e: 'nameClick', node: any): void
@@ -91,7 +89,7 @@ const getInitial = (name: string | null | undefined): string => {
 .chartNode {
   border: none !important;
   background: transparent !important;
-  margin-inline: 32px !important; /* SPACING SIBLING */
+  margin-inline: 32px !important;
 }
 
 .chartNode:hover {
