@@ -2,6 +2,7 @@
 import { watchWithFilter, debounceFilter } from '@vueuse/core'
 import { perPageLimit } from '~/const/utils'
 const { dropdownRT, getDropdownRT } = useApiDropdown()
+const { reveal: confirm } = useConfirmService()
 
 definePageMeta({
   middleware: ['auth']
@@ -12,6 +13,8 @@ const search = ref('')
 const selectedRT = ref()
 const loading = ref(false)
 const dataFinancialStatements = ref<any[]>([])
+const loadingBlast = ref(false)
+const toast = useToast() // Pastikan @nuxt/ui toast plugin aktif
 
 const pagination = ref({
   current_page: 1,
@@ -22,7 +25,7 @@ const pagination = ref({
 
 const bill = ref({
   unpaid: 0
-});
+})
 
 // --- TABLE COLUMNS ---
 // Disesuaikan dengan payload dari /finance/bill
@@ -58,6 +61,49 @@ const getData = async () => {
     console.error('Fetch error:', err)
   } finally {
     loading.value = false
+  }
+}
+
+const handleBlastWA = async () => {
+  const confirmSend = await confirm({
+    title: 'Konfirmasi Blast WhatsApp',
+    description: `Tindakan ini akan mengirimkan pesan tagihan kepada seluruh warga yang memiliki tunggakan. Pastikan data tagihan sudah divalidasi sebelum melanjutkan.`,
+    confirmLabel: 'Ya, Kirim Sekarang',
+    cancelLabel: 'Batal',
+    color: 'primary'
+  })
+
+  if (!confirmSend) return
+
+  loadingBlast.value = true
+  try {
+    const res = await useApi<any>('/finance/bill/wa', {
+      method: 'POST',
+      body: {
+        rt: selectedRT.value,
+        search: search.value
+      }
+    })
+
+    if (res.status === 1) {
+      toast.add({
+        title: 'Berhasil!',
+        description: 'Notifikasi WhatsApp sedang dikirim ke antrean blast.',
+        icon: 'i-lucide-check-circle',
+        color: 'success'
+      })
+    } else {
+      throw new Error(res.message || 'Gagal mengirim WA')
+    }
+  } catch (err: any) {
+    toast.add({
+      title: 'Gagal Blast WA',
+      description: err.message || 'Terjadi kesalahan sistem.',
+      icon: 'i-lucide-alert-circle',
+      color: 'error'
+    })
+  } finally {
+    loadingBlast.value = false
   }
 }
 
@@ -111,10 +157,13 @@ watchWithFilter(
   }
 )
 
-watch(() => pagination.value.per_page, () => {
-  pagination.value.current_page = 1
-  getData()
-})
+watch(
+  () => pagination.value.per_page,
+  () => {
+    pagination.value.current_page = 1
+    getData()
+  }
+)
 
 onMounted(() => {
   getDataBill()
@@ -160,6 +209,16 @@ onMounted(() => {
 
       <div class="flex flex-wrap gap-2">
         <UButton
+          color="success"
+          variant="soft"
+          icon="i-mdi-whatsapp"
+          :loading="loadingBlast"
+          @click="handleBlastWA"
+        >
+          Blast Notif Tagihan
+        </UButton>
+
+        <UButton
           color="primary"
           icon="i-mdi-plus-circle-outline"
           @click="navigateToTagihanDetail"
@@ -180,7 +239,9 @@ onMounted(() => {
           <div class="text-sm text-primary-600 font-medium">
             Total Tagihan Bulan Ini
           </div>
-          <div class="font-bold text-2xl text-primary-900">{{ formatCurrency(bill.unpaid) }}</div>
+          <div class="font-bold text-2xl text-primary-900">
+            {{ formatCurrency(bill.unpaid) }}
+          </div>
         </div>
       </div>
 

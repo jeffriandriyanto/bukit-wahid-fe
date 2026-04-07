@@ -17,7 +17,7 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     public: {
-      version: "1.3.6",
+      version: "1.3.7",
       siteUrl: 'https://rw11bukitwahid.com',
       baseUrl: process?.env?.NUXT_PUBLIC_BASE_URL || ''
     },

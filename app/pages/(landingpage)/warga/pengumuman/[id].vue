@@ -15,8 +15,6 @@ const { data: newsResponse, status } = await useFetch<any>(
   }
 )
 
-console.log("newsResponse", newsResponse.value)
-
 const post = computed(() => newsResponse.value?.data)
 
 // --- Dynamic SEO ---

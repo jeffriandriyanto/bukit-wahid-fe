@@ -167,7 +167,6 @@ const saveData = async (event: FormSubmitEvent<AgendaFormSchema>) => {
         : null,
       fors: event.data.fors || []
     }
-    console.log('payload', payload)
 
     const url = mode.value === 'add' ? '/agenda' : `/agenda/${editingId.value}`
     const method = mode.value === 'add' ? 'POST' : 'PUT'

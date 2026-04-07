@@ -180,7 +180,6 @@ const saveData = async (event: FormSubmitEvent<FamilyCardFormSchema>) => {
     const url =
       mode.value === 'add' ? '/familly' : `/familly/${editingId.value}`
     const method = mode.value === 'add' ? 'POST' : 'PUT'
-    console.log('payload', payload)
 
     const res = await useApi<any>(url, { method, body: payload })
     if (res.status === 1) {

@@ -53,8 +53,6 @@ const { data: newsResponse } = await useFetch<any>('/news', {
   key: 'home-news'
 })
 
-console.log("newsResponse.value", newsResponse.value);
-
 const { data: agendaResponse } = await useFetch<any>('/agenda', {
   baseURL: config.public.baseUrl,
   query: { page: 1, limit: 8 },

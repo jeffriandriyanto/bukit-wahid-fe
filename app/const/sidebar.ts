@@ -42,7 +42,7 @@ export const sidebarItems: SidebarItem[] = [
         to: '/bill/master'
       },
       {
-        label: 'Laporan Keuangan',
+        label: 'Laporan Tagihan',
         icon: 'i-lucide-file-bar-chart',
         to: '/bill/report'
       },
