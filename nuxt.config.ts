@@ -4,7 +4,8 @@ export default defineNuxtConfig({
     '@nuxt/ui',
     '@vueuse/nuxt',
     '@nuxt/image',
-    'nuxt-charts'
+    'nuxt-charts',
+    '@pinia/nuxt'
   ],
   devtools: {
     enabled: true
@@ -23,17 +24,10 @@ export default defineNuxtConfig({
     },
     apiSecret: ''
   },
-  routeRules: {
-    '/': { prerender: true }
-  },
   compatibilityDate: '2025-01-15',
   eslint: {
     config: {
       stylistic: false
     }
-  },
-  nitro: {
-    compressPublicAssets: true,
-    minify: true,
   }
 })

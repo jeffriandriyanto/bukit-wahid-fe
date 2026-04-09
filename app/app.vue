@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { id } from '@nuxt/ui/locale'
 const locale = id
+const store = useConfigStore()
 
 const pageData = reactive({
   hero: {
@@ -14,6 +15,8 @@ const pageData = reactive({
     email: 'admin@bukitwahid.com'
   }
 })
+
+store.fetchConfig();
 
 useSeoMeta({
   title: `${pageData.hero.title} - Portal Resmi Warga`,

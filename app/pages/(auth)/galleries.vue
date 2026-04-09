@@ -2,8 +2,9 @@
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { z } from 'zod'
 import { format } from 'date-fns'
-import { fileUpload } from '~/services/files'
-import { perPageLimit, categories } from '~/const/utils'
+import { fileUpload, fileDelete } from '~/services/files'
+import { perPageLimit } from '~/const/utils'
+
 const { reveal: confirm } = useConfirmService()
 const toast = useToast()
 
@@ -16,27 +17,34 @@ const mode = ref<'add' | 'edit'>('add')
 const editingId = ref<string | null>(null)
 const loading = ref(false)
 
-// Ref untuk menampung banyak file sekaligus
-const imageFiles = ref<File[]>([])
+// Penampung URL file yang akan dihapus dari server setelah sukses simpan
+const imagesToDelete = ref<string[]>([])
 
-// Schema Zod 4
-const GalleryFormSchema = z.object({
-  title: z.string().min(1, { error: 'Judul kegiatan wajib diisi' }),
-  event_date: z.string().min(1, { error: 'Tanggal kegiatan wajib diisi' }),
-  category: z.string().min(1, { error: 'Kategori wajib dipilih' }),
-  description: z.string().optional(),
-  images: z.array(z.string()).min(1, { error: 'Minimal unggah 1 foto' })
-})
+/**
+ * SCHEMA UPDATE:
+ * Kita validasi apakah total (files lama + files baru) minimal 1.
+ */
+const GalleryFormSchema = z
+  .object({
+    name: z.string().min(1, { message: 'Judul kegiatan wajib diisi' }),
+    date: z.string().min(1, { message: 'Tanggal kegiatan wajib diisi' }),
+    description: z.string().optional(),
+    files: z.array(z.string()), // URL dari server
+    newFiles: z.array(z.any()) // File objek dari input
+  })
+  .refine((data) => data.files.length + data.newFiles.length > 0, {
+    message: 'Minimal unggah 1 foto',
+    path: ['files'] // Error akan muncul di bagian field "files"
+  })
 
 type GalleryFormSchema = z.infer<typeof GalleryFormSchema>
 
-const dataGalleries = ref([])
+const dataGalleries = ref<any[]>([])
 
 const columnsGalleryTable = [
-  { accessorKey: 'title', header: 'Judul Kegiatan' },
-  { accessorKey: 'category', header: 'Kategori' },
-  { accessorKey: 'event_date', header: 'Tanggal Kegiatan' },
-  { accessorKey: 'images', header: 'Preview' },
+  { accessorKey: 'name', header: 'Judul Kegiatan' },
+  { accessorKey: 'description', header: 'Deskripsi' },
+  { accessorKey: 'galeries_count', header: 'Jumlah Foto' },
   { accessorKey: 'action', header: 'Aksi' }
 ]
 
@@ -48,11 +56,11 @@ const pagination = ref({
 })
 
 const form = reactive({
-  title: '',
-  event_date: format(new Date(), 'yyyy-MM-dd'),
-  category: '',
+  name: '',
+  date: format(new Date(), 'yyyy-MM-dd'),
   description: '',
-  images: [] as string[]
+  files: [] as string[],
+  newFiles: [] as File[] // Pindahkan imageFiles ke sini
 })
 
 /* =========================
@@ -62,7 +70,7 @@ const form = reactive({
 const getData = async () => {
   loading.value = true
   try {
-    const res = await useApi<any>('/galleries', {
+    const res = await useApi<any>('/galery', {
       params: {
         page: pagination.value.current_page,
         limit: pagination.value.per_page
@@ -71,7 +79,7 @@ const getData = async () => {
     })
     if (res.status === 1) {
       dataGalleries.value = res.data
-      pagination.value = { ...res.pagination }
+      if (res.pagination) pagination.value = { ...res.pagination }
     }
   } catch (err) {
     console.error('Fetch error:', err)
@@ -87,21 +95,39 @@ const openAddModal = () => {
 }
 
 const openEditModal = async (row: any) => {
-  resetForm()
-  mode.value = 'edit'
-  editingId.value = row.id
-  Object.assign(form, {
-    ...row,
-    // Pastikan tanggal dalam format YYYY-MM-DD untuk input date
-    event_date: format(new Date(row.event_date), 'yyyy-MM-dd')
-  })
-  isOpen.value = true
+  loading.value = true
+  try {
+    const res = await useApi<any>(`/galery/${row.id}`, { method: 'GET' })
+    if (res.status === 1) {
+      resetForm()
+      mode.value = 'edit'
+      editingId.value = row.id
+
+      const detail = res.data
+      Object.assign(form, {
+        name: detail.name,
+        date: format(new Date(detail.created_at), 'yyyy-MM-dd'),
+        description: detail.description,
+        files: detail.files || [],
+        newFiles: []
+      })
+
+      isOpen.value = true
+    }
+  } catch (err: any) {
+    toast.add({
+      title: err?.message || 'Gagal mengambil detail galeri',
+      color: 'error'
+    })
+  } finally {
+    loading.value = false
+  }
 }
 
 const confirmDelete = async (row: any) => {
   const ok = await confirm({
     title: 'Hapus Galeri?',
-    description: `Apakah Anda yakin ingin menghapus galeri "${row.title}"?`,
+    description: `Apakah Anda yakin ingin menghapus galeri "${row.name}"?`,
     confirmLabel: 'Hapus',
     cancelLabel: 'Batal',
     color: 'error'
@@ -111,9 +137,9 @@ const confirmDelete = async (row: any) => {
 
   try {
     loading.value = true
-    const res = await useApi<any>(`/galleries/${row.id}`, { method: 'DELETE' })
+    const res = await useApi<any>(`/galery/${row.id}`, { method: 'DELETE' })
     if (res.status === 1) {
-      toast.add({ title: 'Data berhasil dihapus', color: 'success' })
+      toast.add({ title: 'Galeri berhasil dihapus', color: 'success' })
       getData()
     }
   } catch (err: any) {
@@ -124,51 +150,55 @@ const confirmDelete = async (row: any) => {
 }
 
 const resetForm = () => {
-  Object.assign(form, {
-    title: '',
-    event_date: format(new Date(), 'yyyy-MM-dd'),
-    category: '',
-    description: '',
-    images: []
-  })
-  imageFiles.value = []
+  form.name = ''
+  form.date = format(new Date(), 'yyyy-MM-dd')
+  form.description = ''
+  form.files = []
+  form.newFiles = []
+  imagesToDelete.value = []
+  editingId.value = null
 }
 
 const removeImage = (index: number) => {
-  form.images.splice(index, 1)
+  const removedUrl = form.files[index]
+  if (mode.value === 'edit' && removedUrl.startsWith('http')) {
+    imagesToDelete.value.push(removedUrl)
+  }
+  form.files.splice(index, 1)
 }
 
 const saveData = async (event: FormSubmitEvent<GalleryFormSchema>) => {
+  loading.value = true
   try {
-    loading.value = true
-
+    // 1. Upload file baru
     let uploadedUrls: string[] = []
-    if (imageFiles.value.length > 0) {
-      const uploadPromises = Array.from(imageFiles.value).map((file) =>
-        fileUpload(file)
-      )
+    if (form.newFiles.length > 0) {
+      const uploadPromises = form.newFiles.map((file) => fileUpload(file))
       uploadedUrls = await Promise.all(uploadPromises)
     }
 
-    // 2. Gabungkan foto lama (saat edit) dengan foto baru yang diupload
-    const finalImages = [...form.images, ...uploadedUrls].filter((url) => !!url)
+    // 2. Gabungkan data
+    const finalFiles = [...form.files, ...uploadedUrls].filter((url) => !!url)
 
     const payload = {
-      ...event.data,
-      images: finalImages
+      name: event.data.name,
+      description: event.data.description,
+      date: event.data.date,
+      files: finalFiles
     }
 
-    const url =
-      mode.value === 'add' ? '/galleries' : `/galleries/edit/${editingId.value}`
+    const url = mode.value === 'add' ? '/galery' : `/galery/${editingId.value}`
     const method = mode.value === 'add' ? 'POST' : 'PUT'
 
     const res = await useApi<any>(url, { method, body: payload })
 
     if (res.status === 1) {
-      toast.add({
-        title: `Berhasil ${mode.value === 'add' ? 'menambah' : 'mengubah'} galeri`,
-        color: 'success'
-      })
+      // 3. Cleanup file yang dihapus user
+      if (imagesToDelete.value.length > 0) {
+        await Promise.all(imagesToDelete.value.map((url) => fileDelete(url)))
+      }
+
+      toast.add({ title: 'Berhasil menyimpan galeri', color: 'success' })
       isOpen.value = false
       getData()
       resetForm()
@@ -189,7 +219,6 @@ watch(
 )
 
 onMounted(() => getData())
-
 definePageMeta({ middleware: ['auth'] })
 </script>
 
@@ -206,7 +235,6 @@ definePageMeta({ middleware: ['auth'] })
           Galeri & Dokumentasi Kegiatan
         </h2>
       </div>
-
       <UButton
         color="neutral"
         trailing-icon="mdi-plus-circle-outline"
@@ -231,44 +259,35 @@ definePageMeta({ middleware: ['auth'] })
           @submit="saveData"
         >
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <UFormField name="title" label="Judul Kegiatan" required>
+            <UFormField name="name" label="Judul Kegiatan" required>
               <UInput
-                v-model="form.title"
+                v-model="form.name"
                 placeholder="Contoh: Kerja Bakti Blok A"
               />
             </UFormField>
 
-            <UFormField name="event_date" label="Tanggal Kegiatan" required>
-              <UInput v-model="form.event_date" type="date" />
+            <UFormField name="date" label="Tanggal Kegiatan" required>
+              <UInput v-model="form.date" type="date" />
             </UFormField>
           </div>
-
-          <UFormField name="category" label="Kategori" required>
-            <USelect
-              v-model="form.category"
-              :items="categories"
-              placeholder="Pilih Kategori"
-              class="w-full"
-            />
-          </UFormField>
 
           <UFormField name="description" label="Deskripsi (Opsional)">
             <UTextarea
               v-model="form.description"
               :rows="3"
-              placeholder="Ceritakan singkat kegiatan ini..."
+              placeholder="Ceritakan singkat..."
             />
           </UFormField>
 
-          <UFormField name="images" label="Foto Kegiatan (Bisa lebih dari 1)">
+          <UFormField name="files" label="Foto Kegiatan" required>
             <div class="space-y-4">
-              <div v-if="form.images.length > 0" class="grid grid-cols-3 gap-2">
+              <div v-if="form.files.length > 0" class="grid grid-cols-3 gap-2">
                 <div
-                  v-for="(img, idx) in form.images"
+                  v-for="(img, idx) in form.files"
                   :key="idx"
                   class="relative group aspect-square"
                 >
-                  <img
+                  <NuxtImg
                     :src="img"
                     class="h-full w-full object-cover rounded-lg border"
                   />
@@ -287,13 +306,13 @@ definePageMeta({ middleware: ['auth'] })
               </div>
 
               <UFileUpload
-                v-model="imageFiles"
+                v-model="form.newFiles"
                 accept="image/*"
                 multiple
                 :dropzone="true"
                 class="w-full"
                 icon="i-lucide-image-plus"
-                label="Klik atau seret beberapa foto ke sini"
+                label="Klik untuk menambah foto baru"
               />
             </div>
           </UFormField>
@@ -311,36 +330,21 @@ definePageMeta({ middleware: ['auth'] })
     <div
       class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm"
     >
-      <UTable :data="dataGalleries" :columns="columnsGalleryTable">
-        <template #category-cell="{ row }">
-          <UBadge variant="subtle" color="neutral" class="capitalize">
-            {{ row.original.category }}
-          </UBadge>
-        </template>
-
-        <template #event_date-cell="{ row }">
-          <span class="text-sm">{{
-            format(new Date(row.original.event_date), 'dd MMM yyyy')
+      <UTable
+        :data="dataGalleries"
+        :columns="columnsGalleryTable"
+        :loading="loading"
+      >
+        <template #description-cell="{ row }">
+          <span class="text-sm text-gray-500 line-clamp-1">{{
+            row.original.description
           }}</span>
         </template>
-
-        <template #images-cell="{ row }">
-          <div class="flex -space-x-3 overflow-hidden">
-            <img
-              v-for="(img, idx) in row.original.images.slice(0, 3)"
-              :key="idx"
-              :src="img"
-              class="inline-block h-8 w-8 rounded-full ring-2 ring-white object-cover"
-            />
-            <div
-              v-if="row.original.images.length > 3"
-              class="flex items-center justify-center h-8 w-8 rounded-full bg-gray-100 ring-2 ring-white text-[10px] font-medium text-gray-500"
-            >
-              +{{ row.original.images.length - 3 }}
-            </div>
-          </div>
+        <template #galeries_count-cell="{ row }">
+          <UBadge color="primary" variant="subtle"
+            >{{ row.original.galeries_count }} Foto</UBadge
+          >
         </template>
-
         <template #action-cell="{ row }">
           <div class="flex items-center gap-1">
             <UButton
@@ -368,8 +372,6 @@ definePageMeta({ middleware: ['auth'] })
         <USelect
           v-model.number="pagination.per_page"
           :items="perPageLimit"
-          value-attribute="value"
-          option-attribute="label"
           class="w-24"
         />
       </div>

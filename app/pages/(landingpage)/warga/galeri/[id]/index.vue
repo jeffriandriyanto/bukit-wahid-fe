@@ -1,15 +1,43 @@
 <script setup lang="ts">
-import { galleries } from '~/dummies/galleri'
+// Hapus import dummy
 const route = useRoute()
 const toast = useToast()
+const config = useRuntimeConfig()
 
 const isModalOpen = ref(false)
 const selectedIndex = ref(0)
-const album = galleries.find((a) => a.id === route.params.id)
 
+/* =========================
+  API FETCHING
+========================= */
+// Fetch data detail galeri berdasarkan ID di URL
+const { data: response } = await useFetch<any>(`/galery/${route.params.id}`, {
+  baseURL: config.public.baseUrl,
+  key: `gallery-detail-${route.params.id}`
+})
+
+// Normalisasi data API agar sesuai dengan variabel yang dipakai di template
+const album = computed(() => {
+  if (!response.value?.data) return null
+
+  const d = response.value.data
+  return {
+    ...d,
+    title: d.name, // Mapping name ke title
+    images: d.files || [], // Mapping files ke images
+    event_date: d.date, // Menggunakan created_at sebagai tanggal kegiatan
+    category: 'Dokumentasi' // Default karena API detail tidak mengirim category
+  }
+})
+
+/* =========================
+  LOGIC HANDLERS
+========================= */
 const shareAlbum = async () => {
+  if (!album.value) return
+
   const shareData = {
-    title: album?.title,
+    title: album.value.title,
     url: window.location.href
   }
   try {
@@ -24,7 +52,9 @@ const shareAlbum = async () => {
   }
 }
 
-const selectedImg = computed(() => album?.images[selectedIndex.value] || '')
+const selectedImg = computed(
+  () => album.value?.images[selectedIndex.value] || ''
+)
 
 const openLightbox = (idx: number) => {
   selectedIndex.value = idx
@@ -32,13 +62,16 @@ const openLightbox = (idx: number) => {
 }
 
 const nextPhoto = () => {
-  selectedIndex.value = (selectedIndex.value + 1) % (album?.images.length || 1)
+  if (!album.value) return
+  selectedIndex.value =
+    (selectedIndex.value + 1) % (album.value.images.length || 1)
 }
 
 const prevPhoto = () => {
+  if (!album.value) return
   selectedIndex.value =
-    (selectedIndex.value - 1 + (album?.images.length || 1)) %
-    (album?.images.length || 1)
+    (selectedIndex.value - 1 + (album.value.images.length || 1)) %
+    (album.value.images.length || 1)
 }
 
 onKeyStroke(['ArrowRight'], () => {

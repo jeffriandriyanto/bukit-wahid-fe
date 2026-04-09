@@ -1,7 +1,6 @@
 <script setup lang="ts">
-import { galleries } from '~/dummies/galleri'
-
-const config = useRuntimeConfig()
+const configRuntime = useRuntimeConfig()
+const store = useConfigStore()
 
 interface AgendaItem {
   id: string
@@ -23,15 +22,24 @@ interface AnnouncementItem {
   author: { name: string }
 }
 
+interface GalleryItem {
+  id: string
+  name: string
+  description: string
+  galeries_count: number
+  date: string
+  files?: string[]
+}
+
 const pageData = reactive({
   hero: {
     title: 'RW 11 Bukit Wahid Regency',
     location:
       'Kelurahan Manyaran, Kecamatan Semarang Barat, Kota Semarang, Jawa Tengah.',
-    secretariat: 'Sekretariat: Jungle Toon Bukit Wahid Regency, Manyaran',
-    bgImage: '/images/landingpage.png',
-    whatsapp: 'https://wa.me/628123456789',
-    email: 'admin@bukitwahid.com'
+    secretariat: store.values.address,
+    bgImage: store.values.hero_banner || '/images/landingpage.png',
+    whatsapp: `https://wa.me/${store.values.whatsapp}`,
+    email: store.values.email
   },
   welcome: {
     title: 'Kata Sambutan',
@@ -48,16 +56,26 @@ const carouselUi = {
 const isUrl = (str: string) => str.startsWith('http')
 
 const { data: newsResponse } = await useFetch<any>('/news', {
-  baseURL: config.public.baseUrl,
+  baseURL: configRuntime.public.baseUrl,
   query: { page: 1, limit: 8 },
   key: 'home-news'
 })
 
 const { data: agendaResponse } = await useFetch<any>('/agenda', {
-  baseURL: config.public.baseUrl,
+  baseURL: configRuntime.public.baseUrl,
   query: { page: 1, limit: 8 },
   key: 'home-agenda'
 })
+
+const { data: galleryResponse } = await useFetch<any>('/galery', {
+  baseURL: configRuntime.public.baseUrl,
+  query: { page: 1, limit: 5 },
+  key: 'home-gallery'
+})
+
+const galleryItems = computed<GalleryItem[]>(
+  () => galleryResponse.value?.data || []
+)
 
 const announcements = computed<AnnouncementItem[]>(
   () => newsResponse.value?.data || []
@@ -145,7 +163,7 @@ definePageMeta({
                 class="w-5 h-5 shrink-0 text-primary-400"
               />
               <p class="text-xs md:text-sm font-medium">
-                {{ pageData.hero.secretariat }}
+                {{ pageData.hero.secretariat || '' }}
               </p>
             </div>
           </div>
@@ -153,6 +171,7 @@ definePageMeta({
           <div class="flex flex-wrap gap-5 pt-6">
             <UButton
               :to="pageData.hero.whatsapp"
+              target="_blank"
               color="primary"
               variant="solid"
               size="xl"
@@ -243,7 +262,7 @@ definePageMeta({
                   class="absolute left-0 top-0 text-primary-300 font-serif text-3xl"
                   >“</span
                 >
-                {{ pageData.welcome.paragraphs }}
+                {{ store.values.greeting }}
               </p>
             </div>
 
@@ -462,17 +481,92 @@ definePageMeta({
       </UContainer>
     </section>
 
+    <section class="py-24 relative overflow-hidden">
+      <div class="absolute inset-0 bg-primary-600 z-0">
+        <div
+          class="absolute inset-0 opacity-10"
+          style="
+            background-image: radial-gradient(#fff 1px, transparent 1px);
+            background-size: 30px 30px;
+          "
+        ></div>
+      </div>
+
+      <UContainer class="relative z-10">
+        <div
+          class="bg-white/10 backdrop-blur-xl rounded-[3rem] border border-white/20 p-8 md:p-16 overflow-hidden shadow-2xl"
+        >
+          <div class="grid md:grid-cols-12 gap-12 items-center">
+            <div class="md:col-span-7 space-y-8 animate-fade-in-up">
+              <div class="space-y-4">
+                <UBadge
+                  variant="subtle"
+                  class="bg-white/20 text-white border-none rounded-full px-4 font-bold uppercase tracking-widest text-[10px]"
+                  >Mobile Experience</UBadge
+                >
+                <h2
+                  class="text-4xl md:text-5xl font-black text-white tracking-tighter leading-tight"
+                >
+                  Layanan Warga dalam <br />
+                  <span class="text-primary-200">Satu Genggaman</span>
+                </h2>
+                <p class="text-primary-50 text-lg leading-relaxed max-w-xl">
+                  Pantau iuran ISP, info kegiatan, hingga lapor keluhan kini
+                  lebih mudah. Download aplikasi resmi
+                  <b>RW 11 Bukit Wahid</b> untuk kemudahan akses informasi
+                  kapanpun dan dimanapun.
+                </p>
+              </div>
+
+              <div class="flex flex-wrap gap-4 pt-4">
+                <UButton
+                  :to="store.values.link_googleplay"
+                  target="_blank"
+                  class="bg-neutral-950 hover:bg-black text-white px-8 py-4 rounded-2xl flex items-center gap-3 transition-all hover:scale-105 border-none shadow-xl"
+                >
+                  <UIcon name="i-simple-icons-googleplay" class="w-8 h-8" />
+                  <div class="text-left leading-none">
+                    <p class="text-[10px] uppercase font-bold opacity-60">
+                      Get it on
+                    </p>
+                    <p class="text-xl font-black tracking-tight">Google Play</p>
+                  </div>
+                </UButton>
+              </div>
+            </div>
+
+            <div class="md:col-span-5 relative hidden md:block">
+              <div
+                class="flex gap-1 relative z-10 transform rotate-2 hover:rotate-0 transition-transform duration-700"
+              >
+                <NuxtImg
+                  src="/images/app-2.png"
+                  alt="App Mockup"
+                  class="w-full max-w-30 max-h-max mx-auto drop-shadow-[0_35px_35px_rgba(0,0,0,0.5)]"
+                />
+                <NuxtImg
+                  src="/images/app-1.png"
+                  alt="App Mockup"
+                  class="w-full max-w-30 max-h-max mx-auto drop-shadow-[0_35px_35px_rgba(0,0,0,0.5)]"
+                />
+                <NuxtImg
+                  src="/images/app-3.png"
+                  alt="App Mockup"
+                  class="w-full max-w-30 max-h-max mx-auto drop-shadow-[0_35px_35px_rgba(0,0,0,0.5)]"
+                />
+              </div>
+              <div
+                class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-primary-400 rounded-full blur-[100px] opacity-40 z-0"
+              ></div>
+            </div>
+          </div>
+        </div>
+      </UContainer>
+    </section>
+
     <section
       class="py-32 bg-neutral-950 text-white relative overflow-hidden intersect-once intersect:animate-fade-in-up opacity-0"
     >
-      <div
-        class="absolute inset-0 z-0 opacity-20"
-        style="
-          background-image: radial-gradient(#333 1px, transparent 1px);
-          background-size: 30px 30px;
-        "
-      />
-
       <UContainer class="relative z-10">
         <div
           class="flex flex-col md:flex-row justify-between items-end mb-16 gap-6 border-b border-white/10 pb-10"
@@ -482,7 +576,7 @@ definePageMeta({
               variant="subtle"
               color="primary"
               size="lg"
-              class="rounded-full px-4uppercase tracking-widest font-bold text-xs bg-primary-950 text-primary-300 ring-primary-900 ring-1"
+              class="rounded-full px-4 uppercase tracking-widest font-bold text-xs bg-primary-950 text-primary-300 ring-primary-900 ring-1"
               >Lensa Warga</UBadge
             >
             <h2
@@ -493,8 +587,8 @@ definePageMeta({
             <p
               class="text-neutral-400 max-w-xl text-lg leading-relaxed font-medium"
             >
-              Dokumentasi otentik setiap jejak langkah gotong royong, keceriaan,
-              dan kehangatan warga Bukit Wahid Regency.
+              Dokumentasi otentik setiap jejak langkah gotong royong dan
+              kehangatan warga Bukit Wahid Regency.
             </p>
           </div>
           <UButton
@@ -511,7 +605,7 @@ definePageMeta({
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           <div
-            v-for="(item, idx) in galleries.slice(0, 4)"
+            v-for="(item, idx) in galleryItems"
             :key="item.id"
             class="group relative cursor-pointer overflow-hidden rounded-4xl border border-white/5 shadow-2xl transition-all duration-500 ease-in-out hover:-translate-y-2 hover:border-primary-500/30"
             :class="[idx === 1 || idx === 3 ? 'lg:translate-y-10' : '']"
@@ -524,38 +618,28 @@ definePageMeta({
             <div
               class="absolute bottom-0 left-0 z-30 p-8 w-full transform translate-y-3 group-hover:translate-y-0 transition-transform duration-500"
             >
-              <div class="flex items-center gap-2 mb-2.5">
-                <div class="w-5 h-0.5 bg-primary-500 rounded-full" />
-                <p
-                  class="text-primary-400 text-xs font-bold uppercase tracking-widest"
-                >
-                  {{ item.category }}
-                </p>
-              </div>
               <h3
                 class="text-2xl font-extrabold leading-snug mb-3 tracking-tight text-balance"
               >
-                {{ item.title }}
+                {{ item.name }}
               </h3>
               <div
                 class="flex items-center justify-between text-neutral-300 text-sm pt-4 border-t border-white/10"
               >
-                <span class="font-medium">{{
-                  formatDate(new Date(item.event_date), 'dd MMM yyyy')
-                }}</span>
+                <span class="font-medium">{{ formatDate(item.date) }}</span>
                 <span
                   class="flex items-center gap-1.5 bg-white/10 px-3 py-1 rounded-full text-xs font-semibold backdrop-blur-sm"
                 >
                   <UIcon name="i-lucide-image" class="w-3.5 h-3.5" />
-                  {{ item.images.length }}
+                  {{ item.galeries_count }} Foto
                 </span>
               </div>
             </div>
 
-            <div class="aspect-3/4 overflow-hidden">
+            <div class="aspect-3/4 overflow-hidden bg-neutral-900">
               <NuxtImg
-                :src="item.images[0]"
-                alt="Dokumentasi Kegiatan RW 11"
+                :src="item.files?.[0] || '/images/placeholder-gallery.jpg'"
+                :alt="item.name"
                 sizes="sm:100vw md:50vw lg:300px"
                 format="avif,webp"
                 class="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-1000 ease-out"
@@ -569,8 +653,6 @@ definePageMeta({
             </div>
           </div>
         </div>
-
-        <div class="lg:h-10" />
       </UContainer>
     </section>
   </div>

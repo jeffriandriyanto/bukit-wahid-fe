@@ -1,23 +1,31 @@
 <script setup lang="ts">
 import { z } from 'zod'
+import { fileUpload } from '~/services/files' // Pastikan service upload di-import
 
 const toast = useToast()
 const loading = ref(false)
+const initialForm = ref<string>('')
+
+// Ref untuk menampung file banner mentah
+const bannerFile = ref<File | null>(null)
 
 /* =========================
   SCHEMA & STATE
 ========================= */
 const WebsiteConfigSchema = z.object({
-  address: z.string().min(1, { error: 'Alamat wajib diisi' }),
-  greeting: z.string().optional(),
-  whatsapp: z.string().min(1, { error: 'Nomor WA wajib diisi' }),
-  email: z.string().email({ error: 'Format email tidak valid' }),
-  instagram: z.string().optional(),
-  youtube: z.string().optional(),
-  facebook: z.string().optional(),
-  twitter: z.string().optional(),
+  address: z.string().min(1, { message: 'Alamat wajib diisi' }),
+  greeting: z.string().nullable().optional(),
+  whatsapp: z.string().min(1, { message: 'Nomor WA wajib diisi' }),
+  email: z.string().email({ message: 'Format email tidak valid' }),
+  instagram: z.string().nullable().optional(),
+  youtube: z.string().nullable().optional(),
+  facebook: z.string().nullable().optional(),
+  twitter: z.string().nullable().optional(),
   fasum: z.array(z.string()).default([]),
-  kegiatan: z.array(z.string()).default([])
+  kegiatan: z.array(z.string()).default([]),
+  // New Env Fields
+  hero_banner: z.string().nullable().optional(),
+  link_googleplay: z.string().nullable().optional()
 })
 
 type WebsiteConfigSchema = z.infer<typeof WebsiteConfigSchema>
@@ -32,34 +40,47 @@ const form = reactive<WebsiteConfigSchema>({
   facebook: '',
   twitter: '',
   fasum: [],
-  kegiatan: []
+  kegiatan: [],
+  hero_banner: '',
+  link_googleplay: ''
 })
 
 /* =========================
-  TRANSFORMERS (Key-Value Helpers)
+  TRANSFORMERS
 ========================= */
 
-// Mengubah [{key, value}] dari API menjadi flat object untuk Form
-const transformToForm = (apiData: { key: string; value: any }[]) => {
+const transformToForm = (apiData: any[]) => {
   apiData.forEach((item) => {
-    if (item.key in form) {
-      // Handle array data (fasum & kegiatan) jika disimpan sebagai string JSON atau array murni
-      if (Array.isArray(form[item.key as keyof WebsiteConfigSchema])) {
-        form[item.key as keyof WebsiteConfigSchema] =
-          typeof item.value === 'string' ? JSON.parse(item.value) : item.value
+    const key = Object.keys(item)[0]
+    let value = item[key]
+
+    if (key in form) {
+      if (!value) {
+        form[key as keyof WebsiteConfigSchema] = Array.isArray(
+          form[key as keyof WebsiteConfigSchema]
+        )
+          ? []
+          : ''
+        return
+      }
+
+      const unescape = (str: string) =>
+        str.replace(/&#34;/g, '"').replace(/&nbsp;/g, ' ')
+
+      if (Array.isArray(form[key as keyof WebsiteConfigSchema])) {
+        try {
+          const sanitized = typeof value === 'string' ? unescape(value) : value
+          form[key as keyof WebsiteConfigSchema] =
+            typeof sanitized === 'string' ? JSON.parse(sanitized) : sanitized
+        } catch (e) {
+          form[key as keyof WebsiteConfigSchema] = []
+        }
       } else {
-        form[item.key as keyof WebsiteConfigSchema] = item.value
+        form[key as keyof WebsiteConfigSchema] =
+          typeof value === 'string' ? unescape(value) : value
       }
     }
   })
-}
-
-// Mengubah flat object Form menjadi [{key, value}] untuk API
-const transformToApi = (formData: WebsiteConfigSchema) => {
-  return Object.entries(formData).map(([key, value]) => ({
-    key: key,
-    value: value // Backend bisa handle stringify jika diperlukan
-  }))
 }
 
 /* =========================
@@ -69,12 +90,16 @@ const transformToApi = (formData: WebsiteConfigSchema) => {
 const getData = async () => {
   loading.value = true
   try {
-    const res = await useApi<any>('/settings/website', { method: 'GET' })
-    if (res.status === 1 && res.data) {
-      transformToForm(res.data)
+    const res = await useApi<any>('/environment', { method: 'GET' })
+    if (res.status === 1 && res.data?.data) {
+      transformToForm(res.data.data)
+      initialForm.value = JSON.stringify(form)
     }
   } catch (err: any) {
-    toast.add({ title: err.message || 'Gagal memuat konfigurasi', color: 'error' })
+    toast.add({
+      title: err?.message || 'Gagal memuat konfigurasi',
+      color: 'error'
+    })
   } finally {
     loading.value = false
   }
@@ -82,26 +107,57 @@ const getData = async () => {
 
 const updateData = async (event: any) => {
   loading.value = true
-  try {
-    const payload = transformToApi(event.data)
 
-    const res = await useApi<any>('/settings/website', {
-      method: 'POST',
-      body: { settings: payload } // Membungkus array ke dalam object jika API butuh
+  try {
+    // 1. Handle Upload Banner jika ada file baru dipilih
+    if (bannerFile.value) {
+      const uploadedUrl = await fileUpload(bannerFile.value)
+      if (uploadedUrl) {
+        form.hero_banner = uploadedUrl
+      }
+    }
+
+    const currentData = form // Gunakan data form terbaru setelah upload
+    const original = initialForm.value ? JSON.parse(initialForm.value) : {}
+
+    const changedEntries = Object.entries(currentData).filter(
+      ([key, value]) => {
+        const oldValue = original[key]
+        const normalizedNew = value || ''
+        const normalizedOld = oldValue || ''
+        return JSON.stringify(normalizedNew) !== JSON.stringify(normalizedOld)
+      }
+    )
+
+    if (changedEntries.length === 0 && !bannerFile.value) {
+      toast.add({ title: 'Tidak ada perubahan', color: 'neutral' })
+      loading.value = false
+      return
+    }
+
+    const requests = changedEntries.map(([key, value]) => {
+      const payloadValue = Array.isArray(value) ? JSON.stringify(value) : value
+      return useApi(`/environment/${key}`, {
+        method: 'POST',
+        body: { value: payloadValue }
+      })
     })
 
-    if (res.status === 1) {
-      toast.add({ title: 'Data berhasil diperbarui', color: 'success' })
-      getData()
-    }
+    await Promise.all(requests)
+
+    toast.add({ title: 'Konfigurasi berhasil diperbarui', color: 'success' })
+    bannerFile.value = null // Reset file input
+    await getData()
   } catch (err: any) {
-    toast.add({ title: err.message || 'Gagal memperbarui data', color: 'error' })
+    toast.add({
+      title: err?.message || 'Gagal memperbarui data',
+      color: 'error'
+    })
   } finally {
     loading.value = false
   }
 }
 
-// Helper untuk menambah/menghapus list (Fasum/Kegiatan)
 const addItem = (field: 'fasum' | 'kegiatan') => {
   form[field].push('')
 }
@@ -120,7 +176,7 @@ onMounted(() => getData())
           Konfigurasi Konten & Publik
         </h1>
         <p class="text-sm text-gray-500">
-          Kelola informasi yang tampil di halaman depan website.
+          Kelola informasi landing page dan aplikasi.
         </p>
       </div>
       <UBadge
@@ -139,13 +195,44 @@ onMounted(() => getData())
       @submit="updateData"
     >
       <UCard>
+        <template #header
+          ><span class="font-bold text-primary-600"
+            >Landing Page & Mobile App</span
+          ></template
+        >
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <UFormField
+            name="hero_banner"
+            label="Hero Banner Image"
+            help="Upload gambar untuk banner utama halaman depan"
+          >
+            <UFileUpload
+              v-model="bannerFile"
+              accept="image/*"
+              icon="i-lucide-image-plus"
+              label="Pilih Foto Banner"
+            />
+          </UFormField>
+
+          <div class="space-y-4">
+            <UFormField name="link_googleplay" label="Link Google Play Store">
+              <UInput
+                v-model="form.link_googleplay"
+                icon="i-simple-icons-googleplay"
+                placeholder="https://play.google.com/..."
+              />
+            </UFormField>
+          </div>
+        </div>
+      </UCard>
+
+      <UCard>
         <template #header>
           <div class="flex items-center gap-2 font-bold">
             <UIcon name="i-lucide-info" class="text-primary-500" /> Profil
             Sekretariat
           </div>
         </template>
-
         <div class="space-y-4">
           <UFormField name="address" label="Alamat Sekretariat">
             <UTextarea
@@ -154,7 +241,6 @@ onMounted(() => getData())
               block
             />
           </UFormField>
-
           <UFormField name="greeting" label="Sambutan Ketua / Admin">
             <UTextarea
               v-model="form.greeting"
@@ -250,12 +336,6 @@ onMounted(() => getData())
                 @click="removeItem('fasum', index)"
               />
             </div>
-            <p
-              v-if="form.fasum.length === 0"
-              class="text-sm text-gray-400 text-center py-4"
-            >
-              Belum ada fasilitas ditambahkan.
-            </p>
           </div>
         </UCard>
 
@@ -290,12 +370,6 @@ onMounted(() => getData())
                 @click="removeItem('kegiatan', index)"
               />
             </div>
-            <p
-              v-if="form.kegiatan.length === 0"
-              class="text-sm text-gray-400 text-center py-4"
-            >
-              Belum ada kegiatan ditambahkan.
-            </p>
           </div>
         </UCard>
       </div>

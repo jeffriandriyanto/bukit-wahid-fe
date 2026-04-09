@@ -111,12 +111,11 @@ const openEditModal = async (node: OrgNode) => {
 
 const openEditAssignModal = async (node: OrgNode) => {
   resetFormAssign()
-  await getDropdownFamilyHead()
 
   formAssign.person = node?.incumbent_id || ''
   formAssign.position = node.id
   formAssign.signature = node.signature
-  isOpenAssign.value = true
+  isOpenAssign.value = true;
 }
 
 const deletePosition = async () => {
@@ -269,6 +268,7 @@ onMounted(() => {
   getDropdownRT()
   fetchRw()
   fetchRtOrg()
+  getDropdownFamilyHead()
 })
 
 definePageMeta({
@@ -515,66 +515,73 @@ definePageMeta({
       </template>
     </UModal>
 
-    <UTabs
-      v-model="activeTab"
-      :items="tabs"
-      variant="link"
-      class="mb-6 w-full"
-      :ui="{
-        label: 'text-md group-data-[state=inactive]:text-black w-20',
-        indicator: 'h-1 bg-primary-600',
-        list: 'px-0'
-      }"
+    <div
+      class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm px-4 py-2"
     >
-      <template #rw>
-        <div class="flex w-full justify-center">
-          <div v-if="rwData">
-            <OrgChart
-              :datasource="rwData"
-              @node-click="openEditModal"
-              @name-click="openEditAssignModal"
+      <UTabs
+        v-model="activeTab"
+        :items="tabs"
+        variant="link"
+        class="mb-6 w-full"
+        :ui="{
+          label: 'text-md group-data-[state=inactive]:text-black w-20',
+          indicator: 'h-1 bg-primary-600',
+          list: 'px-0'
+        }"
+      >
+        <template #rw>
+          <div class="flex w-full justify-center pt-8">
+            <div v-if="rwData">
+              <OrgChart
+                :datasource="rwData"
+                @node-click="openEditModal"
+                @name-click="openEditAssignModal"
+              />
+            </div>
+            <div
+              v-else
+              class="loading text-neutral-400 italic text-center py-8"
+            >
+              Memuat Struktur RW...
+            </div>
+          </div>
+        </template>
+
+        <template #rt>
+          <div class="my-4 flex flex-col w-full justify-center gap-4">
+            <USelectMenu
+              v-model="selectedRT"
+              placeholder="Pilih RT"
+              :search-input="{
+                placeholder: 'Cari nama RT'
+              }"
+              clear
+              :items="dropdownRT"
+              value-key="key"
+              searchable
+              class="w-40"
             />
           </div>
-          <div v-else class="loading text-neutral-400 italic text-center py-8">
-            Memuat Struktur RW...
-          </div>
-        </div>
-      </template>
 
-      <template #rt>
-        <div class="my-4 flex flex-col w-full justify-center gap-4">
-          <USelectMenu
-            v-model="selectedRT"
-            placeholder="Pilih RT"
-            :search-input="{
-              placeholder: 'Cari nama RT'
-            }"
-            clear
-            :items="dropdownRT"
-            value-key="key"
-            searchable
-            class="w-40"
-          />
-        </div>
-
-        <div class="flex w-full justify-center pt-8">
-          <div v-if="selectedRT && rtData">
-            <OrgChart
-              :datasource="rtData"
-              accent-color="success"
-              @node-click="openEditModal"
-              @name-click="openEditAssignModal"
-            />
+          <div class="flex w-full justify-center pt-8">
+            <div v-if="selectedRT && rtData">
+              <OrgChart
+                :datasource="rtData"
+                accent-color="success"
+                @node-click="openEditModal"
+                @name-click="openEditAssignModal"
+              />
+            </div>
+            <div
+              v-else-if="!selectedRT"
+              class="text-neutral-400 italic text-center"
+            >
+              Silahkan pilih RT untuk menampilkan bagan organisasi.
+            </div>
+            <div v-else class="text-neutral-400 italic">Memuat data RT...</div>
           </div>
-          <div
-            v-else-if="!selectedRT"
-            class="text-neutral-400 italic text-center"
-          >
-            Silahkan pilih RT untuk menampilkan bagan organisasi.
-          </div>
-          <div v-else class="text-neutral-400 italic">Memuat data RT...</div>
-        </div>
-      </template>
-    </UTabs>
+        </template>
+      </UTabs>
+    </div>
   </div>
 </template>

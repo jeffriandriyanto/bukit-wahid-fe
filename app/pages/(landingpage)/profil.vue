@@ -1,5 +1,5 @@
 <script setup lang="ts">
-// [SEO Update]
+const store = useConfigStore()
 const title = 'Profil & Demografi RW 11 Bukit Wahid Regency'
 const description =
   'Informasi geografis wilayah, statistik penduduk, dan potensi lingkungan RW 11 Bukit Wahid Regency, Semarang.'
@@ -29,8 +29,7 @@ const profileData = reactive({
         Timur: 'RW 12',
         Barat: 'RW 5'
       },
-      area_size: '± 178.000 m²',
-      total_rt: '7 (RT 001 sampai RT 007)'
+      postal_code: '50147'
     },
     demographics: {
       total_households: 50,
@@ -43,18 +42,8 @@ const profileData = reactive({
       ]
     },
     assets_activities: {
-      facilities: [
-        'Masjid',
-        'Kolam Renang Jungle Toon',
-        'Lapangan Bulu Tangkis',
-        'Taman'
-      ],
-      routine_activities: [
-        'Pengajian rutin',
-        'Peringatan HUT RI',
-        'Halal bihalal',
-        'Acara Keagamaan'
-      ]
+      facilities: store.values.fasum,
+      routine_activities: store.values.kegiatan
     },
     closing:
       'Demikian Profil RW 11 Bukit Wahid Regency, semoga bermanfaat bagi kita semua.'
@@ -65,8 +54,7 @@ const generalInfoMap = computed(() => ({
   Kelurahan: profileData.sections.general.kelurahan,
   Kecamatan: profileData.sections.general.kecamatan,
   Kota: profileData.sections.general.kota,
-  'Luas Wilayah': profileData.sections.general.area_size,
-  'Jumlah RT': profileData.sections.general.total_rt
+  'Kode Pos': profileData.sections.general.postal_code
 }))
 </script>
 
@@ -102,7 +90,7 @@ const generalInfoMap = computed(() => ({
 
           <div class="p-10 space-y-12">
             <div
-              class="grid grid-cols-2 md:grid-cols-5 gap-8 text-center md:text-left"
+              class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center md:text-left"
             >
               <div
                 v-for="(val, key) in generalInfoMap"
@@ -151,8 +139,8 @@ const generalInfoMap = computed(() => ({
           </div>
         </UCard>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
-          <UCard
+        <div class="grid grid-cols-1 gap-10">
+          <!-- <UCard
             class="border-none shadow-premium rounded-[2.5rem] intersect-once intersect:animate-fade-in-up"
           >
             <template #header>
@@ -213,7 +201,7 @@ const generalInfoMap = computed(() => ({
                 </div>
               </div>
             </div>
-          </UCard>
+          </UCard> -->
 
           <UCard
             class="border-none shadow-premium rounded-[2.5rem] intersect-once intersect:animate-fade-in-up"

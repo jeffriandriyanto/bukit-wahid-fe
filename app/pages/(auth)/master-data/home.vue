@@ -244,43 +244,47 @@ const columnsFamilyTable = [
         /></div
     ></SharedHeaderBg>
 
-    <UTable
-      ref="table"
-      :data="dataHome"
-      :columns="columnsFamilyTable"
-      :loading="loading"
+    <div
+      class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm"
     >
-      <template #head-cell="{ row }">
-        {{ row.original.pic_profile?.name || 'PIC Belum diisi' }}
-      </template>
+      <UTable
+        ref="table"
+        :data="dataHome"
+        :columns="columnsFamilyTable"
+        :loading="loading"
+      >
+        <template #head-cell="{ row }">
+          {{ row.original.pic_profile?.name || 'PIC Belum diisi' }}
+        </template>
 
-      <template #land_size-cell="{ row }">
-        {{ row.original.land_size }} m2
-      </template>
+        <template #land_size-cell="{ row }">
+          {{ row.original.land_size }} m2
+        </template>
 
-      <template #building_size-cell="{ row }">
-        {{ row.original.building_size }} m2
-      </template>
+        <template #building_size-cell="{ row }">
+          {{ row.original.building_size }} m2
+        </template>
 
-      <template #action-cell="{ row }">
-        <div class="flex gap-1">
-          <UButton
-            icon="i-lucide-pencil"
-            variant="ghost"
-            color="neutral"
-            size="sm"
-            @click="openEditModal(row.original)"
-          />
-          <UButton
-            icon="i-lucide-trash-2"
-            variant="ghost"
-            color="error"
-            size="sm"
-            @click="confirmDelete(row.original.id)"
-          />
-        </div>
-      </template>
-    </UTable>
+        <template #action-cell="{ row }">
+          <div class="flex gap-1">
+            <UButton
+              icon="i-lucide-pencil"
+              variant="ghost"
+              color="neutral"
+              size="sm"
+              @click="openEditModal(row.original)"
+            />
+            <UButton
+              icon="i-lucide-trash-2"
+              variant="ghost"
+              color="error"
+              size="sm"
+              @click="confirmDelete(row.original.id)"
+            />
+          </div>
+        </template>
+      </UTable>
+    </div>
 
     <div class="flex justify-between border-t border-default pt-4 px-4">
       <div class="flex items-center gap-2 text-sm text-gray-600">

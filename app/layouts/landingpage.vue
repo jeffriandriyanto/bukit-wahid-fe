@@ -131,6 +131,7 @@
                 :key="soc.label"
                 :to="soc.link"
                 :icon="soc.icon"
+                target="_blank"
                 color="neutral"
                 variant="subtle"
                 class="rounded-full hover:text-primary-500 transition-colors"
@@ -163,6 +164,7 @@
               <li>
                 <UButton
                   :to="CONFIG.whatsapp"
+                  target="_blank"
                   icon="i-lucide-message-circle"
                   label="WhatsApp Admin"
                   color="neutral"
@@ -196,8 +198,8 @@
 </template>
 
 <script setup lang="ts">
-// Ambil token secara reactive dari useAuth
 const { token } = useAuth()
+const store = useConfigStore()
 
 const isMobileMenuOpen = ref(false)
 const loginTarget = computed(() => (token.value ? '/dashboard' : '/login'))
@@ -209,48 +211,57 @@ const loginIcon = computed(() =>
 const CONFIG = {
   location:
     'Kelurahan Manyaran, Kecamatan Semarang Barat, Kota Semarang, Jawa Tengah.',
-  secretariat: 'Sekretariat: Jungle Toon Bukit Wahid Regency, Manyaran',
-  whatsapp: 'https://wa.me/628123456789',
-  email: 'admin@bukitwahid.com'
+  secretariat: store.values.address,
+  whatsapp: `https://wa.me/${store.values.whatsapp}`,
+  email: store.values.email
 }
 
 const socials = [
   {
     icon: 'i-simple-icons-instagram',
-    link: 'https://instagram.com/daily.jeds',
+    link: store.values.instagram || '',
     label: 'Instagram'
   },
-  { icon: 'i-simple-icons-youtube', link: '#', label: 'YouTube' },
-  { icon: 'i-simple-icons-facebook', link: '#', label: 'Facebook' },
-  { icon: 'i-simple-icons-tiktok', link: '#', label: 'TikTok' }
+  {
+    icon: 'i-simple-icons-youtube',
+    link: store.values.youtube || '',
+    label: 'YouTube'
+  },
+  {
+    icon: 'i-simple-icons-facebook',
+    link: store.values.facebook || '',
+    label: 'Facebook'
+  },
+  { icon: 'i-simple-icons-x', link: store.values.twitter || '', label: 'X' }
 ]
 
 const navigationItems = [
+  // {
+  //   label: 'Profil',
+  //   icon: 'i-lucide-building-2',
+  //   description: 'Kenali lebih dekat lingkungan dan pengurus RW 11.',
+  //   children: [
+
+  //   ]
+  // },
   {
-    label: 'Profil',
-    icon: 'i-lucide-building-2',
-    description: 'Kenali lebih dekat lingkungan dan pengurus RW 11.',
-    children: [
-      {
-        label: 'Profil Umum',
-        to: '/profil',
-        icon: 'i-lucide-info',
-        description: 'Visi, misi, dan sejarah Bukit Wahid Regency.'
-      },
-      {
-        label: 'Perangkat RW 11',
-        to: '/perangkat',
-        icon: 'i-lucide-users',
-        description: 'Daftar Ketua RW dan seksi-seksi bidang.'
-      }
-    ]
+    label: 'Profil Umum',
+    to: '/profil',
+    icon: 'i-lucide-info',
+    description: 'Visi, misi, dan sejarah Bukit Wahid Regency.'
   },
   {
-    label: 'Program Kerja',
-    to: '/program',
-    icon: 'i-lucide-clipboard-check',
-    description: 'Transparansi rencana dan realisasi kegiatan tahunan.'
+    label: 'Perangkat RW 11',
+    to: '/perangkat',
+    icon: 'i-lucide-users',
+    description: 'Daftar Ketua RW dan seksi-seksi bidang.'
   },
+  // {
+  //   label: 'Program Kerja',
+  //   to: '/program',
+  //   icon: 'i-lucide-clipboard-check',
+  //   description: 'Transparansi rencana dan realisasi kegiatan tahunan.'
+  // },
   {
     label: 'Layanan Warga',
     icon: 'i-lucide-shrub',
@@ -262,12 +273,6 @@ const navigationItems = [
         icon: 'i-lucide-calendar-clock',
         description: 'Jadwal pertemuan dan kegiatan mendatang.'
       },
-      // {
-      //   label: 'Iuran Kas',
-      //   to: '/warga/kas',
-      //   icon: 'i-lucide-receipt-japanese-yen', // atau i-lucide-banknote
-      //   description: 'Pantau laporan keuangan kas secara transparan.'
-      // },
       {
         label: 'Galeri',
         to: '/warga/galeri',
