@@ -29,7 +29,7 @@ export const sidebarItems: SidebarItem[] = [
         label: 'Data Rumah',
         icon: 'i-lucide-home',
         to: '/master-data/home'
-      },
+      }
     ]
   },
   {
@@ -52,11 +52,16 @@ export const sidebarItems: SidebarItem[] = [
         to: '/bill/coa'
       },
       {
+        label: 'Petty Cash',
+        icon: 'i-lucide-file-bar-chart',
+        to: '/bill/petty-cash'
+      },
+      {
         label: 'Pembayaran Tagihan Air',
         icon: 'i-lucide-credit-card',
         isHide: true,
         to: '/bill/pdam'
-      },
+      }
     ]
   },
   {
@@ -72,7 +77,7 @@ export const sidebarItems: SidebarItem[] = [
         label: 'Agenda Pertemuan',
         icon: 'i-lucide-calendar-days',
         to: '/meeting-agenda'
-      },
+      }
     ]
   },
   {
@@ -100,5 +105,5 @@ export const sidebarItems: SidebarItem[] = [
     label: 'Pengaturan',
     icon: 'i-lucide-cog',
     to: '/settings'
-  },
+  }
 ]
