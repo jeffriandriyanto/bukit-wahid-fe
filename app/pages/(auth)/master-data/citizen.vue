@@ -311,6 +311,7 @@ const getAge = (dob: string | null) => {
 // Update Kolom Tabel
 const columnsFamilyTable = [
   { accessorKey: 'name', header: 'Informasi Warga' },
+  { accessorKey: 'username', header: 'Username' },
   { accessorKey: 'ttl', header: 'Tempat, Tgl Lahir' },
   { accessorKey: 'gender', header: 'L/P' },
   { accessorKey: 'blood_type', header: 'Gol. Darah', class: 'text-center' },

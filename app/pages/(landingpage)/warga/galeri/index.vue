@@ -110,7 +110,7 @@ const config = useRuntimeConfig()
 
 const pagination = ref({
   current_page: 1,
-  per_page: 1,
+  per_page: 9,
   total: 0
 })
 

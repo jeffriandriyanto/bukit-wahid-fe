@@ -123,7 +123,7 @@ const saveBill = async (event: FormSubmitEvent<BillFormSchema>) => {
     }
 
     const payload = {
-      amount: form.nominal, // Koreksi typo ammount -> amount
+      amount: form.nominal,
       proof: finalImageUrl,
       description: form.description || ''
     }

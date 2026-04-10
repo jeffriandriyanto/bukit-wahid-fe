@@ -363,7 +363,7 @@ definePageMeta({
           <UIcon name="i-lucide-git-graph" class="w-5 h-5 text-primary-600" />
         </div>
         <h2 class="text-lg font-bold text-gray-900">
-          Struktur Organisasi & Profil
+          Struktur Organisasi
         </h2>
       </div>
 

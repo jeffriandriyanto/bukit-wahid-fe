@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { useRwStructure } from '~/composables/structure/useRwOrg'
+const { rwDataList, fetchRwList } = useRwStructure()
 const configRuntime = useRuntimeConfig()
 const store = useConfigStore()
 
@@ -81,6 +83,7 @@ const announcements = computed<AnnouncementItem[]>(
   () => newsResponse.value?.data || []
 )
 const events = computed<AgendaItem[]>(() => agendaResponse.value?.data || [])
+onMounted(fetchRwList)
 
 definePageMeta({
   layout: 'landingpage'
@@ -273,7 +276,7 @@ definePageMeta({
                 <p
                   class="font-extrabold text-2xl text-neutral-950 tracking-tight"
                 >
-                  H. Ahmad Fauzi
+                  {{rwDataList[0]?.incumbent?.name || "-"}}
                 </p>
                 <p class="text-primary-700 font-semibold tracking-wide">
                   Ketua Pengurus RW 11 • Bukit Wahid Regency

@@ -26,10 +26,7 @@
                 class="aspect-3/4 overflow-hidden rounded-[3rem] bg-neutral-900 border-4 border-white shadow-2xl relative z-10"
               >
                 <NuxtImg
-                  :src="
-                    leader?.incumbent?.avatar ||
-                    'https://i.pravatar.cc/400?u=ketua'
-                  "
+                  :src="leader?.incumbent?.avatar || ''"
                   :alt="leader?.incumbent?.name"
                   class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-1000 scale-105 group-hover:scale-100"
                   loading="eager"
@@ -67,10 +64,7 @@
                 class="aspect-3/4 overflow-hidden rounded-[2.5rem] bg-neutral-100 border border-neutral-200 transition-all duration-500 group-hover:border-primary-500/30 group-hover:shadow-premium-hover group-hover:-translate-y-2"
               >
                 <NuxtImg
-                  :src="
-                    member?.incumbent?.avatar ||
-                    'https://i.pravatar.cc/400?u=' + index
-                  "
+                  :src="member?.incumbent?.avatar"
                   :alt="member?.incumbent?.name"
                   class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
                   format="avif,webp"

@@ -7,7 +7,7 @@ export const sidebarItems: SidebarItem[] = [
     to: '/dashboard'
   },
   {
-    label: 'Profil & Struktur',
+    label: 'Struktur Organisasi',
     icon: 'i-lucide-network', // Menggambarkan struktur organisasi/hierarki
     to: '/profile-structure'
   },
@@ -37,7 +37,7 @@ export const sidebarItems: SidebarItem[] = [
     icon: 'i-lucide-wallet',
     children: [
       {
-        label: 'Tagihan & Iuran',
+        label: 'Kelola Master Tagihan',
         icon: 'i-lucide-hand-coins',
         to: '/bill/master'
       },
@@ -52,7 +52,7 @@ export const sidebarItems: SidebarItem[] = [
         to: '/bill/coa'
       },
       {
-        label: 'Pembayaran PDAM',
+        label: 'Pembayaran Tagihan Air',
         icon: 'i-lucide-credit-card',
         isHide: true,
         to: '/bill/pdam'
