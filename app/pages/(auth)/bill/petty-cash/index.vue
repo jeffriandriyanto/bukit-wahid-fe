@@ -1,24 +1,55 @@
 <script setup lang="ts">
+import { z } from 'zod'
+import type { FormSubmitEvent } from '@nuxt/ui'
+import { fileUpload } from '~/services/files'
 import { perPageLimit } from '~/const/utils'
 
 definePageMeta({ middleware: ['auth'] })
 
+const toast = useToast()
+
 // --- STATE ---
 const dataPetty = ref([])
 const loading = ref(false)
-const isOpen = ref(false)
+const isOpenDetail = ref(false)
+const isOpenForm = ref(false)
 const selectedDetail = ref<any>(null)
 
-// Filter States
+// Form State
+const mode = ref<'in' | 'out' | 'revisi'>('in')
+const editingId = ref<string | null>(null)
+const imageFile = ref(null)
+
+// Filter & Options
 const searchQuery = ref('')
 const selectedStatus = ref(null)
 const statusOptions = ref<any[]>([{ key: null, label: 'Semua Status' }])
+const coaOptions = ref<any[]>([]) // Diambil dari /dropdown/coa
 
 const pagination = ref({
   current_page: 1,
   last_page: 1,
   per_page: 10,
   total: 0
+})
+
+// --- VALIDATION SCHEMA ---
+const PettyFormSchema = z.object({
+  tag: z.number().min(1, 'Tag/COA wajib dipilih'),
+  amount: z.string().min(1, 'Nominal wajib diisi'),
+  description: z.string().min(5, 'Deskripsi minimal 5 karakter'),
+  date: z.string().optional(), // Muncul hanya saat revisi
+  proof: z.string().min(1, 'Bukti transaksi wajib diunggah')
+})
+
+type PettyFormSchema = z.infer<typeof PettyFormSchema>
+
+const form = reactive({
+  tag: undefined as number | undefined,
+  amount: '',
+  description: '',
+  date: '',
+  proof: ''
 })
 
 // --- TABLE COLUMNS ---
@@ -33,22 +64,28 @@ const pettyTable = [
 
 // --- ACTIONS ---
 
-// Fetch Dropdown Options
 const getOptions = async () => {
   try {
-    const res = await useApi<any>('/dropdown/petty-status')
-    if (res.status === 1) {
+    const [statusRes, coaRes] = await Promise.all([
+      useApi<any>('/dropdown/petty-status'),
+      useApi<any>('/dropdown/coa')
+    ])
+
+    if (statusRes.status === 1) {
       statusOptions.value = [
         { key: null, label: 'Semua Status' },
-        ...(res.data || [])
+        ...statusRes.data
       ]
     }
+    if (coaRes.status === 1) {
+      // mapping data COA sesuai respon API (key, label)
+      coaOptions.value = coaRes.data
+    }
   } catch (err) {
-    console.error('Failed to fetch status options:', err)
+    console.error('Failed to fetch options:', err)
   }
 }
 
-// Fetch List Data
 const getData = async () => {
   loading.value = true
   try {
@@ -60,7 +97,6 @@ const getData = async () => {
         status: selectedStatus.value ?? ''
       }
     })
-
     if (res.status === 1) {
       dataPetty.value = res.data
       pagination.value = { ...res.pagination }
@@ -72,22 +108,103 @@ const getData = async () => {
   }
 }
 
-// Fetch Detail Data
 const getDetail = async (id: string) => {
   try {
     const res = await useApi<any>(`/finance/petty-cash/${id}`)
     if (res.status === 1) {
       selectedDetail.value = res.data
-      isOpen.value = true
+      isOpenDetail.value = true
     }
   } catch (err) {
     console.error('Detail fetch error:', err)
   }
 }
 
-const handleFilterChange = () => {
-  pagination.value.current_page = 1
-  getData()
+// Form Handlers
+const openAddModal = (type: 'in' | 'out') => {
+  resetFormFields()
+  mode.value = type
+  isOpenForm.value = true
+}
+
+const openRevisiModal = (row: any) => {
+  resetFormFields()
+  mode.value = 'revisi'
+  editingId.value = row.id
+  form.tag = row.tag
+  form.amount = parseFloat(row.credit) > 0 ? row.credit : row.debit
+  form.description = row.description
+  form.date = row.date // format yyyy-mm-dd
+  form.proof = row.proof
+
+  isOpenForm.value = true
+}
+
+const resetFormFields = () => {
+  form.tag = undefined
+  form.amount = ''
+  form.description = ''
+  form.date = ''
+  clearImage()
+}
+
+const clearImage = () => {
+  if (form.proof?.startsWith('blob:')) URL.revokeObjectURL(form.proof)
+  form.proof = ''
+  imageFile.value = null
+}
+
+const saveData = async (event: FormSubmitEvent<PettyFormSchema>) => {
+  loading.value = true
+  try {
+    let finalImageUrl = form.proof
+
+    // Upload jika ada file baru
+    if (imageFile.value) {
+      const uploadRes = await fileUpload(imageFile.value)
+      if (uploadRes) finalImageUrl = uploadRes
+    }
+
+    let url = ''
+    let payload: any = {
+      tag: event.data.tag,
+      description: event.data.description,
+      proof: finalImageUrl
+    }
+
+    if (mode.value === 'in') {
+      url = '/finance/petty-cash/in'
+      payload.debit = event.data.amount
+    } else if (mode.value === 'out') {
+      url = '/finance/petty-cash/out/open'
+      payload.credit = event.data.amount
+    } else if (mode.value === 'revisi') {
+      url = `/finance/petty-cash/out/revisi/${editingId.value}`
+      payload.date = event.data.date
+      // Logika nominal revisi disesuaikan dengan tipe transaksi awal
+      const isCredit = parseFloat(form.amount) > 0 // sederhananya dikirim sesuai input
+      payload.credit = mode.value === 'revisi' ? event.data.amount : '0.00'
+      payload.debit = '0.00'
+    }
+
+    const res = await useApi<any>(url, { method: 'POST', body: payload })
+
+    if (res.status === 1) {
+      toast.add({
+        title: `Berhasil menyimpan Cash ${mode.value}`,
+        color: 'success'
+      })
+      isOpenForm.value = false
+      getData()
+    }
+  } catch (err: any) {
+    toast.add({
+      title: err?.data?.message || 'Gagal menyimpan data',
+      color: 'error'
+    })
+  } finally {
+    loading.value = false
+  }
 }
 
 // --- HELPERS ---
@@ -120,6 +237,14 @@ const getStatusLabel = (status: string) => {
   return found ? found.label : status
 }
 
+// Watchers
+watch(imageFile, (newFile) => {
+  if (newFile) {
+    if (form.proof?.startsWith('blob:')) URL.revokeObjectURL(form.proof)
+    form.proof = URL.createObjectURL(newFile)
+  }
+})
+
 watch(
   () => pagination.value.per_page,
   () => {
@@ -146,27 +271,35 @@ onMounted(() => {
         <h2 class="text-lg font-bold text-gray-900">Petty Cash (Kas Kecil)</h2>
       </div>
 
-      <div class="flex gap-4">
-        <div class="w-72">
+      <div class="flex items-center gap-3">
+        <div class="w-64">
           <UInput
             v-model="searchQuery"
             icon="i-heroicons-magnifying-glass"
-            placeholder="Cari Tag atau Deskripsi..."
-            @keyup.enter="handleFilterChange"
+            placeholder="Cari Tag / Deskripsi..."
+            @keyup.enter="getData"
           />
         </div>
-
-        <div v-if="statusOptions.length > 0" class="w-64">
-          <USelect
-            :key="statusOptions.length"
-            v-model="selectedStatus"
-            :items="statusOptions"
-            label-key="label"
-            value-key="key"
-            placeholder="Pilih Status"
-            @update:model-value="handleFilterChange"
-          />
-        </div>
+        <USelect
+          v-model="selectedStatus"
+          :items="statusOptions"
+          label-key="label"
+          value-key="key"
+          class="w-44"
+          @update:model-value="getData"
+        />
+        <UButton
+          color="success"
+          icon="i-heroicons-arrow-down-left"
+          @click="openAddModal('in')"
+          >Cash In</UButton
+        >
+        <UButton
+          color="error"
+          icon="i-heroicons-arrow-up-right"
+          @click="openAddModal('out')"
+          >Cash Out</UButton
+        >
       </div>
     </SharedHeaderBg>
 
@@ -178,36 +311,31 @@ onMounted(() => {
           <div class="text-sm font-medium">
             {{ formatDate(row.original.date) }}
           </div>
-          <div class="text-[10px] text-gray-400">
-            Dibuat: {{ formatDateTime(row.original.created_at) }}
+          <div class="text-[10px] text-gray-400 italic">
+            {{ formatDateTime(row.original.created_at) }}
           </div>
         </template>
 
         <template #coa-cell="{ row }">
           <div class="font-bold text-primary-700">#{{ row.original.tag }}</div>
-          <div class="text-xs text-gray-500">{{ row.original.coa?.name }}</div>
-        </template>
-
-        <template #description-cell="{ row }">
-          <div class="truncate max-w-xs text-sm">
-            {{ row.original.description }}
+          <div class="text-xs text-gray-500">
+            {{ row.original.coa?.name || 'Tanpa Kategori' }}
           </div>
         </template>
 
         <template #amount-cell="{ row }">
           <div
             v-if="parseFloat(row.original.credit) > 0"
-            class="text-green-600 font-semibold"
+            class="text-red-600 font-semibold"
           >
-            + {{ formatCurrency(row.original.credit) }}
+            - {{ formatCurrency(row.original.credit) }}
           </div>
           <div
             v-else-if="parseFloat(row.original.debit) > 0"
-            class="text-red-600 font-semibold"
+            class="text-green-600 font-semibold"
           >
-            - {{ formatCurrency(row.original.debit) }}
+            + {{ formatCurrency(row.original.debit) }}
           </div>
-          <div v-else class="text-gray-400">Rp 0</div>
         </template>
 
         <template #status-cell="{ row }">
@@ -221,28 +349,34 @@ onMounted(() => {
         </template>
 
         <template #action-cell="{ row }">
-          <UButton
-            icon="i-heroicons-eye"
-            variant="ghost"
-            color="neutral"
-            @click="getDetail(row.original.id)"
-          />
+          <div class="flex gap-1">
+            <UButton
+              icon="i-heroicons-eye"
+              variant="ghost"
+              color="neutral"
+              @click="getDetail(row.original.id)"
+            />
+            <UButton
+              v-if="row.original.status === 'reject'"
+              icon="i-heroicons-pencil-square"
+              variant="ghost"
+              color="warning"
+              @click="openRevisiModal(row.original)"
+            />
+          </div>
         </template>
       </UTable>
     </div>
 
-    <div class="flex justify-between items-center">
-      <div class="flex items-center gap-2 text-sm text-gray-600">
+    <div class="flex justify-between items-center px-4">
+      <div class="flex items-center gap-2 text-sm text-gray-500">
         <span>Tampilkan</span>
         <USelect
           v-model.number="pagination.per_page"
           :items="perPageLimit"
-          value-attribute="value"
-          option-attribute="label"
-          class="w-24"
+          class="w-20"
         />
       </div>
-
       <UPagination
         v-model:page="pagination.current_page"
         :total="pagination.total"
@@ -251,173 +385,208 @@ onMounted(() => {
       />
     </div>
 
-    <UModal v-model:open="isOpen" :ui="{ content: 'sm:max-w-4xl' }">
+    <UModal v-model:open="isOpenForm" :ui="{ width: 'sm:max-w-lg' }">
       <template #header>
-        <div class="flex items-center justify-between w-full">
-          <div>
-            <h3 class="text-lg font-bold">Detail Petty Cash</h3>
-            <p class="text-xs text-gray-500">ID: {{ selectedDetail?.id }}</p>
-          </div>
-          <UBadge :color="getStatusColor(selectedDetail?.status)">
-            {{ getStatusLabel(selectedDetail?.status) }}
-          </UBadge>
+        <div class="flex items-center gap-2 font-bold text-gray-800">
+          <UIcon
+            :name="
+              mode === 'in'
+                ? 'i-heroicons-arrow-down-left'
+                : 'i-heroicons-arrow-up-right'
+            "
+            :class="mode === 'in' ? 'text-green-500' : 'text-red-500'"
+          />
+          <span class="capitalize">{{
+            mode === 'revisi' ? 'Revisi Transaksi' : `Input Cash ${mode}`
+          }}</span>
         </div>
       </template>
 
       <template #body>
+        <UForm
+          :schema="PettyFormSchema"
+          :state="form"
+          class="space-y-5"
+          @submit="saveData"
+        >
+          <UFormField name="tag" label="Tag / COA" required>
+            <USelectMenu
+              v-model="form.tag"
+              :items="coaOptions"
+              label-key="label"
+              value-key="key"
+              placeholder="Pilih Akun/Tag"
+              searchable
+              size="lg"
+            />
+          </UFormField>
+
+          <UFormField
+            v-if="mode === 'revisi'"
+            name="date"
+            label="Tanggal Transaksi"
+          >
+            <UInput v-model="form.date" type="date" size="lg" />
+          </UFormField>
+
+          <UFormField name="amount" label="Nominal" required>
+            <UInput
+              v-model="form.amount"
+              placeholder="0"
+              size="lg"
+            >
+              <template #leading>
+                <span class="text-gray-400 text-xs font-bold">Rp</span>
+              </template>
+            </UInput>
+          </UFormField>
+
+          <UFormField name="description" label="Keterangan" required>
+            <UTextarea
+              v-model="form.description"
+              placeholder="Jelaskan keperluan transaksi secara detail..."
+              :rows="3"
+            />
+          </UFormField>
+
+          <UFormField name="proof" label="Bukti Transaksi" required>
+            <div class="w-full">
+              <div
+                v-if="form.proof"
+                class="relative group aspect-video rounded-xl border-2 border-gray-100 overflow-hidden bg-gray-50"
+              >
+                <img :src="form.proof" class="w-full h-full object-contain" />
+                <div
+                  class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <UButton
+                    color="error"
+                    variant="solid"
+                    icon="i-lucide-trash-2"
+                    label="Hapus & Ganti"
+                    @click="clearImage"
+                  />
+                </div>
+              </div>
+              <UFileUpload
+                v-else
+                v-model="imageFile"
+                accept="image/*"
+                :dropzone="true"
+                class="aspect-video"
+                icon="i-heroicons-camera"
+              />
+            </div>
+          </UFormField>
+
+          <div class="flex justify-end gap-3 pt-4 border-t border-gray-50">
+            <UButton variant="ghost" color="neutral" @click="isOpenForm = false"
+              >Batal</UButton
+            >
+            <UButton
+              type="submit"
+              color="primary"
+              :loading="loading"
+              class="px-8"
+            >
+              Simpan Transaksi
+            </UButton>
+          </div>
+        </UForm>
+      </template>
+    </UModal>
+
+    <UModal v-model:open="isOpenDetail" :ui="{ content: 'sm:max-w-3xl' }">
+      <template #header>
+        <div class="flex items-center justify-between w-full">
+          <h3 class="font-bold text-gray-900">Rincian Transaksi Petty Cash</h3>
+          <UBadge :color="getStatusColor(selectedDetail?.status)">{{
+            getStatusLabel(selectedDetail?.status)
+          }}</UBadge>
+        </div>
+      </template>
+      <template #body>
         <div v-if="selectedDetail" class="space-y-6">
           <div
-            class="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg border border-gray-100"
+            class="grid grid-cols-2 md:grid-cols-4 gap-4 p-5 bg-gray-50 rounded-2xl border border-gray-100"
           >
             <div>
-              <div class="text-[10px] text-gray-500 uppercase font-bold">
-                Pengaju
-              </div>
-              <p class="font-medium">{{ selectedDetail.user.name }}</p>
-              <p class="text-xs text-gray-400">
-                {{ selectedDetail.user.username }}
+              <p
+                class="text-[10px] font-bold text-gray-400 uppercase tracking-wider"
+              >
+                Tanggal
+              </p>
+              <p class="font-semibold text-sm">
+                {{ formatDate(selectedDetail.date) }}
               </p>
             </div>
             <div>
-              <div class="text-[10px] text-gray-500 uppercase font-bold">
-                COA / Tag
-              </div>
-              <p class="font-medium text-primary-700">
-                #{{ selectedDetail.tag }}
+              <p
+                class="text-[10px] font-bold text-gray-400 uppercase tracking-wider"
+              >
+                Tag / COA
               </p>
-              <p class="text-xs text-gray-600">{{ selectedDetail.coa.name }}</p>
+              <p class="font-semibold text-sm">#{{ selectedDetail.tag }}</p>
             </div>
-            <div>
-              <div class="text-[10px] text-gray-500 uppercase font-bold">
+            <div class="col-span-2">
+              <p
+                class="text-[10px] font-bold text-gray-400 uppercase tracking-wider"
+              >
                 Nominal
-              </div>
+              </p>
               <p
                 :class="[
-                  'text-lg font-bold',
+                  'text-xl font-black',
                   parseFloat(selectedDetail.credit) > 0
-                    ? 'text-green-600'
-                    : 'text-red-600'
+                    ? 'text-red-600'
+                    : 'text-green-600'
                 ]"
               >
                 {{
-                  parseFloat(selectedDetail.credit) > 0
-                    ? formatCurrency(selectedDetail.credit)
-                    : formatCurrency(selectedDetail.debit)
+                  formatCurrency(
+                    parseFloat(selectedDetail.credit) > 0
+                      ? selectedDetail.credit
+                      : selectedDetail.debit
+                  )
                 }}
               </p>
             </div>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <p class="text-sm font-bold mb-2 text-gray-900">
-                Deskripsi / Keperluan:
-              </p>
-              <div
-                class="p-3 bg-white border rounded-lg text-sm text-gray-700 italic leading-relaxed"
-              >
-                "{{ selectedDetail.description }}"
-              </div>
-              <div class="mt-4">
-                <p class="text-xs text-gray-500 mb-2">Lampiran Bukti:</p>
-                <div
-                  class="p-3 border-2 border-dashed rounded-lg flex items-center gap-3"
-                >
-                  <UIcon
-                    name="i-heroicons-document-text"
-                    class="w-8 h-8 text-gray-400"
-                  />
-                  <div class="flex-1 overflow-hidden">
-                    <p class="text-xs font-medium truncate">
-                      {{ selectedDetail.proof }}
-                    </p>
-                  </div>
-                  <UButton size="xs" color="neutral" variant="subtle"
-                    >Lihat</UButton
-                  >
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <p class="text-sm font-bold mb-3 text-gray-900">
-                Riwayat Persetujuan:
-              </p>
-              <div
-                class="relative space-y-4 before:absolute before:inset-0 before:ml-5 before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-slate-200 before:to-transparent"
-              >
-                <div
-                  v-for="history in selectedDetail.histories"
-                  :key="history.id"
-                  class="relative flex items-start gap-4"
-                >
-                  <div class="absolute left-0 mt-1">
-                    <div
-                      :class="[
-                        'flex items-center justify-center w-10 h-10 rounded-full border-4 border-white shadow-sm',
-                        history.status === 'approve'
-                          ? 'bg-green-500'
-                          : 'bg-red-500'
-                      ]"
-                    >
-                      <UIcon
-                        :name="
-                          history.status === 'approve'
-                            ? 'i-heroicons-check'
-                            : 'i-heroicons-x-mark'
-                        "
-                        class="w-5 h-5 text-white"
-                      />
-                    </div>
-                  </div>
-                  <div
-                    class="ml-12 p-3 bg-gray-50 rounded-lg border border-gray-100 flex-1"
-                  >
-                    <div class="flex justify-between items-center mb-1">
-                      <span class="text-xs font-bold">{{
-                        history.user.name
-                      }}</span>
-                      <span class="text-[9px] text-gray-400">{{
-                        formatDateTime(history.created_at)
-                      }}</span>
-                    </div>
-                    <div class="flex items-center gap-2 mb-2">
-                      <UBadge
-                        size="xs"
-                        variant="outline"
-                        class="text-[9px] uppercase"
-                      >
-                        {{ history.action_by }}
-                      </UBadge>
-                    </div>
-                    <p class="text-xs text-gray-600 italic">
-                      "{{ history.description }}"
-                    </p>
-                  </div>
-                </div>
-
-                <div
-                  v-if="!selectedDetail.histories?.length"
-                  class="text-center py-4 text-gray-400 text-sm"
-                >
-                  Belum ada riwayat tindakan.
-                </div>
-              </div>
+          <div>
+            <p class="text-sm font-bold text-gray-900 mb-2">
+              Keterangan / Deskripsi:
+            </p>
+            <div
+              class="p-4 bg-white border border-gray-100 rounded-xl text-sm text-gray-600 italic leading-relaxed"
+            >
+              "{{ selectedDetail.description }}"
             </div>
           </div>
-        </div>
-      </template>
 
-      <template #footer>
-        <div class="flex justify-end w-full">
-          <UButton
-            label="Tutup"
-            color="neutral"
-            variant="ghost"
-            @click="isOpen = false"
-          />
+          <div v-if="selectedDetail.proof">
+            <p
+              class="text-sm font-bold text-gray-900 mb-2 text-center md:text-left"
+            >
+              Bukti Lampiran:
+            </p>
+            <div
+              class="max-w-md mx-auto md:mx-0 overflow-hidden rounded-2xl border shadow-sm"
+            >
+              <img :src="selectedDetail.proof" class="w-full h-auto" />
+            </div>
+          </div>
         </div>
       </template>
     </UModal>
   </div>
 </template>
+
+<style scoped>
+/* Menghilangkan spin button di input number */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+</style>

@@ -3,6 +3,7 @@ import { z } from 'zod'
 import type { FormSubmitEvent } from '#ui/types'
 import { genderItems } from '~/const/dropdown'
 const { dropdownRT, getDropdownRT } = useApiDropdown()
+const isSuccessModalOpen = ref(false)
 const router = useRouter()
 
 // --- VALIDATION SCHEMA ---
@@ -101,22 +102,23 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
     })
 
     if (res.status === 1) {
-      alert(
-        'Registrasi Berhasil!\n\nData Anda telah kami terima. Username dan password untuk login aplikasi akan dikirimkan melalui WhatsApp ke nomor Kepala Keluarga setelah diverifikasi oleh Admin.'
-      )
-
-      // Reset form ke kondisi awal
+      isSuccessModalOpen.value = true
       resetForm()
-
-      // Redirect ke Landing Page
-      router.push('/')
     }
   } catch (err: any) {
     // Tampilkan pesan error dari API jika ada, atau fallback ke pesan default
-    alert(err.data?.message || 'Terjadi kesalahan saat mengirim data. Silakan coba lagi.')
+    alert(
+      err.data?.message ||
+        'Terjadi kesalahan saat mengirim data. Silakan coba lagi.'
+    )
   } finally {
     loading.value = false
   }
+}
+
+const handleFinish = () => {
+  isSuccessModalOpen.value = false
+  router.push('/') // Lari ke landing page
 }
 
 // --- HELPERS ---
@@ -163,7 +165,7 @@ const removeChild = (index: number) => {
 watch(
   () => state.rt_id,
   (newRt) => {
-    state.address_id = undefined
+    state.address_id = ''
     addressOptions.value = []
     if (newRt) getAddress(newRt)
   }
@@ -174,6 +176,7 @@ definePageMeta({
 })
 
 onMounted(() => {
+  isSuccessModalOpen.value = true
   getDropdownRT()
 })
 </script>
@@ -435,7 +438,7 @@ onMounted(() => {
 
           <div
             v-if="state.childs.length === 0"
-            class="text-center py-16 bg-white rounded-[2rem] border border-slate-100 shadow-inner"
+            class="text-center py-16 bg-white rounded-4xl border border-slate-100 shadow-inner"
           >
             <div
               class="bg-slate-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4"
@@ -454,7 +457,7 @@ onMounted(() => {
             <div
               v-for="(child, index) in state.childs"
               :key="index"
-              class="bg-white p-6 rounded-[2rem] shadow-sm border border-slate-100 relative group animate-in slide-in-from-top-4 duration-300"
+              class="bg-white p-6 rounded-4xl shadow-sm border border-slate-100 relative group animate-in slide-in-from-top-4 duration-300"
             >
               <div
                 class="absolute -top-3 left-8 px-5 py-1.5 bg-orange-600 text-white text-xs font-black uppercase rounded-full tracking-widest shadow-lg shadow-orange-100"
@@ -518,7 +521,7 @@ onMounted(() => {
             size="xl"
             block
             :loading="loading"
-            class="rounded-[2rem] py-8 font-black text-xl uppercase tracking-widest shadow-2xl shadow-primary-200 transition-all hover:scale-[1.02] active:scale-95 bg-primary-600 hover:bg-primary-700"
+            class="rounded-4xl py-8 font-black text-xl uppercase tracking-widest shadow-2xl shadow-primary-200 transition-all hover:scale-[1.02] active:scale-95 bg-primary-600 hover:bg-primary-700"
           >
             Kirim Data Keluarga
           </UButton>
@@ -537,5 +540,55 @@ onMounted(() => {
         </div>
       </UForm>
     </div>
+
+    <UModal
+      v-model:openl="isSuccessModalOpen"
+      prevent-close
+      :ui="{ body: 'sm:max-w-md' }"
+    >
+      <template #body>
+        <div class="p-8 text-center">
+          <div
+            class="mx-auto w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mb-6 animate-bounce"
+          >
+            <UIcon
+              name="i-heroicons-check-circle"
+              class="w-16 h-16 text-green-500"
+            />
+          </div>
+
+          <h3 class="text-2xl font-black text-slate-900 mb-4">
+            Registrasi Berhasil!
+          </h3>
+
+          <div class="space-y-4 mb-8 text-slate-600 leading-relaxed text-sm">
+            <p>
+              Data keluarga Anda telah kami terima dengan aman dalam sistem.
+            </p>
+            <div
+              class="bg-blue-50 p-4 rounded-2xl border border-blue-100 text-blue-700 text-xs italic"
+            >
+              <div class="flex gap-2 items-start text-left">
+                <UIcon name="i-lucide-info" class="w-5 h-5 shrink-0" />
+                <span>
+                  <strong>Penting:</strong> Username & Password akan dikirim
+                  secara otomatis melalui <strong>WhatsApp</strong> ke nomor
+                  Kepala Keluarga.
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <UButton
+            label="Selesai & Kembali ke Beranda"
+            block
+            size="xl"
+            color="primary"
+            class="rounded-2xl py-4 font-bold shadow-lg shadow-primary-100"
+            @click="handleFinish"
+          />
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>

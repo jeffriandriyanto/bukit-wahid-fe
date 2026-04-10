@@ -8,7 +8,7 @@ export const sidebarItems: SidebarItem[] = [
   },
   {
     label: 'Struktur Organisasi',
-    icon: 'i-lucide-network', // Menggambarkan struktur organisasi/hierarki
+    icon: 'i-lucide-sitemap', // Lebih spesifik untuk hierarki/struktur
     to: '/profile-structure'
   },
   {
@@ -22,7 +22,7 @@ export const sidebarItems: SidebarItem[] = [
       },
       {
         label: 'Data Keluarga',
-        icon: 'i-lucide-contact-2', // Ikon kartu identitas/kontak grup
+        icon: 'i-lucide-contact-2',
         to: '/master-data/family'
       },
       {
@@ -34,7 +34,7 @@ export const sidebarItems: SidebarItem[] = [
   },
   {
     label: 'Keuangan',
-    icon: 'i-lucide-wallet',
+    icon: 'i-lucide-banknote', // Menggambarkan aliran uang secara umum
     children: [
       {
         label: 'Kelola Master Tagihan',
@@ -43,22 +43,27 @@ export const sidebarItems: SidebarItem[] = [
       },
       {
         label: 'Laporan Tagihan',
-        icon: 'i-lucide-file-bar-chart',
+        icon: 'i-lucide-file-text', // Laporan dokumen
         to: '/bill/report'
       },
       {
         label: 'Master COA',
-        icon: 'i-lucide-file-bar-chart',
+        icon: 'i-lucide-tags',
         to: '/bill/coa'
       },
       {
         label: 'Petty Cash',
-        icon: 'i-lucide-file-bar-chart',
+        icon: 'i-lucide-coins',
         to: '/bill/petty-cash'
       },
       {
+        label: 'Jurnal',
+        icon: 'i-lucide-notebook-tabs',
+        to: '/bill/journal'
+      },
+      {
         label: 'Pembayaran Tagihan Air',
-        icon: 'i-lucide-credit-card',
+        icon: 'i-lucide-droplets',
         isHide: true,
         to: '/bill/pdam'
       }
@@ -103,7 +108,7 @@ export const sidebarItems: SidebarItem[] = [
   },
   {
     label: 'Pengaturan',
-    icon: 'i-lucide-cog',
+    icon: 'i-lucide-settings-2',
     to: '/settings'
   }
 ]
