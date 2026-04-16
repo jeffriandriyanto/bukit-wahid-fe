@@ -2,7 +2,7 @@
 import { z } from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { genderItems } from '~/const/dropdown'
-import { fileUpload, fileUploadResidence } from '~/services/files' // Pastikan path ini benar sesuai contohmu
+import { fileUpload, fileUploadResidence } from '~/services/files'
 import { watchWithFilter, debounceFilter } from '@vueuse/core'
 import { perPageLimit } from '~/const/utils'
 
@@ -33,6 +33,7 @@ type CitizenFromSchema = z.infer<typeof CitizenFromSchema>
 
 const { reveal: confirm } = useConfirmService()
 const toast = useToast()
+const { dropdownRT, getDropdownRT } = useApiDropdown()
 
 const isOpen = ref(false)
 const mode = ref<'add' | 'edit'>('add')
@@ -43,7 +44,20 @@ const loadingEdit = ref(false)
 // File Upload Refs
 const avatarFile = ref<File | null>(null)
 const signatureFile = ref<File | null>(null)
+
+// Search & Filter States
 const search = ref('')
+const selectedRT = ref(null)
+const selectedAgeGroup = ref(null)
+const selectedReligion = ref(null)
+
+// --- Temporary States (Yang nempel di Dropdown Modal) ---
+const tempRT = ref(null)
+const tempAgeGroup = ref(null)
+const tempReligion = ref(null)
+
+const isFilterModalOpen = ref(false)
+
 const dataCitizen = ref<any[]>([])
 const pagination = ref({
   current_page: 1,
@@ -51,6 +65,60 @@ const pagination = ref({
   per_page: 10,
   total: 0
 })
+
+const religionOptions = [
+  { key: null, label: 'Semua Agama' },
+  { key: 'Islam', label: 'Islam' },
+  { key: 'Kristen', label: 'Kristen' },
+  { key: 'Katolik', label: 'Katolik' },
+  { key: 'Hindu', label: 'Hindu' },
+  { key: 'Budha', label: 'Budha' },
+  { key: 'Khonghucu', label: 'Khonghucu' }
+]
+
+const ageGroupOptions = [
+  { key: null, label: 'Semua Usia' },
+  { key: '0-5', label: '0 - 5 Tahun' },
+  { key: '6-12', label: '6 - 12 Tahun' },
+  { key: '13-16', label: '13 - 16 Tahun' },
+  { key: '17-21', label: '17 - 21 Tahun' },
+  { key: '22-40', label: '22 - 40 Tahun' },
+  { key: '41-59', label: '41 - 59 Tahun' },
+  { key: '60', label: '>= 60 Tahun' }
+]
+
+const activeFilterCount = computed(() => {
+  let count = 0
+  if (selectedRT.value) count++
+  if (selectedAgeGroup.value) count++
+  if (selectedReligion.value) count++
+  return count
+})
+
+const applyFilters = () => {
+  selectedRT.value = tempRT.value
+  selectedAgeGroup.value = tempAgeGroup.value
+  selectedReligion.value = tempReligion.value
+
+  pagination.value.current_page = 1
+  getData()
+  isFilterModalOpen.value = false
+}
+
+const resetFilters = () => {
+  tempRT.value = null
+  tempAgeGroup.value = null
+  tempReligion.value = null
+
+  selectedRT.value = null
+  selectedAgeGroup.value = null
+  selectedReligion.value = null
+
+  search.value = ''
+  pagination.value.current_page = 1
+  getData()
+  isFilterModalOpen.value = false
+}
 
 const form = reactive<CitizenFromSchema>({
   name: '',
@@ -63,7 +131,6 @@ const form = reactive<CitizenFromSchema>({
   no_kk: '',
   email: '',
   avatar: '',
-  // signature: '',
   job: '',
   religion: '',
   nationality: '',
@@ -88,7 +155,6 @@ const resetForm = () => {
     no_kk: '',
     email: '',
     avatar: '',
-    // signature: '',
     job: '',
     religion: '',
     nationality: '',
@@ -97,18 +163,12 @@ const resetForm = () => {
   })
 }
 
-// Logic untuk preview & bersihkan URL blob agar tidak memory leak
 const clearFile = (type: 'avatar' | 'signature') => {
   if (type === 'avatar') {
     if (form.avatar?.startsWith('blob:')) URL.revokeObjectURL(form.avatar)
     form.avatar = ''
     avatarFile.value = null
   }
-  // else {
-  //   if (form.signature?.startsWith('blob:')) URL.revokeObjectURL(form.signature)
-  //   form.signature = ''
-  //   signatureFile.value = null
-  // }
 }
 
 watch(avatarFile, (file) => {
@@ -118,23 +178,30 @@ watch(avatarFile, (file) => {
   }
 })
 
+// Watchers for Filters
+const handleFilterChange = () => {
+  pagination.value.current_page = 1
+  getData()
+}
+
 watchWithFilter(
   search,
   () => {
     pagination.value.current_page = 1
     getData()
   },
+  { eventFilter: debounceFilter(1000) }
+)
+
+watchWithFilter(
+  search,
+  () => {
+    handleFilterChange()
+  },
   {
     eventFilter: debounceFilter(1000)
   }
 )
-
-// watch(signatureFile, (file) => {
-//   if (file) {
-//     if (form.signature?.startsWith('blob:')) URL.revokeObjectURL(form.signature)
-//     form.signature = URL.createObjectURL(file)
-//   }
-// })
 
 // --- EXCEL ACTIONS ---
 const excelInput = ref<HTMLInputElement | null>(null)
@@ -143,6 +210,19 @@ const loadingExcel = ref(false)
 const downloadTemplateHandler = () => {
   const config = useRuntimeConfig()
   const url = `${config.public.baseUrl}resident/excel/template`
+  window.open(url, '_blank')
+}
+
+const downloadExportHandler = () => {
+  const config = useRuntimeConfig()
+  // Generate query params based on active filters
+  const params = new URLSearchParams({
+    search: search.value || '',
+    rt: selectedRT.value || '',
+    age_group: selectedAgeGroup.value || '',
+    religion: selectedReligion.value || ''
+  })
+  const url = `${config.public.baseUrl}resident/excel/export?${params.toString()}`
   window.open(url, '_blank')
 }
 
@@ -178,6 +258,9 @@ const getData = async () => {
     const res = await useApi<any>('/resident', {
       params: {
         search: search.value,
+        rt: selectedRT.value,
+        age_group: selectedAgeGroup.value,
+        religion: selectedReligion.value,
         page: pagination.value.current_page,
         limit: pagination.value.per_page
       },
@@ -210,7 +293,6 @@ const openEditModal = async (row: any) => {
   try {
     const res = await useApi<any>(`/resident/${row.id}`)
     if (res.status === 1) {
-      // Pastikan data dari BE masuk ke form
       Object.assign(form, { ...res.data, dob: parseToCalendarDate(row.dob) })
     }
   } catch (err) {
@@ -224,27 +306,17 @@ const openEditModal = async (row: any) => {
 const saveData = async (event: FormSubmitEvent<CitizenFromSchema>) => {
   try {
     loading.value = true
-
-    // 1. Handling Upload Avatar & Signature
     let finalAvatarUrl = form.avatar
-    // let finalSignatureUrl = form.signature
 
     if (avatarFile.value) {
       const uploadRes = await fileUpload(avatarFile.value)
       if (uploadRes) finalAvatarUrl = uploadRes
     }
 
-    // if (signatureFile.value) {
-    //   const uploadRes = await fileUpload(signatureFile.value)
-    //   if (uploadRes) finalSignatureUrl = uploadRes
-    // }
-
-    // 2. Prepare Payload
     const payload = {
       ...event.data,
       dob: formatDOB(event.data.dob || ''),
       avatar: finalAvatarUrl
-      // signature: finalSignatureUrl
     }
 
     const url =
@@ -255,9 +327,7 @@ const saveData = async (event: FormSubmitEvent<CitizenFromSchema>) => {
 
     if (res.status === 1) {
       toast.add({
-        title: `Berhasil ${
-          mode.value === 'add' ? 'menambah' : 'mengubah'
-        } data`,
+        title: `Berhasil ${mode.value === 'add' ? 'menambah' : 'mengubah'} data`,
         color: 'success'
       })
       isOpen.value = false
@@ -308,7 +378,6 @@ const getAge = (dob: string | null) => {
   return age
 }
 
-// Update Kolom Tabel
 const columnsFamilyTable = [
   { accessorKey: 'name', header: 'Informasi Warga' },
   { accessorKey: 'username', header: 'Username' },
@@ -328,6 +397,7 @@ watch(
 )
 
 onMounted(() => {
+  getDropdownRT()
   getData()
 })
 </script>
@@ -346,11 +416,11 @@ onMounted(() => {
 
     <SharedHeaderBg>
       <div
-        class="flex flex-col xl:flex-row xl:items-center justify-between gap-6 w-full py-2"
+        class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 w-full py-2"
       >
         <div class="flex items-center gap-4 shrink-0">
           <div
-            class="p-3 bg-primary-50 rounded-2xl shadow-sm border border-primary-100/50"
+            class="p-3 bg-primary-50 rounded-2xl border border-primary-100/50"
           >
             <UIcon
               name="i-lucide-user-circle-2"
@@ -361,7 +431,7 @@ onMounted(() => {
             <h2
               class="text-xl font-black text-neutral-900 tracking-tight leading-none"
             >
-              Manajemen Data Penduduk
+              Data Penduduk
             </h2>
             <span
               class="text-[10px] text-neutral-400 uppercase font-black tracking-widest mt-1.5"
@@ -371,61 +441,136 @@ onMounted(() => {
           </div>
         </div>
 
-        <div class="flex-1 max-w-2xl w-full">
-          <UFormField>
-            <UInput
-              v-model="search"
-              icon="i-lucide-search"
-              placeholder="Cari Nama Warga .."
-              size="lg"
-              class="w-full"
-              :ui="{ root: 'rounded-full' }"
-            />
-          </UFormField>
+        <div class="flex flex-1 items-center gap-2 max-w-xl">
+          <UInput
+            v-model="search"
+            icon="i-lucide-search"
+            placeholder="Cari nama..."
+            size="lg"
+            class="flex-1"
+            :ui="{ root: 'rounded-full' }"
+          />
+
+          <UButton
+            color="neutral"
+            variant="soft"
+            size="lg"
+            class="rounded-full px-5 font-bold shrink-0 relative"
+            @click="isFilterModalOpen = true"
+          >
+            <template #leading>
+              <UIcon name="i-lucide-filter" class="w-4 h-4" />
+            </template>
+            Filter
+            <UBadge
+              v-if="activeFilterCount > 0"
+              color="primary"
+              size="xs"
+              class="ml-1 rounded-full px-1.5 min-w-[20px] justify-center"
+            >
+              {{ activeFilterCount }}
+            </UBadge>
+          </UButton>
         </div>
 
-        <div class="flex flex-wrap items-center gap-3 shrink-0">
-          <div
-            class="flex items-center bg-neutral-100 p-1 rounded-full border border-neutral-200"
+        <div class="flex items-center gap-2">
+          <UButton
+            color="neutral"
+            variant="ghost"
+            icon="i-lucide-file-spreadsheet"
+            size="md"
+            class="rounded-full font-bold hidden sm:flex"
+            @click="downloadExportHandler"
           >
-            <UButton
-              color="neutral"
-              variant="ghost"
-              icon="i-lucide-download"
-              size="sm"
-              class="rounded-full px-4 hover:bg-white"
-              @click="downloadTemplateHandler"
-            >
-              Template
-            </UButton>
+            Export
+          </UButton>
 
-            <div class="w-px h-4 bg-neutral-300 mx-1" />
-
-            <UButton
-              color="neutral"
-              variant="ghost"
-              icon="i-lucide-upload"
-              size="sm"
-              :loading="loadingExcel"
-              class="rounded-full px-4 hover:bg-white"
-              @click="triggerExcelUpload"
-            >
-              Upload
-            </UButton>
-          </div>
+          <div class="h-6 w-px bg-neutral-200 mx-1 hidden sm:block"></div>
 
           <UButton
             color="primary"
             icon="i-lucide-plus-circle"
             size="lg"
-            class="rounded-full px-8 shadow-lg shadow-primary-500/20 font-bold tracking-wide"
+            class="rounded-full px-6 shadow-lg shadow-primary-500/20 font-bold"
             @click="openAddModal"
           >
-            Tambah Warga
+            <span class="hidden sm:inline">Tambah Warga</span>
           </UButton>
         </div>
       </div>
     </SharedHeaderBg>
+
+    <UModal
+      v-model:open="isFilterModalOpen"
+      :ui="{ content: 'max-w-md', rounded: 'rounded-4xl' }"
+    >
+      <template #header>
+        <div
+          class="flex items-center gap-2 font-black text-neutral-900 uppercase tracking-tight"
+        >
+          <UIcon name="i-lucide-sliders-horizontal" class="text-primary-600" />
+          Filter Pencarian
+        </div>
+      </template>
+
+      <template #body>
+        <div class="space-y-6">
+          <UFormField label="Berdasarkan Wilayah RT">
+            <USelectMenu
+              v-model="selectedRT"
+              :items="dropdownRT"
+              value-key="key"
+              label-key="label"
+              placeholder="Semua RT"
+              size="xl"
+              class="w-full"
+            />
+          </UFormField>
+
+          <UFormField label="Berdasarkan Kelompok Usia">
+            <USelectMenu
+              v-model="selectedAgeGroup"
+              :items="ageGroupOptions"
+              value-key="key"
+              label-key="label"
+              placeholder="Semua Usia"
+              size="xl"
+              class="w-full"
+            />
+          </UFormField>
+
+          <UFormField label="Berdasarkan Agama">
+            <USelectMenu
+              v-model="selectedReligion"
+              :items="religionOptions"
+              value-key="key"
+              label-key="label"
+              placeholder="Semua Agama"
+              size="xl"
+              class="w-full"
+            />
+          </UFormField>
+        </div>
+      </template>
+
+      <template #footer>
+        <div class="flex justify-between w-full">
+          <UButton
+            label="Reset Filter"
+            color="error"
+            variant="ghost"
+            class="font-bold"
+            @click="resetFilters"
+          />
+          <UButton
+            label="Terapkan"
+            color="primary"
+            class="rounded-xl px-8 font-black uppercase tracking-widest"
+            @click="isFilterModalOpen = false"
+          />
+        </div>
+      </template>
+    </UModal>
 
     <div
       class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm"
@@ -487,9 +632,7 @@ onMounted(() => {
         </template>
 
         <template #blood_type-cell="{ row }">
-          <div>
-            {{ row.original.blood_type || '-' }}
-          </div>
+          <div>{{ row.original.blood_type || '-' }}</div>
         </template>
 
         <template #type-cell="{ row }">
@@ -592,23 +735,6 @@ onMounted(() => {
               </div>
               <UFileUpload v-else v-model="avatarFile" accept="image/*" />
             </UFormField>
-
-            <!-- <UFormField name="signature" label="Tanda Tangan">
-              <div v-if="form.signature" class="relative w-full h-24 mb-2">
-                <img
-                  :src="form.signature"
-                  class="w-full h-full object-contain rounded-lg border bg-gray-50"
-                />
-                <UButton
-                  size="xs"
-                  color="error"
-                  icon="i-lucide-x"
-                  class="absolute -top-2 -right-2"
-                  @click="clearFile('signature')"
-                />
-              </div>
-              <UFileUpload v-else v-model="signatureFile" accept="image/*" />
-            </UFormField> -->
           </div>
 
           <div class="flex justify-end gap-3 pt-4 border-t">
@@ -635,7 +761,6 @@ onMounted(() => {
           class="w-24"
         />
       </div>
-
       <UPagination
         v-model:page="pagination.current_page"
         :total="pagination.total"

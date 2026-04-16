@@ -271,7 +271,7 @@ onMounted(() => {
         <h2 class="text-lg font-bold text-gray-900">Petty Cash (Kas Kecil)</h2>
       </div>
 
-      <div class="flex items-center gap-3">
+      <div class="flex flex-wrap items-center gap-3">
         <div class="w-64">
           <UInput
             v-model="searchQuery"

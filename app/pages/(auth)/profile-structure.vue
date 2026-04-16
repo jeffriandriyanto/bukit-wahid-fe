@@ -408,7 +408,7 @@ definePageMeta({
               :items="dropdownFamilyHead"
               orientation="horizontal"
               class="w-full"
-              placeholder="Pilih Person"
+              placeholder="Pilih Pejabat"
               value-key="key"
               value-label="label"
             />

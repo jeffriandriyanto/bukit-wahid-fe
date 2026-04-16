@@ -276,7 +276,7 @@ definePageMeta({
                 <p
                   class="font-extrabold text-2xl text-neutral-950 tracking-tight"
                 >
-                  {{rwDataList[0]?.incumbent?.name || "-"}}
+                  {{ rwDataList[0]?.incumbent?.name || '-' }}
                 </p>
                 <p class="text-primary-700 font-semibold tracking-wide">
                   Ketua Pengurus RW 11 • Bukit Wahid Regency
@@ -505,8 +505,9 @@ definePageMeta({
                 <UBadge
                   variant="subtle"
                   class="bg-white/20 text-white border-none rounded-full px-4 font-bold uppercase tracking-widest text-[10px]"
-                  >Mobile Experience</UBadge
                 >
+                  Mobile Experience
+                </UBadge>
                 <h2
                   class="text-4xl md:text-5xl font-black text-white tracking-tighter leading-tight"
                 >
@@ -514,9 +515,9 @@ definePageMeta({
                   <span class="text-primary-200">Satu Genggaman</span>
                 </h2>
                 <p class="text-primary-50 text-lg leading-relaxed max-w-xl">
-                  Pantau iuran ISP, info kegiatan, hingga lapor keluhan kini
-                  lebih mudah. Download aplikasi resmi
-                  <b>RW 11 Bukit Wahid</b> untuk kemudahan akses informasi
+                  Pantau <b>iuran lingkungan, tagihan air</b>, info kegiatan,
+                  hingga lapor keluhan kini lebih mudah. Download aplikasi resmi
+                  <b>Bukit Wahid Digital</b> untuk kemudahan akses informasi
                   kapanpun dan dimanapun.
                 </p>
               </div>

@@ -7,6 +7,9 @@ export default defineNuxtConfig({
     'nuxt-charts',
     '@pinia/nuxt'
   ],
+  experimental: {
+    scanPageMeta: false,
+  },
   devtools: {
     enabled: true
   },
@@ -18,7 +21,7 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     public: {
-      version: "1.3.7",
+      version: "1.6.1",
       siteUrl: 'https://rw11bukitwahid.com',
       baseUrl: process?.env?.NUXT_PUBLIC_BASE_URL || ''
     },
@@ -29,5 +32,17 @@ export default defineNuxtConfig({
     config: {
       stylistic: false
     }
-  }
+  },
+  vite: {
+    build: {
+      rollupOptions: {
+        external: ['@nuxt/nitro-server']
+      }
+    },
+    server: {
+      watch: {
+        usePolling: true,
+      }
+    }
+  },
 })

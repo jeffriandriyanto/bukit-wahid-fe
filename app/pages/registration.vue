@@ -3,14 +3,16 @@ import { z } from 'zod'
 import type { FormSubmitEvent } from '#ui/types'
 import { genderItems } from '~/const/dropdown'
 const { dropdownRT, getDropdownRT } = useApiDropdown()
-const isSuccessModalOpen = ref(false)
+const { reveal: confirm } = useConfirmService()
 const router = useRouter()
+const loading = ref(false)
+const addressOptions = ref([])
 
 // --- VALIDATION SCHEMA ---
 const schema = z.object({
   no_kk: z.string().optional(),
   rt_id: z.any().refine((val) => !!val, 'RT wajib dipilih'),
-  address_id: z.any().refine((val) => !!val, 'Alamat rumah wajib dipilih'),
+  address: z.any().refine((val) => !!val, 'Alamat rumah wajib dipilih'),
   head: z.object({
     name: z.string().min(1, 'Nama lengkap kepala keluarga wajib diisi'),
     phone: z.string().min(10, 'Nomor WhatsApp minimal 10 digit'),
@@ -23,16 +25,14 @@ const schema = z.object({
       .optional()
       .or(z.literal(''))
   }),
-
   spouse: z.object({
-    name: z.string().min(1, 'Nama lengkap pasangan wajib diisi'),
+    name: z.string().optional(),
     phone: z.string().optional().or(z.literal('')),
     gender: z.string().min(1, 'Pilih jenis kelamin'),
     bod: z.string().optional().or(z.literal('')),
     pob: z.string().optional().or(z.literal('')),
     nik: z.string().optional().or(z.literal(''))
   }),
-
   childs: z.array(
     z.object({
       name: z.string().min(1, 'Nama anak wajib diisi'),
@@ -48,29 +48,12 @@ const schema = z.object({
 type Schema = z.output<typeof schema>
 
 // --- STATE ---
-const loading = ref(false)
-const addressOptions = ref([])
-
 const state = reactive({
   no_kk: '',
   rt_id: '',
-  address_id: '',
-  head: {
-    name: '',
-    phone: '',
-    gender: 'L',
-    bod: '',
-    pob: '',
-    nik: ''
-  },
-  spouse: {
-    name: '',
-    phone: '',
-    gender: 'P',
-    bod: '',
-    pob: '',
-    nik: ''
-  },
+  address: '',
+  head: { name: '', phone: '', gender: 'L', bod: '', pob: '', nik: '' },
+  spouse: { name: '', phone: '', gender: 'P', bod: '', pob: '', nik: '' },
   childs: [] as any[]
 })
 
@@ -93,7 +76,6 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
   loading.value = true
   try {
     const payload = JSON.parse(JSON.stringify(event.data))
-    // Hapus rt_id karena API hanya butuh address_id
     delete payload.rt_id
 
     const res = await useApi<any>('/familly/registration', {
@@ -102,23 +84,26 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
     })
 
     if (res.status === 1) {
-      isSuccessModalOpen.value = true
-      resetForm()
+      // PAKAI CONFIRM SERVICE BIAR SERAGAM
+      const ok = await confirm({
+        title: 'Registrasi Berhasil!',
+        description:
+          'Data pendaftaran Anda telah diterima. Username & Password akan dikirim otomatis via WhatsApp ke nomor Kepala Keluarga setelah divalidasi oleh Admin.',
+        confirmLabel: 'Selesai & Ke Beranda',
+        cancelLabel: 'Tutup',
+        color: 'primary'
+      })
+
+      if (ok) {
+        resetForm()
+        router.push('/')
+      }
     }
   } catch (err: any) {
-    // Tampilkan pesan error dari API jika ada, atau fallback ke pesan default
-    alert(
-      err.data?.message ||
-        'Terjadi kesalahan saat mengirim data. Silakan coba lagi.'
-    )
+    alert(err.data?.message || 'Terjadi kesalahan sistem.')
   } finally {
     loading.value = false
   }
-}
-
-const handleFinish = () => {
-  isSuccessModalOpen.value = false
-  router.push('/') // Lari ke landing page
 }
 
 // --- HELPERS ---
@@ -126,23 +111,9 @@ const resetForm = () => {
   Object.assign(state, {
     no_kk: '',
     rt_id: null,
-    address_id: null,
-    head: {
-      name: '',
-      phone: '',
-      gender: 'L',
-      bod: '',
-      pob: '',
-      nik: ''
-    },
-    spouse: {
-      name: '',
-      phone: '',
-      gender: 'P',
-      bod: '',
-      pob: '',
-      nik: ''
-    },
+    address: null,
+    head: { name: '', phone: '', gender: 'L', bod: '', pob: '', nik: '' },
+    spouse: { name: '', phone: '', gender: 'P', bod: '', pob: '', nik: '' },
     childs: []
   })
 }
@@ -165,18 +136,15 @@ const removeChild = (index: number) => {
 watch(
   () => state.rt_id,
   (newRt) => {
-    state.address_id = ''
+    state.address = ''
     addressOptions.value = []
     if (newRt) getAddress(newRt)
   }
 )
 
-definePageMeta({
-  layout: 'white'
-})
+definePageMeta({ layout: 'white' })
 
 onMounted(() => {
-  isSuccessModalOpen.value = true
   getDropdownRT()
 })
 </script>
@@ -185,6 +153,8 @@ onMounted(() => {
   <div
     class="min-h-screen bg-slate-50 flex flex-col items-center justify-start py-12 px-4 sm:px-6 lg:px-8 font-sans"
   >
+    <ConfirmDialog />
+
     <div class="w-full max-w-5xl">
       <div class="mb-12 text-center">
         <div
@@ -214,7 +184,6 @@ onMounted(() => {
           <div
             class="absolute top-0 right-0 w-32 h-32 bg-primary-50 rounded-full -mr-16 -mt-16 opacity-50"
           />
-
           <div class="flex items-center gap-4 mb-8">
             <div
               class="w-12 h-12 rounded-2xl bg-primary-600 flex items-center justify-center text-white text-xl font-black"
@@ -242,7 +211,6 @@ onMounted(() => {
                 placeholder="Contoh: 3374012345678901"
               />
             </UFormField>
-
             <UFormField
               label="Wilayah RT"
               name="rt_id"
@@ -258,15 +226,14 @@ onMounted(() => {
                 size="xl"
               />
             </UFormField>
-
             <UFormField
               label="Alamat / Nomor Rumah"
-              name="address_id"
+              name="address"
               class="md:col-span-5"
               required
             >
               <USelectMenu
-                v-model="state.address_id"
+                v-model="state.address"
                 :items="addressOptions"
                 value-key="key"
                 label-key="label"
@@ -294,7 +261,6 @@ onMounted(() => {
               </p>
             </div>
           </div>
-
           <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
             <UFormField
               label="Nama Lengkap (Tanpa Gelar)"
@@ -323,7 +289,6 @@ onMounted(() => {
                 placeholder="16 Digit NIK"
               />
             </UFormField>
-
             <UFormField label="Jenis Kelamin" name="head.gender">
               <USelectMenu
                 v-model="state.head.gender"
@@ -360,13 +325,8 @@ onMounted(() => {
               <p class="text-sm text-slate-400">Data pasangan (jika ada)</p>
             </div>
           </div>
-
           <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-            <UFormField
-              label="Nama Lengkap Pasangan"
-              name="spouse.name"
-              required
-            >
+            <UFormField label="Nama Lengkap Pasangan" name="spouse.name">
               <UInput
                 v-model="state.spouse.name"
                 size="lg"
@@ -429,9 +389,8 @@ onMounted(() => {
             <UButton
               icon="i-heroicons-plus-circle"
               color="primary"
-              variant="solid"
               label="Tambah Anak"
-              class="rounded-2xl px-6 py-2.5 font-bold shadow-lg shadow-primary-400 mt-2 sm:mt-0"
+              class="rounded-2xl px-6 py-2.5 font-bold shadow-lg"
               @click="addChild"
             />
           </div>
@@ -440,11 +399,6 @@ onMounted(() => {
             v-if="state.childs.length === 0"
             class="text-center py-16 bg-white rounded-4xl border border-slate-100 shadow-inner"
           >
-            <div
-              class="bg-slate-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4"
-            >
-              <UIcon name="i-lucide-baby" class="w-10 h-10 text-slate-300" />
-            </div>
             <p class="text-slate-400 font-medium">
               Belum ada data anak yang ditambahkan.
             </p>
@@ -464,7 +418,6 @@ onMounted(() => {
               >
                 Anak Ke-{{ index + 1 }}
               </div>
-
               <UButton
                 icon="i-heroicons-trash"
                 color="red"
@@ -473,7 +426,6 @@ onMounted(() => {
                 class="absolute top-6 right-6 rounded-xl hover:bg-red-100 transition-colors"
                 @click="removeChild(index)"
               />
-
               <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mt-4">
                 <UFormField
                   label="Nama Lengkap Anak"
@@ -540,55 +492,5 @@ onMounted(() => {
         </div>
       </UForm>
     </div>
-
-    <UModal
-      v-model:openl="isSuccessModalOpen"
-      prevent-close
-      :ui="{ body: 'sm:max-w-md' }"
-    >
-      <template #body>
-        <div class="p-8 text-center">
-          <div
-            class="mx-auto w-24 h-24 bg-green-50 rounded-full flex items-center justify-center mb-6 animate-bounce"
-          >
-            <UIcon
-              name="i-heroicons-check-circle"
-              class="w-16 h-16 text-green-500"
-            />
-          </div>
-
-          <h3 class="text-2xl font-black text-slate-900 mb-4">
-            Registrasi Berhasil!
-          </h3>
-
-          <div class="space-y-4 mb-8 text-slate-600 leading-relaxed text-sm">
-            <p>
-              Data keluarga Anda telah kami terima dengan aman dalam sistem.
-            </p>
-            <div
-              class="bg-blue-50 p-4 rounded-2xl border border-blue-100 text-blue-700 text-xs italic"
-            >
-              <div class="flex gap-2 items-start text-left">
-                <UIcon name="i-lucide-info" class="w-5 h-5 shrink-0" />
-                <span>
-                  <strong>Penting:</strong> Username & Password akan dikirim
-                  secara otomatis melalui <strong>WhatsApp</strong> ke nomor
-                  Kepala Keluarga.
-                </span>
-              </div>
-            </div>
-          </div>
-
-          <UButton
-            label="Selesai & Kembali ke Beranda"
-            block
-            size="xl"
-            color="primary"
-            class="rounded-2xl py-4 font-bold shadow-lg shadow-primary-100"
-            @click="handleFinish"
-          />
-        </div>
-      </template>
-    </UModal>
   </div>
 </template>

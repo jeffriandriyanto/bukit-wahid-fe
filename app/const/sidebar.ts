@@ -8,7 +8,7 @@ export const sidebarItems: SidebarItem[] = [
   },
   {
     label: 'Struktur Organisasi',
-    icon: 'i-lucide-sitemap', // Lebih spesifik untuk hierarki/struktur
+    icon: 'i-lucide-network',
     to: '/profile-structure'
   },
   {
@@ -29,6 +29,11 @@ export const sidebarItems: SidebarItem[] = [
         label: 'Data Rumah',
         icon: 'i-lucide-home',
         to: '/master-data/home'
+      },
+      {
+        label: 'Petugas & Staf',
+        icon: 'i-lucide-user-check',
+        to: '/master-data/employee'
       }
     ]
   },
