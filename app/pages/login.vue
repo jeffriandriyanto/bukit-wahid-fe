@@ -15,15 +15,12 @@ const isPasswordVisible = ref(false)
 const isLoading = ref(false)
 
 const formState = reactive({
-  email: '',
+  username: '',
   password: ''
 })
 
 const schema = z.object({
-  email: z
-    .string()
-    .min(1, 'Email wajib diisi')
-    .email('Format email tidak valid'),
+  username: z.string().min(1, 'Username / Email wajib diisi'),
   password: z.string().min(5, 'Password minimal 5 karakter')
 })
 
@@ -36,7 +33,7 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
     const response = await useApi<any>('/login', {
       method: 'POST',
       body: {
-        username: event.data.email,
+        username: event.data.username,
         password: event.data.password
       }
     })
@@ -64,7 +61,7 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
 
 <template>
   <UCard
-    class="bg-white/50 text-black rounded-xl border-0 backdrop-blur-sm shadow-sm min-w-md"
+    class="bg-white/50 text-black rounded-xl border-0 backdrop-blur-sm shadow-sm min-w-xs py-6 sm:mx-0 sm:min-w-md"
   >
     <NuxtLink to="/">
       <AppLogo class="w-auto mx-auto h-14 mb-4 shrink-0" />
@@ -81,13 +78,12 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
       class="flex flex-col gap-4 mt-8"
       @submit="onSubmit"
     >
-      <!-- EMAIL -->
-      <UFormField name="email" required>
+      <UFormField name="username" required>
         <UInput
-          v-model="formState.email"
-          type="email"
-          placeholder="masukan email anda"
-          icon="i-lucide-mail"
+          v-model="formState.username"
+          type="text"
+          placeholder="masukan username atau email"
+          icon="i-lucide-user"
         />
       </UFormField>
 

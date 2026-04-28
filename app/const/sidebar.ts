@@ -87,6 +87,11 @@ export const sidebarItems: SidebarItem[] = [
         label: 'Agenda Pertemuan',
         icon: 'i-lucide-calendar-days',
         to: '/meeting-agenda'
+      },
+      {
+        label: 'Pengumuman',
+        icon: 'i-lucide-announcement',
+        to: '/announcement'
       }
     ]
   },
@@ -103,7 +108,12 @@ export const sidebarItems: SidebarItem[] = [
         label: 'E-Voting',
         icon: 'i-lucide-vote',
         to: '/e-voting'
-      }
+      },
+      {
+        label: 'Surat',
+        icon: 'i-lucide-mail',
+        to: '/letter'
+      },
     ]
   },
   {
