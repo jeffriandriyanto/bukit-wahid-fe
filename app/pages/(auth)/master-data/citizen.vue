@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { z } from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
-import { genderItems } from '~/const/dropdown'
+import { genderItems, religionOptions } from '~/const/dropdown'
 import { fileUpload, fileUploadResidence } from '~/services/files'
 import { watchWithFilter, debounceFilter } from '@vueuse/core'
 import { perPageLimit } from '~/const/utils'
@@ -65,16 +65,6 @@ const pagination = ref({
   per_page: 10,
   total: 0
 })
-
-const religionOptions = [
-  { key: null, label: 'Semua Agama' },
-  { key: 'Islam', label: 'Islam' },
-  { key: 'Kristen', label: 'Kristen' },
-  { key: 'Katolik', label: 'Katolik' },
-  { key: 'Hindu', label: 'Hindu' },
-  { key: 'Budha', label: 'Budha' },
-  { key: 'Khonghucu', label: 'Khonghucu' }
-]
 
 const ageGroupOptions = [
   { key: null, label: 'Semua Usia' },
@@ -213,18 +203,20 @@ const downloadTemplateHandler = () => {
   window.open(url, '_blank')
 }
 
-const downloadExportHandler = () => {
-  const config = useRuntimeConfig()
-  // Generate query params based on active filters
-  const params = new URLSearchParams({
-    search: search.value || '',
-    rt: selectedRT.value || '',
-    age_group: selectedAgeGroup.value || '',
-    religion: selectedReligion.value || ''
-  })
-  const url = `${config.public.baseUrl}resident/excel/export?${params.toString()}`
-  window.open(url, '_blank')
-}
+// const downloadExportHandler = () => {
+//   const config = useRuntimeConfig()
+//   // Generate query params based on active filters
+//   const params = new URLSearchParams({
+//     search: search.value || '',
+//     rt: selectedRT.value || '',
+//     age_group: selectedAgeGroup.value || '',
+//     religion: selectedReligion.value || ''
+//   })
+//   const url = `${
+//     config.public.baseUrl
+//   }resident/excel/export?${params.toString()}`
+//   window.open(url, '_blank')
+// }
 
 const triggerExcelUpload = () => excelInput.value?.click()
 
@@ -327,7 +319,9 @@ const saveData = async (event: FormSubmitEvent<CitizenFromSchema>) => {
 
     if (res.status === 1) {
       toast.add({
-        title: `Berhasil ${mode.value === 'add' ? 'menambah' : 'mengubah'} data`,
+        title: `Berhasil ${
+          mode.value === 'add' ? 'menambah' : 'mengubah'
+        } data`,
         color: 'success'
       })
       isOpen.value = false
@@ -388,6 +382,32 @@ const columnsFamilyTable = [
   { id: 'action', header: 'Aksi', class: 'text-right' }
 ]
 
+const excelActions = computed(() => [
+  [
+    {
+      label: 'Download Template',
+      icon: 'i-lucide-download-cloud',
+      onSelect: () => {
+        downloadTemplateHandler()
+      }
+    },
+    {
+      label: 'Upload Excel',
+      icon: 'i-lucide-upload-cloud',
+      onSelect: () => {
+        triggerExcelUpload()
+      }
+    },
+    // {
+    //   label: 'Export Spreadsheet',
+    //   icon: 'i-lucide-file-spreadsheet',
+    //   onSelect: () => {
+    //     downloadExportHandler()
+    //   }
+    // }
+  ]
+])
+
 watch(
   () => pagination.value.per_page,
   () => {
@@ -418,80 +438,81 @@ onMounted(() => {
       <div
         class="flex flex-col lg:flex-row lg:items-center justify-between gap-4 w-full py-2"
       >
-        <div class="flex items-center gap-4 shrink-0">
-          <div
-            class="p-3 bg-primary-50 rounded-2xl border border-primary-100/50"
-          >
+        <!-- Judul -->
+        <div class="flex items-center gap-3 shrink-0">
+          <div class="p-2 bg-primary-50 rounded-lg">
             <UIcon
-              name="i-lucide-user-circle-2"
-              class="w-6 h-6 text-primary-600 block"
+              name="i-lucide-users-round"
+              class="w-5 h-5 text-primary-600"
             />
           </div>
-          <div class="flex flex-col">
-            <h2
-              class="text-xl font-black text-neutral-900 tracking-tight leading-none"
-            >
-              Data Penduduk
-            </h2>
-            <span
-              class="text-[10px] text-neutral-400 uppercase font-black tracking-widest mt-1.5"
-            >
-              Bukit Wahid Regency
-            </span>
-          </div>
+          <h2 class="text-lg font-bold text-gray-900 whitespace-nowrap">
+            Manajemen Data Warga
+          </h2>
         </div>
 
-        <div class="flex flex-1 items-center gap-2 max-w-xl">
+        <!-- Search & Filter Area -->
+        <div class="flex flex-1 items-center gap-2 min-w-0 max-w-2xl">
           <UInput
             v-model="search"
             icon="i-lucide-search"
-            placeholder="Cari nama..."
-            size="lg"
-            class="flex-1"
+            placeholder="Cari nama atau NIK..."
+            size="md"
+            class="flex-1 max-w-sm"
             :ui="{ root: 'rounded-full' }"
           />
 
           <UButton
             color="neutral"
             variant="soft"
-            size="lg"
-            class="rounded-full px-5 font-bold shrink-0 relative"
+            size="md"
+            class="rounded-full shrink-0 font-semibold"
             @click="isFilterModalOpen = true"
           >
             <template #leading>
               <UIcon name="i-lucide-filter" class="w-4 h-4" />
             </template>
-            Filter
+            <span class="hidden sm:inline">Filter</span>
             <UBadge
               v-if="activeFilterCount > 0"
               color="primary"
               size="xs"
-              class="ml-1 rounded-full px-1.5 min-w-[20px] justify-center"
+              class="ml-1 rounded-full px-1.5"
             >
               {{ activeFilterCount }}
             </UBadge>
           </UButton>
         </div>
 
-        <div class="flex items-center gap-2">
-          <UButton
-            color="neutral"
-            variant="ghost"
-            icon="i-lucide-file-spreadsheet"
-            size="md"
-            class="rounded-full font-bold hidden sm:flex"
-            @click="downloadExportHandler"
+        <!-- Actions Area -->
+        <div class="flex items-center gap-2 shrink-0">
+          <!-- Grouped Excel Actions using UDropdownMenu -->
+          <UDropdownMenu
+            :items="excelActions"
+            :content="{ align: 'end', sideOffset: 8 }"
           >
-            Export
-          </UButton>
+            <UButton
+              color="neutral"
+              variant="subtle"
+              size="md"
+              class="rounded-full"
+              :loading="loadingExcel"
+            >
+              <template #leading>
+                <UIcon name="i-lucide-layers" class="w-4 h-4" />
+              </template>
+              <span class="hidden xl:inline">Opsi Data</span>
+              <UIcon name="i-lucide-chevron-down" class="w-3.5 h-3.5 ml-0.5" />
+            </UButton>
+          </UDropdownMenu>
 
           <div class="h-6 w-px bg-neutral-200 mx-1 hidden sm:block"></div>
 
           <UButton
             color="primary"
-            icon="i-lucide-plus-circle"
-            size="lg"
-            class="rounded-full px-6 shadow-lg shadow-primary-500/20 font-bold"
+            icon="i-lucide-plus"
+            size="md"
+            class="rounded-full px-5 shadow-sm font-bold"
             @click="openAddModal"
           >
             <span class="hidden sm:inline">Tambah Warga</span>
@@ -502,7 +523,7 @@ onMounted(() => {
 
     <UModal
       v-model:open="isFilterModalOpen"
-      :ui="{ content: 'max-w-md', rounded: 'rounded-4xl' }"
+      :ui="{ content: 'max-w-md rounded-4xl' }"
     >
       <template #header>
         <div

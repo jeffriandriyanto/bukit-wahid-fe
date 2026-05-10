@@ -10,19 +10,16 @@ const emit = defineEmits<{
   (e: 'update:open', value: boolean): void
 }>()
 
-const isOldVisible = ref(false)
 const isNewVisible = ref(false)
 const isConfirmVisible = ref(false)
 
 const formState = reactive({
-  oldPassword: '',
   newPassword: '',
   confirmPassword: ''
 })
 
 const schema = z
   .object({
-    oldPassword: z.string().min(5, 'Password lama minimal 5 karakter'),
     newPassword: z.string().min(5, 'Password baru minimal 5 karakter'),
     confirmPassword: z.string().min(5, 'Konfirmasi password wajib diisi')
   })
@@ -38,19 +35,19 @@ const close = () => {
 }
 
 const onSubmit = async (event: FormSubmitEvent<Schema>) => {
-  const { oldPassword, newPassword } = event.data
-
-  // nanti sambung API di sini
-  console.log('change password payload', {
-    oldPassword,
-    newPassword
+  const response = await useApi<any>(`change-password`, {
+    method: 'PUT',
+    body: {
+      name: event.data.newPassword
+    }
   })
 
-  formState.confirmPassword = ''
-  formState.newPassword = ''
-  formState.oldPassword = ''
+  if (response.status === 1) {
+    formState.confirmPassword = ''
+    formState.newPassword = ''
 
-  emit('update:open', false)
+    emit('update:open', false)
+  }
 }
 </script>
 
@@ -67,25 +64,6 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
         class="space-y-4"
         @submit="onSubmit"
       >
-        <!-- PASSWORD LAMA -->
-        <UFormField label="Password Lama" name="oldPassword" required>
-          <UInput
-            v-model="formState.oldPassword"
-            :type="isOldVisible ? 'text' : 'password'"
-            icon="i-lucide-lock"
-            placeholder="Masukkan password lama"
-          >
-            <template #trailing>
-              <UButton
-                color="neutral"
-                variant="ghost"
-                :icon="isOldVisible ? 'i-lucide-eye-off' : 'i-lucide-eye'"
-                @click="isOldVisible = !isOldVisible"
-              />
-            </template>
-          </UInput>
-        </UFormField>
-
         <!-- PASSWORD BARU -->
         <UFormField label="Password Baru" name="newPassword" required>
           <UInput

@@ -1,66 +1,127 @@
 <script setup lang="ts">
 import { z } from 'zod'
 import type { FormSubmitEvent } from '#ui/types'
-import { genderItems } from '~/const/dropdown'
-const { dropdownRT, getDropdownRT } = useApiDropdown()
+import { genderItems, religionOptions } from '~/const/dropdown'
+
+const {
+  dropdownRT,
+  dropdownResidenceCategory,
+  getDropdownRT,
+  getDropdownResidenceCategory
+} = useApiDropdown()
+
 const { reveal: confirm } = useConfirmService()
+
 const router = useRouter()
+
 const loading = ref(false)
+
 const addressOptions = ref([])
 
-// --- VALIDATION SCHEMA ---
+// =========================
+// HELPERS
+// =========================
+
+const requiredText = (message: string) => z.string().min(1, message)
+
+const optionalText = z.string().nullable()
+
+// =========================
+// SCHEMA
+// =========================
+
+const residentSchema = z.object({
+  name: requiredText('Nama wajib diisi'),
+  phone: optionalText,
+  gender: requiredText('Gender wajib diisi'),
+  dob: requiredText('Tanggal lahir wajib diisi'),
+  pob: requiredText('Tempat lahir wajib diisi'),
+  nik: optionalText,
+  religion: requiredText('Agama wajib diisi'),
+  avatar: optionalText,
+  blood_type: optionalText,
+  email: optionalText,
+  job: optionalText,
+  nationality: optionalText,
+  last_education: optionalText
+})
+
+const headSchema = z.object({
+  name: requiredText('Nama wajib diisi'),
+  phone: requiredText('No HP wajib diisi'),
+  gender: requiredText('Gender wajib diisi'),
+  dob: requiredText('Tanggal lahir wajib diisi'),
+  pob: requiredText('Tempat lahir wajib diisi'),
+  nik: optionalText,
+  religion: requiredText('Agama wajib diisi'),
+  avatar: optionalText,
+  blood_type: optionalText,
+  email: optionalText,
+  job: optionalText,
+  nationality: optionalText,
+  last_education: optionalText
+})
+
 const schema = z.object({
-  no_kk: z.string().optional(),
-  rt_id: z.any().refine((val) => !!val, 'RT wajib dipilih'),
-  address: z.any().refine((val) => !!val, 'Alamat rumah wajib dipilih'),
-  head: z.object({
-    name: z.string().min(1, 'Nama lengkap kepala keluarga wajib diisi'),
-    phone: z.string().min(10, 'Nomor WhatsApp minimal 10 digit'),
-    gender: z.string().optional().or(z.literal('')),
-    bod: z.string().optional().or(z.literal('')),
-    pob: z.string().optional().or(z.literal('')),
-    nik: z
-      .string()
-      .length(16, 'NIK harus 16 digit')
-      .optional()
-      .or(z.literal(''))
-  }),
-  spouse: z.object({
-    name: z.string().optional(),
-    phone: z.string().optional().or(z.literal('')),
-    gender: z.string().min(1, 'Pilih jenis kelamin'),
-    bod: z.string().optional().or(z.literal('')),
-    pob: z.string().optional().or(z.literal('')),
-    nik: z.string().optional().or(z.literal(''))
-  }),
-  childs: z.array(
-    z.object({
-      name: z.string().min(1, 'Nama anak wajib diisi'),
-      phone: z.string().optional().or(z.literal('')),
-      gender: z.string().min(1, 'Pilih jenis kelamin'),
-      bod: z.string().optional(),
-      pob: z.string().optional().or(z.literal('')),
-      nik: z.string().optional().or(z.literal(''))
-    })
-  )
+  rt_id: requiredText('RT wajib dipilih'),
+  address: requiredText('Alamat wajib dipilih'),
+  category: requiredText('Kategori tinggal wajib dipilih'),
+  head: headSchema,
+  spouse: residentSchema.nullable(),
+  childs: z.array(residentSchema),
+  other: z.array(residentSchema)
 })
 
 type Schema = z.output<typeof schema>
 
-// --- STATE ---
+// =========================
+// FACTORY
+// =========================
+
+const createResident = () => ({
+  name: '',
+  phone: null,
+  gender: '',
+  dob: '',
+  pob: '',
+  nik: null,
+  religion: '',
+  avatar: null,
+  blood_type: null,
+  email: null,
+  job: null,
+  nationality: null,
+  last_education: null
+})
+
+// =========================
+// STATE
+// =========================
+
 const state = reactive({
-  no_kk: '',
   rt_id: '',
   address: '',
-  head: { name: '', phone: '', gender: 'L', bod: '', pob: '', nik: '' },
-  spouse: { name: '', phone: '', gender: 'P', bod: '', pob: '', nik: '' },
-  childs: [] as any[]
+  category: 'Tetap',
+  head: {
+    ...createResident(),
+    phone: '',
+    gender: 'L'
+  },
+  spouse: null as any,
+  childs: [] as any[],
+  other: [] as any[]
 })
+
+// =========================
+// API
+// =========================
 
 const getAddress = async (rtId: string) => {
   if (!rtId) return
+
   try {
     const res = await useApi<any>(`/dropdown/address/${rtId}`)
+
     if (res.status === 1) {
       addressOptions.value = res.data.map((i: any) => ({
         key: i.key,
@@ -74,8 +135,10 @@ const getAddress = async (rtId: string) => {
 
 const onSubmit = async (event: FormSubmitEvent<Schema>) => {
   loading.value = true
+
   try {
     const payload = JSON.parse(JSON.stringify(event.data))
+
     delete payload.rt_id
 
     const res = await useApi<any>('/familly/registration', {
@@ -84,13 +147,11 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
     })
 
     if (res.status === 1) {
-      // PAKAI CONFIRM SERVICE BIAR SERAGAM
       const ok = await confirm({
         title: 'Registrasi Berhasil!',
         description:
-          'Data pendaftaran Anda telah diterima. Username & Password akan dikirim otomatis via WhatsApp ke nomor Kepala Keluarga setelah divalidasi oleh Admin.',
-        confirmLabel: 'Selesai & Ke Beranda',
-        cancelLabel: 'Tutup',
+          'Data pendaftaran Anda telah diterima dan akan divalidasi oleh Admin.',
+        confirmLabel: 'Selesai',
         color: 'primary'
       })
 
@@ -106,391 +167,585 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
   }
 }
 
-// --- HELPERS ---
+// =========================
+// HELPERS
+// =========================
+const enableSpouse = () => {
+  state.spouse = {
+    ...createResident(),
+    gender: 'P'
+  }
+}
+
+const removeSpouse = () => {
+  state.spouse = null
+}
+
 const resetForm = () => {
   Object.assign(state, {
-    no_kk: '',
-    rt_id: null,
-    address: null,
-    head: { name: '', phone: '', gender: 'L', bod: '', pob: '', nik: '' },
-    spouse: { name: '', phone: '', gender: 'P', bod: '', pob: '', nik: '' },
-    childs: []
+    rt_id: '',
+    address: '',
+    category: 'Tetap',
+    head: {
+      ...createResident(),
+      phone: '',
+      gender: 'L'
+    },
+    spouse: null,
+    childs: [],
+    other: []
   })
 }
 
-const addChild = () => {
-  state.childs.push({
-    name: '',
-    phone: '',
-    gender: 'L',
-    bod: '',
-    pob: '',
-    nik: ''
+const addMember = (type: 'childs' | 'other') => {
+  state[type].push({
+    ...createResident(),
+    gender: 'L'
   })
 }
 
-const removeChild = (index: number) => {
-  state.childs.splice(index, 1)
+const removeMember = (type: 'childs' | 'other', index: number) => {
+  state[type].splice(index, 1)
 }
+
+// =========================
+// WATCH
+// =========================
 
 watch(
   () => state.rt_id,
   (newRt) => {
     state.address = ''
     addressOptions.value = []
-    if (newRt) getAddress(newRt)
+
+    if (newRt) {
+      getAddress(newRt)
+    }
   }
 )
 
-definePageMeta({ layout: 'white' })
+definePageMeta({
+  layout: 'white'
+})
 
 onMounted(() => {
   getDropdownRT()
+  getDropdownResidenceCategory()
 })
 </script>
 
 <template>
-  <div
-    class="min-h-screen bg-slate-50 flex flex-col items-center justify-start py-12 px-4 sm:px-6 lg:px-8 font-sans"
-  >
-    <ConfirmDialog />
+  <!-- Background Decor -->
+  <div>
+    <div class="fixed inset-0 -z-10 overflow-hidden bg-slate-50">
+      <div
+        class="absolute -top-[10%] -left-[10%] w-[70%] h-[40%] rounded-full bg-primary-100/50 blur-[120px]"
+      />
+      <div
+        class="absolute top-[40%] -right-[10%] w-[60%] h-[40%] rounded-full bg-blue-100/50 blur-[120px]"
+      />
+    </div>
 
-    <div class="w-full max-w-5xl">
-      <div class="mb-12 text-center">
-        <div
-          class="inline-flex items-center justify-center p-4 bg-primary-600 rounded-3xl shadow-xl shadow-primary-200 mb-6"
-        >
-          <UIcon name="i-lucide-users-round" class="w-12 h-12 text-white" />
-        </div>
-        <h1
-          class="text-4xl font-black text-slate-900 tracking-tight sm:text-5xl"
-        >
-          Formulir Warga Baru
-        </h1>
-        <p class="text-slate-500 mt-3 text-lg font-medium">
-          Lengkapi data keluarga untuk pendataan digital lingkungan.
-        </p>
-      </div>
+    <div class="min-h-screen font-sans pb-24">
+      <ConfirmDialog />
 
-      <UForm
-        :schema="schema"
-        :state="state"
-        class="space-y-10"
-        @submit="onSubmit"
+      <!-- Mobile Wrapper -->
+      <div
+        class="w-full max-w-120 mx-auto min-h-screen bg-white/40 backdrop-blur-md shadow-2xl shadow-slate-200/50"
       >
-        <section
-          class="bg-white rounded-[2.5rem] p-6 shadow-sm border border-slate-100 relative overflow-hidden"
+        <!-- Sticky Header ala Tokopedia -->
+        <header
+          class="sticky top-0 z-20 bg-white/80 backdrop-blur-md border-b border-slate-100 p-5 flex items-center gap-4"
         >
-          <div
-            class="absolute top-0 right-0 w-32 h-32 bg-primary-50 rounded-full -mr-16 -mt-16 opacity-50"
+          <UButton
+            icon="i-heroicons-chevron-left"
+            variant="ghost"
+            color="neutral"
+            @click="router.back()"
           />
-          <div class="flex items-center gap-4 mb-8">
-            <div
-              class="w-12 h-12 rounded-2xl bg-primary-600 flex items-center justify-center text-white text-xl font-black"
-            >
-              1
-            </div>
-            <div>
-              <h2 class="text-2xl font-bold text-slate-800">Domisili & KK</h2>
-              <p class="text-sm text-slate-400">
-                Identitas utama tempat tinggal
-              </p>
-            </div>
+          <h1 class="text-xl font-bold text-slate-800">Registrasi Warga</h1>
+        </header>
+
+        <div class="p-5">
+          <div class="mb-8">
+            <p class="text-slate-500 text-sm">
+              Selamat datang! Mohon lengkapi data kependudukan Anda untuk
+              pendataan wilayah.
+            </p>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-12 gap-6 relative z-10">
-            <UFormField
-              label="Nomor Kartu Keluarga"
-              name="no_kk"
-              class="md:col-span-4"
-            >
-              <UInput
-                v-model="state.no_kk"
-                icon="i-heroicons-identification"
-                size="xl"
-                placeholder="Contoh: 3374012345678901"
-              />
-            </UFormField>
-            <UFormField
-              label="Wilayah RT"
-              name="rt_id"
-              class="md:col-span-3"
-              required
-            >
-              <USelectMenu
-                v-model="state.rt_id"
-                :items="dropdownRT"
-                value-key="key"
-                label-key="label"
-                placeholder="Pilih RT..."
-                size="xl"
-              />
-            </UFormField>
-            <UFormField
-              label="Alamat / Nomor Rumah"
-              name="address"
-              class="md:col-span-5"
-              required
-            >
-              <USelectMenu
-                v-model="state.address"
-                :items="addressOptions"
-                value-key="key"
-                label-key="label"
-                placeholder="Cari nomor rumah..."
-                size="xl"
-                :disabled="!state.rt_id"
-              />
-            </UFormField>
-          </div>
-        </section>
-
-        <section
-          class="bg-white rounded-[2.5rem] p-6 shadow-sm border border-slate-100"
-        >
-          <div class="flex items-center gap-4 mb-8">
-            <div
-              class="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center text-white text-xl font-black"
-            >
-              2
-            </div>
-            <div>
-              <h2 class="text-2xl font-bold text-slate-800">Kepala Keluarga</h2>
-              <p class="text-sm text-slate-400">
-                Data penanggung jawab keluarga
-              </p>
-            </div>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-            <UFormField
-              label="Nama Lengkap (Tanpa Gelar)"
-              name="head.name"
-              required
-            >
-              <UInput
-                v-model="state.head.name"
-                size="lg"
-                placeholder="Masukkan nama sesuai KTP"
-              />
-            </UFormField>
-            <UFormField label="Nomor WhatsApp Aktif" name="head.phone" required>
-              <UInput
-                v-model="state.head.phone"
-                size="lg"
-                placeholder="Contoh: 08123456789"
-                icon="i-lucide-phone"
-              />
-            </UFormField>
-
-            <UFormField label="NIK Kepala Keluarga" name="head.nik">
-              <UInput
-                v-model="state.head.nik"
-                size="lg"
-                placeholder="16 Digit NIK"
-              />
-            </UFormField>
-            <UFormField label="Jenis Kelamin" name="head.gender">
-              <USelectMenu
-                v-model="state.head.gender"
-                :items="genderItems"
-                value-key="key"
-                label-key="label"
-                size="lg"
-              />
-            </UFormField>
-            <UFormField label="Tempat Lahir" name="head.pob">
-              <UInput
-                v-model="state.head.pob"
-                size="lg"
-                placeholder="Contoh: Semarang"
-              />
-            </UFormField>
-            <UFormField label="Tanggal Lahir" name="head.bod">
-              <UInput v-model="state.head.bod" type="date" size="lg" />
-            </UFormField>
-          </div>
-        </section>
-
-        <section
-          class="bg-white rounded-[2.5rem] p-6 shadow-sm border border-slate-100"
-        >
-          <div class="flex items-center gap-4 mb-8">
-            <div
-              class="w-12 h-12 rounded-2xl bg-pink-600 flex items-center justify-center text-white text-xl font-black"
-            >
-              3
-            </div>
-            <div>
-              <h2 class="text-2xl font-bold text-slate-800">Istri / Suami</h2>
-              <p class="text-sm text-slate-400">Data pasangan (jika ada)</p>
-            </div>
-          </div>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-            <UFormField label="Nama Lengkap Pasangan" name="spouse.name">
-              <UInput
-                v-model="state.spouse.name"
-                size="lg"
-                placeholder="Nama sesuai KTP"
-              />
-            </UFormField>
-            <UFormField label="NIK Pasangan" name="spouse.nik">
-              <UInput
-                v-model="state.spouse.nik"
-                size="lg"
-                placeholder="16 Digit NIK"
-              />
-            </UFormField>
-            <UFormField label="Nomor WhatsApp (Opsional)" name="spouse.phone">
-              <UInput
-                v-model="state.spouse.phone"
-                size="lg"
-                placeholder="08xxxx"
-              />
-            </UFormField>
-            <UFormField label="Jenis Kelamin" name="spouse.gender">
-              <USelectMenu
-                v-model="state.spouse.gender"
-                :items="genderItems"
-                value-key="key"
-                label-key="label"
-                size="lg"
-              />
-            </UFormField>
-            <UFormField label="Tempat Lahir" name="spouse.pob">
-              <UInput
-                v-model="state.spouse.pob"
-                size="lg"
-                placeholder="Kota Kelahiran"
-              />
-            </UFormField>
-            <UFormField label="Tanggal Lahir" name="spouse.bod">
-              <UInput v-model="state.spouse.bod" type="date" size="lg" />
-            </UFormField>
-          </div>
-        </section>
-
-        <section
-          class="bg-slate-100/60 rounded-[2.5rem] p-6 border-2 border-dashed border-slate-200"
-        >
-          <div class="flex flex-wrap sm:justify-between items-center mb-8">
-            <div class="flex items-center gap-4">
-              <div
-                class="w-12 h-12 rounded-2xl bg-primary-600 flex items-center justify-center text-white text-xl font-black"
-              >
-                4
-              </div>
-              <div>
-                <h2 class="text-2xl font-bold text-slate-800">Data Anak</h2>
-                <p class="text-sm text-slate-500">
-                  Tambahkan anak sesuai Kartu Keluarga
-                </p>
-              </div>
-            </div>
-            <UButton
-              icon="i-heroicons-plus-circle"
-              color="primary"
-              label="Tambah Anak"
-              class="rounded-2xl px-6 py-2.5 font-bold shadow-lg"
-              @click="addChild"
-            />
-          </div>
-
-          <div
-            v-if="state.childs.length === 0"
-            class="text-center py-16 bg-white rounded-4xl border border-slate-100 shadow-inner"
+          <UForm
+            :schema="schema"
+            :state="state"
+            class="space-y-6"
+            @submit="onSubmit"
           >
-            <p class="text-slate-400 font-medium">
-              Belum ada data anak yang ditambahkan.
-            </p>
-            <p class="text-xs text-slate-300 mt-1">
-              Silakan klik tombol "Tambah Anak" di atas jika ada.
-            </p>
-          </div>
-
-          <div class="space-y-8">
+            <!-- SECTION 1: DOMISILI -->
             <div
-              v-for="(child, index) in state.childs"
-              :key="index"
-              class="bg-white p-6 rounded-4xl shadow-sm border border-slate-100 relative group animate-in slide-in-from-top-4 duration-300"
+              class="bg-white rounded-4xl p-6 shadow-sm border border-slate-100 transition-all hover:shadow-md"
             >
-              <div
-                class="absolute -top-3 left-8 px-5 py-1.5 bg-orange-600 text-white text-xs font-black uppercase rounded-full tracking-widest shadow-lg shadow-orange-100"
-              >
-                Anak Ke-{{ index + 1 }}
+              <div class="flex items-center gap-3 mb-6">
+                <span class="p-2 bg-primary-50 rounded-lg text-primary-600">
+                  <UIcon name="i-heroicons-home-modern" class="w-5 h-5" />
+                </span>
+                <h2
+                  class="font-bold text-slate-800 uppercase tracking-wider text-xs"
+                >
+                  Lokasi Domisili
+                </h2>
               </div>
-              <UButton
-                icon="i-heroicons-trash"
-                color="red"
-                variant="soft"
-                size="sm"
-                class="absolute top-6 right-6 rounded-xl hover:bg-red-100 transition-colors"
-                @click="removeChild(index)"
-              />
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 mt-4">
-                <UFormField
-                  label="Nama Lengkap Anak"
-                  :name="`childs.${index}.name`"
-                >
-                  <UInput
-                    v-model="child.name"
-                    placeholder="Sesuai Akta Kelahiran / KK"
-                    size="lg"
-                  />
-                </UFormField>
-                <UFormField
-                  label="NIK Anak (Jika Ada)"
-                  :name="`childs.${index}.nik`"
-                >
-                  <UInput
-                    v-model="child.nik"
-                    placeholder="NIK atau nomor KIA"
-                    size="lg"
-                  />
-                </UFormField>
-                <UFormField
-                  label="Jenis Kelamin"
-                  :name="`childs.${index}.gender`"
-                >
+              <div class="space-y-4">
+                <UFormField label="Wilayah RT" name="rt_id" required>
                   <USelectMenu
-                    v-model="child.gender"
-                    :items="genderItems"
+                    v-model="state.rt_id"
+                    :items="dropdownRT"
                     value-key="key"
                     label-key="label"
-                    size="lg"
+                    placeholder="Pilih RT"
+                    size="xl"
                   />
                 </UFormField>
-                <UFormField label="Tanggal Lahir" :name="`childs.${index}.bod`">
-                  <UInput v-model="child.bod" type="date" size="lg" />
+
+                <UFormField label="Alamat / No. Rumah" name="address" required>
+                  <USelectMenu
+                    v-model="state.address"
+                    :items="addressOptions"
+                    value-key="key"
+                    label-key="label"
+                    placeholder="Cari Alamat"
+                    size="xl"
+                    :disabled="!state.rt_id"
+                    :ui="{ base: 'rounded-2xl' }"
+                  />
+                </UFormField>
+
+                <UFormField label="Kategori Tinggal" name="category" required>
+                  <USelectMenu
+                    v-model="state.category"
+                    :items="dropdownResidenceCategory"
+                    value-key="key"
+                    label-key="label"
+                    placeholder="Pilih kategori tinggal"
+                    size="xl"
+                  />
                 </UFormField>
               </div>
             </div>
-          </div>
-        </section>
 
-        <div class="pt-8 text-center max-w-2xl mx-auto">
-          <UButton
-            type="submit"
-            size="xl"
-            block
-            :loading="loading"
-            class="rounded-4xl py-8 font-black text-xl uppercase tracking-widest shadow-2xl shadow-primary-200 transition-all hover:scale-[1.02] active:scale-95 bg-primary-600 hover:bg-primary-700"
-          >
-            Kirim Data Keluarga
-          </UButton>
-          <div
-            class="mt-8 flex items-center justify-center gap-3 text-slate-400"
-          >
-            <UIcon
-              name="i-heroicons-shield-check"
-              class="w-6 h-6 text-green-500"
-            />
-            <span class="text-sm font-medium italic"
-              >Data pendaftaran ini bersifat rahasia dan akan diverifikasi oleh
-              pengurus RT setempat.</span
+            <!-- SECTION 2: KEPALA KELUARGA -->
+            <div
+              class="bg-white rounded-[2rem] p-6 shadow-sm border border-slate-100"
             >
-          </div>
+              <div class="flex items-center gap-3 mb-6">
+                <span class="p-2 bg-blue-50 rounded-lg text-blue-600">
+                  <UIcon name="i-heroicons-user-circle" class="w-5 h-5" />
+                </span>
+                <h2
+                  class="font-bold text-slate-800 uppercase tracking-wider text-xs"
+                >
+                  Kepala Keluarga
+                </h2>
+              </div>
+              <div class="space-y-4">
+                <UFormField label="Nama Lengkap" name="head.name" required>
+                  <UInput
+                    v-model="state.head.name"
+                    size="xl"
+                    placeholder="Sesuai KTP"
+                    :ui="{ base: 'rounded-2xl' }"
+                    class="bg-slate-50 rounded-2xl"
+                  />
+                </UFormField>
+                <UFormField label="Nomor WhatsApp" name="head.phone" required>
+                  <UInput
+                    v-model="state.head.phone"
+                    size="xl"
+                    placeholder="0812..."
+                    :ui="{ base: 'rounded-2xl' }"
+                    class="bg-slate-50 rounded-2xl"
+                  />
+                </UFormField>
+                <div class="grid grid-cols-2 gap-4">
+                  <UFormField label="Tempat Lahir" name="head.pob" required>
+                    <UInput
+                      v-model="state.head.pob"
+                      size="xl"
+                      :ui="{ base: 'rounded-2xl' }"
+                    />
+                  </UFormField>
+                  <UFormField label="Tgl Lahir" name="head.dob" required>
+                    <UInput
+                      v-model="state.head.dob"
+                      type="date"
+                      size="xl"
+                      :ui="{ base: 'rounded-2xl' }"
+                    />
+                  </UFormField>
+
+                  <UFormField label="Jenis Kelamin" name="head.gender" required>
+                    <USelectMenu
+                      v-model="state.head.gender"
+                      :items="genderItems"
+                      value-key="key"
+                      label-key="label"
+                      size="xl"
+                      :ui="{ base: 'rounded-2xl' }"
+                    />
+                  </UFormField>
+
+                  <UFormField label="Agama" name="head.religion" required>
+                    <USelectMenu
+                      v-model="state.head.religion"
+                      :items="religionOptions"
+                      value-key="key"
+                      label-key="label"
+                      size="xl"
+                      class="w-full"
+                    />
+                  </UFormField>
+                </div>
+              </div>
+            </div>
+
+            <!-- SECTION 3: KELUARGA (ISTRI & ANAK) -->
+            <div
+              class="bg-white rounded-4xl p-6 shadow-sm border border-slate-100"
+            >
+              <div class="flex items-center gap-3 mb-6">
+                <span class="p-2 bg-pink-50 rounded-lg text-pink-600">
+                  <UIcon name="i-heroicons-users" class="w-5 h-5" />
+                </span>
+                <h2
+                  class="font-bold text-slate-800 uppercase tracking-wider text-xs"
+                >
+                  Anggota Keluarga
+                </h2>
+              </div>
+
+              <!-- Istri -->
+              <div class="pb-6 border-b border-slate-50 mb-6">
+                <div class="flex items-center justify-between mb-4">
+                  <p class="text-xs font-semibold text-slate-400 italic">
+                    Pasangan (Istri/Suami)
+                  </p>
+
+                  <UButton
+                    v-if="!state.spouse"
+                    label="Tambah Pasangan"
+                    icon="i-heroicons-plus-circle"
+                    size="xs"
+                    variant="soft"
+                    @click="enableSpouse"
+                  />
+
+                  <UButton
+                    v-else
+                    label="Hapus"
+                    icon="i-heroicons-trash"
+                    size="xs"
+                    color="error"
+                    variant="soft"
+                    @click="removeSpouse"
+                  />
+                </div>
+
+                <div v-if="state.spouse" class="space-y-4">
+                  <UFormField label="Nama Pasangan" name="spouse.name" required>
+                    <UInput
+                      v-model="state.spouse.name"
+                      size="xl"
+                      :ui="{ base: 'rounded-2xl' }"
+                    />
+                  </UFormField>
+
+                  <div class="grid grid-cols-2 gap-4">
+                    <UFormField
+                      label="Jenis Kelamin"
+                      name="spouse.gender"
+                      required
+                    >
+                      <USelectMenu
+                        v-model="state.spouse.gender"
+                        :items="genderItems"
+                        value-key="key"
+                        label-key="label"
+                        size="xl"
+                        :ui="{ base: 'rounded-2xl' }"
+                      />
+                    </UFormField>
+
+                    <UFormField label="Agama" name="spouse.religion" required>
+                      <USelectMenu
+                        v-model="state.spouse.religion"
+                        :items="religionOptions"
+                        placeholder="Agama"
+                        value-key="key"
+                        label-key="label"
+                        size="xl"
+                        class="w-full"
+                      />
+                    </UFormField>
+                  </div>
+
+                  <div class="grid grid-cols-2 gap-4">
+                    <UFormField label="Tempat Lahir" name="spouse.pob" required>
+                      <UInput
+                        v-model="state.spouse.pob"
+                        size="xl"
+                        placeholder="Tempat Lahir"
+                        :ui="{ base: 'rounded-2xl' }"
+                      />
+                    </UFormField>
+
+                    <UFormField
+                      label="Tanggal Lahir"
+                      name="spouse.dob"
+                      required
+                    >
+                      <UInput
+                        v-model="state.spouse.dob"
+                        type="date"
+                        size="xl"
+                        :ui="{ base: 'rounded-2xl' }"
+                      />
+                    </UFormField>
+                  </div>
+                </div>
+
+                <div
+                  v-else
+                  class="border border-dashed border-slate-200 rounded-2xl py-6 text-center"
+                >
+                  <p class="text-xs text-slate-400 italic">
+                    Belum menambahkan pasangan
+                  </p>
+                </div>
+              </div>
+
+              <!-- Anak List -->
+              <div>
+                <div class="flex justify-between items-center mb-4">
+                  <p class="text-xs font-semibold text-slate-400 italic">
+                    Data Anak
+                  </p>
+                  <UButton
+                    label="Tambah"
+                    icon="i-heroicons-plus-circle"
+                    variant="soft"
+                    size="xs"
+                    @click="addMember('childs')"
+                  />
+                </div>
+
+                <div class="space-y-4">
+                  <div
+                    v-for="(child, index) in state.childs"
+                    :key="index"
+                    class="p-4 bg-slate-50 rounded-2xl relative group"
+                  >
+                    <UButton
+                      icon="i-heroicons-x-mark"
+                      color="primary"
+                      variant="ghost"
+                      size="xs"
+                      class="absolute -top-2 -right-2 bg-white shadow-sm rounded-full"
+                      @click="removeMember('childs', index)"
+                    />
+                    <div class="grid grid-cols-1 gap-3">
+                      <UFormField :name="`childs.${index}.name`" required>
+                        <UInput
+                          v-model="child.name"
+                          placeholder="Nama Anak"
+                          size="lg"
+                          :ui="{ base: 'rounded-xl' }"
+                        />
+                      </UFormField>
+
+                      <UFormField :name="`childs.${index}.gender`" required>
+                        <USelectMenu
+                          v-model="child.gender"
+                          :items="genderItems"
+                          value-key="key"
+                          label-key="label"
+                          size="lg"
+                          :ui="{ base: 'rounded-xl' }"
+                        />
+                      </UFormField>
+
+                      <div class="grid grid-cols-2 gap-3">
+                        <UFormField :name="`childs.${index}.pob`" required>
+                          <UInput
+                            v-model="child.pob"
+                            placeholder="Tempat Lahir"
+                            size="lg"
+                            :ui="{ base: 'rounded-xl' }"
+                          />
+                        </UFormField>
+
+                        <UFormField :name="`childs.${index}.dob`" required>
+                          <UInput
+                            v-model="child.dob"
+                            type="date"
+                            size="lg"
+                            :ui="{ base: 'rounded-xl' }"
+                          />
+                        </UFormField>
+                      </div>
+
+                      <UFormField :name="`childs.${index}.religion`" required>
+                        <USelectMenu
+                          v-model="child.religion"
+                          :items="religionOptions"
+                          placeholder="Agama"
+                          value-key="key"
+                          label-key="label"
+                          size="xl"
+                          class="w-full"
+                        />
+                      </UFormField>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div
+              class="bg-white rounded-4xl p-6 shadow-sm border border-slate-100 transition-all"
+            >
+              <div class="flex items-center gap-3 mb-6">
+                <span class="p-2 bg-purple-50 rounded-lg text-purple-600">
+                  <UIcon name="i-heroicons-user-group" class="w-5 h-5" />
+                </span>
+                <h2
+                  class="font-bold text-slate-800 uppercase tracking-wider text-xs"
+                >
+                  Anggota Lain (ART / Lainnya)
+                </h2>
+              </div>
+
+              <div class="flex justify-between items-center mb-4">
+                <div class="flex flex-col">
+                  <p class="text-xs font-semibold text-slate-400 italic">
+                    Data Anggota
+                  </p>
+                  <span class="text-[10px] text-slate-400 leading-tight"
+                    >Gunakan jika ada ART atau saudara yang tinggal
+                    menetap</span
+                  >
+                </div>
+                <UButton
+                  label="Tambah"
+                  icon="i-heroicons-plus-circle"
+                  variant="soft"
+                  size="xs"
+                  color="info"
+                  @click="addMember('other')"
+                />
+              </div>
+
+              <div class="space-y-4">
+                <div
+                  v-for="(item, index) in state.other"
+                  :key="index"
+                  class="p-4 bg-slate-50/50 rounded-2xl relative border border-dashed border-slate-200"
+                >
+                  <!-- Remove Button -->
+                  <UButton
+                    icon="i-heroicons-x-mark"
+                    color="primary"
+                    variant="ghost"
+                    size="xs"
+                    class="absolute -top-2 -right-2 bg-white shadow-sm rounded-full"
+                    @click="removeMember('other', index)"
+                  />
+
+                  <div class="grid grid-cols-2 gap-3">
+                    <UFormField :name="`other.${index}.name`" required>
+                      <UInput
+                        v-model="item.name"
+                        placeholder="Nama Lengkap"
+                        size="lg"
+                        :ui="{ base: 'rounded-xl' }"
+                        class="bg-white"
+                      />
+                    </UFormField>
+
+                    <UFormField :name="`other.${index}.gender`" required>
+                      <USelectMenu
+                        v-model="item.gender"
+                        :items="genderItems"
+                        value-key="key"
+                        label-key="label"
+                        placeholder="Jenis Kelamin"
+                        size="lg"
+                        :ui="{ base: 'rounded-xl' }"
+                        class="bg-white"
+                      />
+                    </UFormField>
+
+                    <UFormField :name="`other.${index}.religion`" required>
+                      <USelectMenu
+                        v-model="item.religion"
+                        :items="religionOptions"
+                        value-key="key"
+                        label-key="label"
+                        size="xl"
+                        placeholder="Agama"
+                        class="w-full"
+                      />
+                    </UFormField>
+
+                    <UFormField :name="`other.${index}.pob`" required>
+                      <UInput
+                        v-model="item.pob"
+                        placeholder="Tempat Lahir"
+                        size="lg"
+                        :ui="{ base: 'rounded-xl' }"
+                      />
+                    </UFormField>
+
+                    <UFormField :name="`other.${index}.dob`" required>
+                      <UInput
+                        v-model="item.dob"
+                        type="date"
+                        size="lg"
+                        :ui="{ base: 'rounded-xl' }"
+                      />
+                    </UFormField>
+                  </div>
+                </div>
+
+                <!-- Empty State Simple -->
+                <div
+                  v-if="state.other.length === 0"
+                  class="py-8 text-center border-2 border-dashed border-slate-50 rounded-2xl"
+                >
+                  <p class="text-xs text-slate-400 italic">
+                    Belum ada anggota tambahan
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Bottom Action Container -->
+            <div
+              class="fixed bottom-0 left-0 right-0 p-5 bg-white/80 backdrop-blur-xl border-t border-slate-100 sm:relative sm:bg-transparent sm:border-0 sm:p-0"
+            >
+              <div class="max-w-120 mx-auto">
+                <UButton
+                  type="submit"
+                  size="xl"
+                  block
+                  :loading="loading"
+                  class="rounded-2xl py-4 font-bold text-md shadow-lg shadow-primary-200 transition-transform active:scale-95 bg-primary-600 hover:bg-primary-700"
+                >
+                  Kirim Data Sekarang
+                </UButton>
+              </div>
+            </div>
+          </UForm>
         </div>
-      </UForm>
+      </div>
     </div>
   </div>
 </template>

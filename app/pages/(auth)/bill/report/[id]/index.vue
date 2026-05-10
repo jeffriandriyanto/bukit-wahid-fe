@@ -123,7 +123,7 @@ const saveBill = async (event: FormSubmitEvent<BillFormSchema>) => {
     }
 
     const payload = {
-      amount: form.nominal,
+      amount: totalSelectedAmount.value,
       proof: finalImageUrl,
       description: form.description || ''
     }
@@ -214,7 +214,7 @@ watch(proofFile, (newFiles) => {
 
 watch(() => pagination.value.per_page, () => {
   pagination.value.current_page = 1
-  getData()
+  fetchDetail()
 })
 
 onMounted(() => {
