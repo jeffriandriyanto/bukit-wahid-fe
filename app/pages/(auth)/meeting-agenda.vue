@@ -2,6 +2,7 @@
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { z } from 'zod'
 import { perPageLimit } from '~/const/utils'
+import { fileUpload } from '~/services/files'
 
 // Composables & Services
 const { dropdownRT, getDropdownRT } = useApiDropdown()
@@ -26,6 +27,14 @@ const isOpen = ref(false)
 const mode = ref<'add' | 'edit'>('add')
 const editingId = ref<string | null>(null)
 const loading = ref(false)
+const summaryFileRaw = ref<File | null>(null)
+const isOpenDetail = ref(false)
+const selectedAgenda = ref<any>(null)
+
+const openDetailModal = (row: any) => {
+  selectedAgenda.value = row
+  isOpenDetail.value = true
+}
 
 const columnsAgendaTable = [
   { accessorKey: 'title', header: 'Agenda' },
@@ -53,7 +62,9 @@ const AgendaFormSchema = z.object({
   start_date: z.any().refine((val) => !!val, 'Tanggal mulai wajib diisi'),
   start_time: z.any().refine((val) => !!val, 'Jam mulai wajib diisi'),
   end_date: z.any().optional(),
-  end_time: z.any().optional()
+  end_time: z.any().optional(),
+  summary_note: z.string().optional(),
+  summary_file: z.string().optional().nullable()
 })
 
 type AgendaFormSchema = z.infer<typeof AgendaFormSchema>
@@ -66,7 +77,9 @@ const form = reactive({
   start_date: null,
   start_time: null,
   end_date: null,
-  end_time: null
+  end_time: null,
+  summary_note: '',
+  summary_file: ''
 })
 
 /* =========================
@@ -75,7 +88,8 @@ const form = reactive({
 const getData = async () => {
   loading.value = true
   try {
-    const endpoint = activeTab.value === 'done' ? '/agenda?done=true' : '/agenda'
+    const endpoint =
+      activeTab.value === 'done' ? '/agenda?done=true' : '/agenda'
 
     const res = await useApi<any>(endpoint, {
       params: {
@@ -120,7 +134,9 @@ const openEditModal = async (row: any) => {
     start_time: parseToTime(row.start_time),
     end_date: row.end_date ? parseToCalendarDate(row.end_date) : null,
     end_time: row.end_time ? parseToTime(row.end_time) : null,
-    fors: Array.isArray(row.fors) ? row.fors.map((f: any) => f.id || f) : []
+    fors: Array.isArray(row.fors) ? row.fors.map((f: any) => f.id || f) : [],
+    summary_note: row.summary_note || '',
+    summary_file: row.summary_file || ''
   })
   isOpen.value = true
 }
@@ -159,13 +175,24 @@ const resetForm = () => {
     start_date: null,
     start_time: null,
     end_date: null,
-    end_time: null
+    end_time: null,
+    summary_note: '',
+    summary_file: ''
   })
+  summaryFileRaw.value = null
 }
 
 const saveData = async (event: FormSubmitEvent<AgendaFormSchema>) => {
   try {
     loading.value = true
+
+    // Upload file summary jika ada file baru yang dipilih
+    let finalSummaryFile = form.summary_file
+    if (summaryFileRaw.value) {
+      const uploadRes = await fileUpload(summaryFileRaw.value)
+      if (uploadRes) finalSummaryFile = uploadRes
+    }
+
     const payload = {
       ...event.data,
       start_date: formatDOB(event.data.start_date),
@@ -174,7 +201,10 @@ const saveData = async (event: FormSubmitEvent<AgendaFormSchema>) => {
       end_time: event.data.end_time
         ? formatTimeValue(event.data.end_time)
         : null,
-      fors: event.data.fors || []
+      fors: event.data.fors || [],
+      // Masukkan ke payload
+      summary_note: event.data.summary_note,
+      summary_file: finalSummaryFile
     }
 
     const url = mode.value === 'add' ? '/agenda' : `/agenda/${editingId.value}`
@@ -183,20 +213,12 @@ const saveData = async (event: FormSubmitEvent<AgendaFormSchema>) => {
     const res = await useApi<any>(url, { method, body: payload })
 
     if (res.status === 1) {
-      toast.add({
-        title: `Berhasil ${
-          mode.value === 'add' ? 'menambah' : 'mengubah'
-        } data`,
-        color: 'success'
-      })
+      toast.add({ title: 'Berhasil menyimpan data', color: 'success' })
       isOpen.value = false
       getData()
     }
   } catch (err: any) {
-    toast.add({
-      title: err?.message || 'Terjadi kesalahan server',
-      color: 'error'
-    })
+    toast.add({ title: err?.message || 'Terjadi kesalahan', color: 'error' })
   } finally {
     loading.value = false
   }
@@ -311,13 +333,22 @@ definePageMeta({
 
         <template #action-cell="{ row }">
           <div class="flex gap-1">
+            <!-- Tombol Lihat Rekapan (Hanya muncul di Tab Selesai) -->
             <UButton
-              v-if="activeTab === 0"
+              v-if="activeTab === 'done'"
+              icon="i-lucide-eye"
+              variant="ghost"
+              color="info"
+              @click="openDetailModal(row.original)"
+            />
+
+            <UButton
               icon="i-lucide-pencil"
               variant="ghost"
               color="neutral"
               @click="openEditModal(row.original)"
             />
+
             <UButton
               icon="i-lucide-trash-2"
               variant="ghost"
@@ -349,7 +380,127 @@ definePageMeta({
       />
     </div>
 
-    <UModal v-model:open="isOpen" :ui="{ width: 'sm:max-w-xl' }">
+    <UModal v-model:open="isOpenDetail" :ui="{ body: 'sm:max-w-lg' }">
+      <template #header>
+        <div class="flex flex-col">
+          <span class="text-lg font-bold text-gray-900">{{
+            selectedAgenda?.title
+          }}</span>
+          <span class="text-xs text-gray-500 italic">{{
+            formatDate(selectedAgenda?.start_date)
+          }}</span>
+        </div>
+      </template>
+
+      <template #body>
+        <div class="space-y-6">
+          <div class="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+            <h4
+              class="text-xs font-black text-gray-400 uppercase mb-3 tracking-widest"
+            >
+              Laporan Hasil
+            </h4>
+            <p
+              class="text-sm text-gray-700 leading-relaxed whitespace-pre-line italic"
+            >
+              "{{
+                selectedAgenda?.summary_note || 'Belum ada catatan rekapan.'
+              }}"
+            </p>
+          </div>
+
+          <!-- Di dalam UModal untuk Detail (isOpenDetail) -->
+          <div v-if="selectedAgenda?.summary_file">
+            <h4
+              class="text-xs font-black text-gray-400 uppercase mb-3 tracking-widest"
+            >
+              Lampiran Dokumentasi
+            </h4>
+
+            <div class="overflow-hidden rounded-2xl border bg-white shadow-sm">
+              <!-- JIKA GAMBAR -->
+              <template
+                v-if="
+                  selectedAgenda.summary_file.match(/\.(jpg|jpeg|png|webp)$/i)
+                "
+              >
+                <img
+                  :src="selectedAgenda.summary_file"
+                  class="w-full h-auto max-h-80 object-contain bg-gray-50"
+                />
+              </template>
+
+              <!-- JIKA PDF -->
+              <template
+                v-else-if="selectedAgenda.summary_file.match(/\.pdf$/i)"
+              >
+                <div class="flex items-center justify-between p-4">
+                  <div class="flex items-center gap-3">
+                    <div class="p-2 bg-red-50 rounded-lg">
+                      <UIcon
+                        name="i-lucide-file-text"
+                        class="w-6 h-6 text-red-600"
+                      />
+                    </div>
+                    <div class="flex flex-col">
+                      <span class="text-sm font-bold text-gray-800"
+                        >Dokumen PDF</span
+                      >
+                      <span class="text-[10px] text-gray-400 uppercase"
+                        >Klik untuk membaca</span
+                      >
+                    </div>
+                  </div>
+                  <UButton
+                    :to="selectedAgenda.summary_file"
+                    target="_blank"
+                    color="neutral"
+                    variant="subtle"
+                    size="sm"
+                    icon="i-lucide-external-link"
+                    >Buka PDF</UButton
+                  >
+                </div>
+              </template>
+
+              <!-- JIKA WORD / LAINNYA -->
+              <template v-else>
+                <div class="flex items-center justify-between p-4">
+                  <div class="flex items-center gap-3">
+                    <div class="p-2 bg-blue-50 rounded-lg">
+                      <UIcon
+                        name="i-lucide-file-output"
+                        class="w-6 h-6 text-blue-600"
+                      />
+                    </div>
+                    <div class="flex flex-col">
+                      <span class="text-sm font-bold text-gray-800"
+                        >Lampiran Dokumen</span
+                      >
+                      <span class="text-[10px] text-gray-400 uppercase"
+                        >Format:
+                        {{ selectedAgenda.summary_file.split('.').pop() }}</span
+                      >
+                    </div>
+                  </div>
+                  <UButton
+                    :to="selectedAgenda.summary_file"
+                    target="_blank"
+                    color="primary"
+                    variant="soft"
+                    size="sm"
+                    icon="i-lucide-download"
+                    >Download</UButton
+                  >
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+      </template>
+    </UModal>
+
+    <UModal v-model:open="isOpen" :ui="{ body: 'sm:max-w-xl' }">
       <template #header>
         <div class="flex flex-col">
           <span class="text-lg font-bold"
@@ -369,70 +520,142 @@ definePageMeta({
           class="space-y-6 py-2"
           @submit="saveData"
         >
-          <UFormField name="title" label="Judul Agenda" required>
-            <UInput
-              v-model="form.title"
-              placeholder="Contoh: Kerja Bakti Bulanan"
-              size="lg"
-            />
-          </UFormField>
-
-          <UFormField
-            name="fors"
-            label="Ditujukan Untuk"
-            help="Pilih RT atau biarkan kosong untuk seluruh warga"
+          <!-- Section Detail Utama: Di-disable jika Tab Selesai -->
+          <fieldset
+            :disabled="mode === 'edit' && activeTab === 'done'"
+            class="space-y-6 group"
           >
-            <USelect
-              v-model="form.fors"
-              :items="dropdownRT"
-              multiple
-              value-key="key"
-              label-key="label"
-              placeholder="Pilih RT"
-              size="lg"
-            />
-          </UFormField>
-
-          <div
-            class="grid grid-cols-2 gap-x-4 gap-y-6 p-4 bg-gray-50 rounded-2xl border border-gray-100"
-          >
-            <UFormField name="start_date" label="Tanggal Mulai" required>
-              <UInputDate v-model="form.start_date" />
-            </UFormField>
-            <UFormField name="start_time" label="Jam Mulai" required>
-              <UInputTime v-model="form.start_time" :hour-cycle="24" />
-            </UFormField>
-            <UFormField name="end_date" label="Tanggal Selesai (Opsional)">
-              <UInputDate v-model="form.end_date" />
-            </UFormField>
-            <UFormField name="end_time" label="Jam Selesai (Opsional)">
-              <UInputTime v-model="form.end_time" :hour-cycle="24" />
-            </UFormField>
-          </div>
-
-          <UFormField name="location" label="Lokasi / Tautan">
-            <UInput
-              v-model="form.location"
-              placeholder="Alamat fisik atau Link Zoom/Meet"
-              size="lg"
+            <div
+              v-if="mode === 'edit' && activeTab === 'done'"
+              class="flex items-center gap-2 text-[10px] text-amber-600 font-bold bg-amber-50 p-2 rounded-lg mb-2"
             >
-              <template #leading>
-                <UIcon
-                  :name="
-                    isUrl(form.location) ? 'i-lucide-link' : 'i-lucide-map-pin'
-                  "
-                />
-              </template>
-            </UInput>
-          </UFormField>
+              <UIcon name="i-lucide-lock" class="w-3 h-3" />
+              DETAIL UTAMA DIKUNCI KARENA AGENDA TELAH SELESAI
+            </div>
 
-          <UFormField name="description" label="Detail Kegiatan" required>
-            <UTextarea
-              v-model="form.description"
-              :rows="4"
-              placeholder="Tuliskan detail agenda di sini..."
-            />
-          </UFormField>
+            <UFormField name="title" label="Judul Agenda" required>
+              <UInput
+                v-model="form.title"
+                placeholder="Contoh: Kerja Bakti Bulanan"
+                size="lg"
+              />
+            </UFormField>
+
+            <UFormField
+              name="fors"
+              label="Ditujukan Untuk"
+              help="Pilih RT atau biarkan kosong untuk seluruh warga"
+            >
+              <USelect
+                v-model="form.fors"
+                :items="dropdownRT"
+                multiple
+                value-key="key"
+                label-key="label"
+                placeholder="Pilih RT"
+                size="lg"
+              />
+            </UFormField>
+
+            <div
+              class="grid grid-cols-2 gap-x-4 gap-y-6 p-4 bg-gray-50 rounded-2xl border border-gray-100"
+            >
+              <UFormField name="start_date" label="Tanggal Mulai" required>
+                <UInputDate v-model="form.start_date" />
+              </UFormField>
+              <UFormField name="start_time" label="Jam Mulai" required>
+                <UInputTime v-model="form.start_time" :hour-cycle="24" />
+              </UFormField>
+              <UFormField name="end_date" label="Tanggal Selesai (Opsional)">
+                <UInputDate v-model="form.end_date" />
+              </UFormField>
+              <UFormField name="end_time" label="Jam Selesai (Opsional)">
+                <UInputTime v-model="form.end_time" :hour-cycle="24" />
+              </UFormField>
+            </div>
+
+            <UFormField name="location" label="Lokasi / Tautan">
+              <UInput
+                v-model="form.location"
+                placeholder="Alamat fisik atau Link Zoom/Meet"
+                size="lg"
+              >
+                <template #leading>
+                  <UIcon
+                    :name="
+                      isUrl(form.location)
+                        ? 'i-lucide-link'
+                        : 'i-lucide-map-pin'
+                    "
+                  />
+                </template>
+              </UInput>
+            </UFormField>
+
+            <UFormField name="description" label="Detail Kegiatan" required>
+              <UTextarea
+                v-model="form.description"
+                :rows="4"
+                placeholder="Tuliskan detail agenda di sini..."
+              />
+            </UFormField>
+          </fieldset>
+
+          <template v-if="mode === 'edit' && activeTab === 'done'">
+            <div
+              class="p-4 bg-primary-50/50 rounded-2xl border border-primary-100 space-y-4"
+            >
+              <div
+                class="flex items-center gap-2 text-primary-700 font-bold text-sm"
+              >
+                <UIcon name="i-lucide-clipboard-check" />
+                Laporan Hasil Kegiatan (Summary)
+              </div>
+
+              <UFormField name="summary_note" label="Catatan Hasil Kegiatan">
+                <UTextarea
+                  v-model="form.summary_note"
+                  placeholder="Tuliskan rangkuman atau catatan hasil agenda yang telah terlaksana..."
+                  :rows="3"
+                />
+              </UFormField>
+
+              <UFormField
+                name="summary_file"
+                label="Dokumentasi / File Laporan"
+              >
+                <div class="space-y-2">
+                  <!-- Preview jika sudah ada file -->
+                  <div
+                    v-if="form.summary_file"
+                    class="flex items-center gap-2 p-2 bg-white rounded-lg border text-xs"
+                  >
+                    <UIcon name="i-lucide-file-text" class="text-primary-500" />
+                    <span class="truncate flex-1">{{
+                      form.summary_file.split('/').pop()
+                    }}</span>
+                    <UButton
+                      color="error"
+                      variant="ghost"
+                      icon="i-lucide-x"
+                      size="xs"
+                      @click="form.summary_file = ''"
+                    />
+                  </div>
+
+                  <UFileUpload
+                    v-model="summaryFileRaw"
+                    accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+                    icon="i-lucide-upload"
+                    label="Klik untuk unggah file laporan"
+                  />
+                  <p class="text-[10px] text-gray-400">
+                    Dukungan format: Gambar, PDF, atau Dokumen.
+                  </p>
+                </div>
+              </UFormField>
+            </div>
+          </template>
 
           <div class="flex justify-end gap-3 pt-4">
             <UButton variant="ghost" color="neutral" @click="isOpen = false"

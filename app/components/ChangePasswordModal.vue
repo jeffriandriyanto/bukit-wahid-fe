@@ -38,7 +38,7 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
   const response = await useApi<any>(`change-password`, {
     method: 'PUT',
     body: {
-      name: event.data.newPassword
+      password: event.data.newPassword
     }
   })
 

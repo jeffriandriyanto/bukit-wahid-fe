@@ -67,6 +67,11 @@ export const sidebarItems: SidebarItem[] = [
         to: '/bill/journal'
       },
       {
+        label: 'Rekapitulasi',
+        icon: 'i-lucide-notebook-tabs',
+        to: '/bill/recapitulation'
+      },
+      {
         label: 'Pembayaran Tagihan Air',
         icon: 'i-lucide-droplets',
         isHide: true,
@@ -120,6 +125,11 @@ export const sidebarItems: SidebarItem[] = [
     label: 'Galeri',
     icon: 'i-lucide-images',
     to: '/galleries'
+  },
+  {
+    label: 'Promo & Bisnis',
+    icon: 'i-lucide-megaphone',
+    to: '/promo'
   },
   {
     label: 'Pengaturan',

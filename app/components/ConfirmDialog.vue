@@ -3,7 +3,7 @@ const { state, isOpen, confirm, cancel } = useConfirmService()
 </script>
 
 <template>
-  <UModal v-model:open="isOpen" :close="false">
+  <UModal v-model:open="isOpen" :close="false" class="z-1000">
     <template #body>
       <span class="font-bold text-lg">
         {{ state.title }}

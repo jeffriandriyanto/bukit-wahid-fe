@@ -7,7 +7,6 @@ import { watchWithFilter, debounceFilter } from '@vueuse/core'
 import { perPageLimit } from '~/const/utils'
 
 // ===== 1. SCHEMAS =====
-
 const CitizenFromSchema = z.object({
   name: z.string().min(1, 'Nama wajib diisi'),
   phone: z.string().optional().nullable(),
@@ -64,6 +63,20 @@ const pagination = ref({
   last_page: 1,
   per_page: 10,
   total: 0
+})
+
+// Schema Validasi Password
+const PasswordSchema = z.object({
+  password: z.string().min(6, 'Password minimal 6 karakter')
+})
+
+type PasswordSchema = z.infer<typeof PasswordSchema>
+
+// State Modal Password
+const isOpenPassword = ref(false)
+const passwordTargetId = ref<string | null>(null)
+const passwordForm = reactive({
+  password: ''
 })
 
 const ageGroupOptions = [
@@ -362,6 +375,49 @@ const confirmDelete = async (id: string) => {
   }
 }
 
+const openPasswordModal = (id: string) => {
+  passwordTargetId.value = id
+  passwordForm.password = '' // Reset input
+  isOpenPassword.value = true
+}
+
+const handleUpdatePassword = async (event: FormSubmitEvent<PasswordSchema>) => {
+  const ok = await confirm({
+    title: 'Ubah Password Warga?',
+    description: 'Anda akan mengganti password akun warga ini secara paksa.',
+    confirmLabel: 'Ya, Ubah',
+    color: 'primary'
+  })
+
+  if (!ok) return
+
+  try {
+    loading.value = true
+    const res = await useApi<any>(
+      `/resident/${passwordTargetId.value}/change-password`,
+      {
+        method: 'PUT',
+        body: { password: event.data.password }
+      }
+    )
+
+    if (res.status === 1) {
+      toast.add({
+        title: 'Password berhasil diperbarui',
+        color: 'success'
+      })
+      isOpenPassword.value = false
+    }
+  } catch (err: any) {
+    toast.add({
+      title: err?.data?.message || 'Gagal mengubah password',
+      color: 'error'
+    })
+  } finally {
+    loading.value = false
+  }
+}
+
 const getAge = (dob: string | null) => {
   if (!dob) return '-'
   const birthDate = new Date(dob)
@@ -397,7 +453,7 @@ const excelActions = computed(() => [
       onSelect: () => {
         triggerExcelUpload()
       }
-    },
+    }
     // {
     //   label: 'Export Spreadsheet',
     //   icon: 'i-lucide-file-spreadsheet',
@@ -538,7 +594,7 @@ onMounted(() => {
         <div class="space-y-6">
           <UFormField label="Berdasarkan Wilayah RT">
             <USelectMenu
-              v-model="selectedRT"
+              v-model="tempRT"
               :items="dropdownRT"
               value-key="key"
               label-key="label"
@@ -550,7 +606,7 @@ onMounted(() => {
 
           <UFormField label="Berdasarkan Kelompok Usia">
             <USelectMenu
-              v-model="selectedAgeGroup"
+              v-model="tempAgeGroup"
               :items="ageGroupOptions"
               value-key="key"
               label-key="label"
@@ -562,7 +618,7 @@ onMounted(() => {
 
           <UFormField label="Berdasarkan Agama">
             <USelectMenu
-              v-model="selectedReligion"
+              v-model="tempReligion"
               :items="religionOptions"
               value-key="key"
               label-key="label"
@@ -587,7 +643,7 @@ onMounted(() => {
             label="Terapkan"
             color="primary"
             class="rounded-xl px-8 font-black uppercase tracking-widest"
-            @click="isFilterModalOpen = false"
+            @click="applyFilters"
           />
         </div>
       </template>
@@ -667,6 +723,16 @@ onMounted(() => {
 
         <template #action-cell="{ row }">
           <div class="flex justify-end gap-1">
+            <UTooltip text="Ganti Password">
+              <UButton
+                icon="i-lucide-key-round"
+                variant="ghost"
+                color="warning"
+                size="sm"
+                @click="openPasswordModal(row.original.id)"
+              />
+            </UTooltip>
+
             <UTooltip text="Edit Data">
               <UButton
                 icon="i-lucide-pencil"
@@ -689,6 +755,53 @@ onMounted(() => {
         </template>
       </UTable>
     </div>
+
+    <!-- Modal Ganti Password -->
+    <UModal v-model:open="isOpenPassword" :ui="{ content: 'max-w-md' }">
+      <template #header>
+        <div class="flex items-center gap-2 font-bold text-gray-900">
+          <UIcon name="i-lucide-shield-check" class="text-warning-500" />
+          <span>Ubah Password Akun</span>
+        </div>
+      </template>
+
+      <template #body>
+        <UForm
+          :schema="PasswordSchema"
+          :state="passwordForm"
+          class="space-y-4"
+          @submit="handleUpdatePassword"
+        >
+          <UFormField
+            name="password"
+            label="Password Baru"
+            help="Pastikan Anda memberitahu warga setelah mengganti password mereka."
+          >
+            <UInput
+              v-model="passwordForm.password"
+              type="password"
+              placeholder="Masukkan password baru..."
+              icon="i-lucide-lock"
+              size="lg"
+            />
+          </UFormField>
+
+          <div class="flex justify-end gap-3 pt-4">
+            <UButton
+              variant="ghost"
+              label="Batal"
+              @click="isOpenPassword = false"
+            />
+            <UButton
+              type="submit"
+              color="warning"
+              label="Update Password"
+              :loading="loading"
+            />
+          </div>
+        </UForm>
+      </template>
+    </UModal>
 
     <UModal v-model:open="isOpen" :ui="{ content: 'min-w-4xl' }">
       <template #header>

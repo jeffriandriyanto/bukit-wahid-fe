@@ -29,6 +29,20 @@ const isOpen = ref(false)
 const mode = ref<'add' | 'edit'>('add')
 const editingId = ref<string | null>(null)
 
+// Schema Validasi Password
+const PasswordSchema = z.object({
+  password: z.string().min(6, 'Password minimal 6 karakter')
+})
+
+type PasswordSchema = z.infer<typeof PasswordSchema>
+
+// State Modal Password
+const isOpenPassword = ref(false)
+const passwordTargetId = ref<string | null>(null)
+const passwordForm = reactive({
+  password: ''
+})
+
 // Filters
 const search = ref('')
 const selectedCategory = ref(null)
@@ -77,6 +91,49 @@ const getData = async () => {
     }
   } catch (err) {
     console.error('Fetch error:', err)
+  } finally {
+    loading.value = false
+  }
+}
+
+const openPasswordModal = (id: string) => {
+  passwordTargetId.value = id
+  passwordForm.password = '' // Reset input
+  isOpenPassword.value = true
+}
+
+const handleUpdatePassword = async (event: FormSubmitEvent<PasswordSchema>) => {
+  const ok = await confirm({
+    title: 'Ubah Password Warga?',
+    description: 'Anda akan mengganti password akun petugas ini secara paksa.',
+    confirmLabel: 'Ya, Ubah',
+    color: 'primary'
+  })
+
+  if (!ok) return
+
+  try {
+    loading.value = true
+    const res = await useApi<any>(
+      `/employee/${passwordTargetId.value}/change-password`,
+      {
+        method: 'PUT',
+        body: { password: event.data.password }
+      }
+    )
+
+    if (res.status === 1) {
+      toast.add({
+        title: 'Password berhasil diperbarui',
+        color: 'success'
+      })
+      isOpenPassword.value = false
+    }
+  } catch (err: any) {
+    toast.add({
+      title: err?.data?.message || 'Gagal mengubah password',
+      color: 'error'
+    })
   } finally {
     loading.value = false
   }
@@ -226,7 +283,9 @@ onMounted(() => {
               class="w-6 h-6 text-primary-600 block"
             />
           </div>
-          <h2 class="text-lg font-bold text-gray-900">Manajemen Petugas & Staf</h2>
+          <h2 class="text-lg font-bold text-gray-900">
+            Manajemen Petugas & Staf
+          </h2>
         </div>
 
         <div class="flex items-center gap-3">
@@ -316,22 +375,37 @@ onMounted(() => {
 
         <template #action-cell="{ row }">
           <div class="flex gap-1">
-            <UButton
-              icon="i-lucide-pencil"
-              variant="ghost"
-              color="neutral"
-              size="sm"
-              class="rounded-full"
-              @click="openEditModal(row.original)"
-            />
-            <UButton
-              icon="i-lucide-trash-2"
-              variant="ghost"
-              color="error"
-              size="sm"
-              class="rounded-full"
-              @click="confirmDelete(row.original)"
-            />
+            <UTooltip text="Ganti Password">
+              <UButton
+                icon="i-lucide-key-round"
+                variant="ghost"
+                color="warning"
+                size="sm"
+                @click="openPasswordModal(row.original.id)"
+              />
+            </UTooltip>
+
+            <UTooltip text="Edit Data">
+              <UButton
+                icon="i-lucide-pencil"
+                variant="ghost"
+                color="neutral"
+                size="sm"
+                class="rounded-full"
+                @click="openEditModal(row.original)"
+              />
+            </UTooltip>
+
+            <UTooltip text="Hapus Data">
+              <UButton
+                icon="i-lucide-trash-2"
+                variant="ghost"
+                color="error"
+                size="sm"
+                class="rounded-full"
+                @click="confirmDelete(row.original)"
+              />
+            </UTooltip>
           </div>
         </template>
       </UTable>
@@ -352,6 +426,53 @@ onMounted(() => {
         @update:page="getData"
       />
     </div>
+
+    <!-- Modal Ganti Password -->
+    <UModal v-model:open="isOpenPassword" :ui="{ content: 'max-w-md' }">
+      <template #header>
+        <div class="flex items-center gap-2 font-bold text-gray-900">
+          <UIcon name="i-lucide-shield-check" class="text-warning-500" />
+          <span>Ubah Password Akun</span>
+        </div>
+      </template>
+
+      <template #body>
+        <UForm
+          :schema="PasswordSchema"
+          :state="passwordForm"
+          class="space-y-4"
+          @submit="handleUpdatePassword"
+        >
+          <UFormField
+            name="password"
+            label="Password Baru"
+            help="Pastikan Anda memberitahu petugas setelah mengganti password mereka."
+          >
+            <UInput
+              v-model="passwordForm.password"
+              type="password"
+              placeholder="Masukkan password baru..."
+              icon="i-lucide-lock"
+              size="lg"
+            />
+          </UFormField>
+
+          <div class="flex justify-end gap-3 pt-4">
+            <UButton
+              variant="ghost"
+              label="Batal"
+              @click="isOpenPassword = false"
+            />
+            <UButton
+              type="submit"
+              color="warning"
+              label="Update Password"
+              :loading="loading"
+            />
+          </div>
+        </UForm>
+      </template>
+    </UModal>
 
     <UModal
       v-model:open="isOpen"
