@@ -9,7 +9,6 @@ import {
 } from 'echarts/components'
 import VChart from 'vue-echarts'
 
-// Register ECharts components
 use([
   CanvasRenderer,
   BarChart,
@@ -22,119 +21,150 @@ use([
 definePageMeta({ middleware: ['auth'] })
 
 // --- STATE ---
-const loading = ref(false)
-const financialData = ref({
-  in: 0,
-  out: 0,
-  balance: 0
-})
-
-const stats = ref({
-  total_citizens: 1240,
-  total_houses: 450,
-  app_users: 890
-})
+const loading = ref(true)
+const rawData = ref<any>(null) // Penampung data mentah dari API
 
 // --- API ACTIONS ---
 const fetchDashboardData = async () => {
-  loading.value = true
   try {
-    const res = await useApi<any>('/finance/journal/data')
+    const res = await useApi<any>('/dashboard')
     if (res.status === 1) {
-      financialData.value = res.data
+      rawData.value = res.data
     }
   } catch (err) {
-    console.error('Failed to fetch financial stats:', err)
+    console.error('Gagal mengambil data dashboard:', err)
   } finally {
     loading.value = false
   }
 }
 
-// --- CHART CONFIGURATIONS (Theme Adjusted) ---
+// --- MAPPING DATA UNTUK UI ---
+const stats = computed(() => ({
+  total_citizens: rawData.value?.total_resident || 0,
+  total_houses: rawData.value?.total_residence || 0,
+  app_users: rawData.value?.total_user || 0
+}))
 
-// 1. Grafik Usia (Bar Chart - Pakai warna Secondary/Hijau)
-const ageChartOption = ref({
-  tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
-  grid: { left: '3%', right: '4%', bottom: '3%', containLabel: true },
-  xAxis: {
-    type: 'category',
-    data: [
-      'Tdk Diketahui',
-      '0-5 thn',
-      '6-12 thn',
-      '13-16 thn',
-      '17-21 thn',
-      '22-40 thn',
-      '41-59 thn',
-      '>=60 thn'
+const financialData = computed(() => ({
+  in: rawData.value?.balance?.this_month_income || 0,
+  out: rawData.value?.balance?.this_month_outcome || 0,
+  balance: rawData.value?.balance?.total_balance || 0
+}))
+
+// --- CHART CONFIGURATIONS ---
+const chartBaseConfig = {
+  animationDuration: 1500,
+  animationEasing: 'cubicOut' as any
+}
+
+// 1. Grafik Usia (Dinamis dari resident_by_age_group)
+const ageChartOption = computed(() => {
+  const ageGroup = rawData.value?.resident_by_age_group || {}
+  return {
+    ...chartBaseConfig,
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '3%',
+      top: '10%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: Object.keys(ageGroup),
+      axisLine: { lineStyle: { color: '#e5e5e5' } },
+      axisLabel: { color: '#a3a3a3', fontSize: 10 }
+    },
+    yAxis: { type: 'value', splitLine: { lineStyle: { type: 'dashed' } } },
+    series: [
+      {
+        data: Object.values(ageGroup),
+        type: 'bar',
+        itemStyle: {
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [
+              { offset: 0, color: '#43b433' },
+              { offset: 1, color: '#338e26' }
+            ]
+          },
+          borderRadius: [6, 6, 0, 0]
+        },
+        barWidth: '40%'
+      }
+    ]
+  }
+})
+
+// 2. Grafik Agama (Dinamis dari resident_by_religion)
+const religionChartOption = computed(() => {
+  const religionData = rawData.value?.resident_by_religion || {}
+  const chartData = Object.entries(religionData)
+    .filter(([_, val]) => (val as number) > 0) // Hanya tampilkan yang ada datanya
+    .map(([name, value]) => ({ name, value }))
+
+  return {
+    ...chartBaseConfig,
+    tooltip: { trigger: 'item' },
+    legend: { bottom: '0', icon: 'circle', textStyle: { fontSize: 10 } },
+    color: [
+      '#338e26',
+      '#fb6967',
+      '#fb261d',
+      '#facc15',
+      '#3b82f6',
+      '#8b5cf6',
+      '#a3a3a3'
     ],
-    axisLabel: { fontSize: 10, color: '#737373' }
-  },
-  yAxis: {
-    type: 'value',
-    splitLine: { lineStyle: { type: 'dashed', color: '#e5e5e5' } }
-  },
-  series: [
-    {
-      data: [12, 85, 120, 90, 145, 410, 275, 103],
-      type: 'bar',
-      itemStyle: { color: '#43b433', borderRadius: [4, 4, 0, 0] }, // Secondary-500
-      barWidth: '50%'
-    }
-  ]
+    series: [
+      {
+        type: 'pie',
+        radius: ['45%', '75%'],
+        avoidLabelOverlap: false,
+        itemStyle: { borderRadius: 10, borderColor: '#fff', borderWidth: 4 },
+        label: { show: false },
+        data: chartData
+      }
+    ]
+  }
 })
 
-// 2. Grafik Agama (Pie Chart - Mix Primary & Secondary)
-const religionChartOption = ref({
-  tooltip: { trigger: 'item' },
-  legend: {
-    bottom: '0',
-    left: 'center',
-    itemWidth: 8,
-    itemHeight: 8,
-    textStyle: { fontSize: 10, color: '#737373' }
-  },
-  color: ['#a3a3a3', '#43b433', '#fb261d', '#338e26', '#d31b13', '#fb6967'], // Mix Neutral, Secondary, Primary
-  series: [
-    {
-      type: 'pie',
-      radius: ['40%', '70%'],
-      itemStyle: { borderRadius: 8, borderColor: '#fff', borderWidth: 2 },
-      label: { show: false },
-      data: [
-        { value: 5, name: 'Tidak diketahui' },
-        { value: 850, name: 'Islam' },
-        { value: 150, name: 'Kristen' },
-        { value: 120, name: 'Katolik' },
-        { value: 30, name: 'Hindu' },
-        { value: 20, name: 'Budha' }
-      ]
-    }
-  ]
-})
-
-// 3. Grafik Jenis Kelamin (Doughnut Chart)
-const genderChartOption = ref({
-  tooltip: { trigger: 'item' },
-  legend: {
-    top: 'middle',
-    right: '5%',
-    orient: 'vertical',
-    textStyle: { fontSize: 11, color: '#737373' }
-  },
-  series: [
-    {
-      name: 'Jenis Kelamin',
-      type: 'pie',
-      radius: ['50%', '85%'],
-      center: ['40%', '50%'],
-      label: { show: false },
-      data: [
-        { value: 640, name: 'Laki-laki', itemStyle: { color: '#338e26' } }, // Secondary-600
-        { value: 600, name: 'Perempuan', itemStyle: { color: '#fb6967' } } // Primary-400
-      ]
-    }
-  ]
+// 3. Grafik Jenis Kelamin (Dinamis dari resident_by_gender)
+const genderChartOption = computed(() => {
+  const genderData = rawData.value?.resident_by_gender || {}
+  return {
+    ...chartBaseConfig,
+    tooltip: { trigger: 'item' },
+    legend: { top: 'middle', right: '5%', orient: 'vertical', icon: 'circle' },
+    series: [
+      {
+        name: 'Jenis Kelamin',
+        type: 'pie',
+        radius: ['55%', '80%'],
+        center: ['40%', '50%'],
+        avoidLabelOverlap: false,
+        itemStyle: { borderRadius: 10, borderColor: '#fff', borderWidth: 2 },
+        label: { show: false },
+        data: [
+          {
+            value: genderData['Laki-laki'] || 0,
+            name: 'Laki-laki',
+            itemStyle: { color: '#338e26' }
+          },
+          {
+            value: genderData['Perempuan'] || 0,
+            name: 'Perempuan',
+            itemStyle: { color: '#fb6967' }
+          }
+        ]
+      }
+    ]
+  }
 })
 
 const formatCurrency = (val: number) => {
@@ -145,150 +175,155 @@ const formatCurrency = (val: number) => {
   }).format(val)
 }
 
-onMounted(() => {
-  fetchDashboardData()
-})
+onMounted(() => fetchDashboardData())
 </script>
 
 <template>
-  <div class="space-y-6">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <UCard class="border-none shadow-sm ring-1 ring-neutral-200 rounded-4xl">
-        <div class="flex items-center gap-4">
-          <div
-            class="p-3 bg-secondary-50 rounded-2xl text-secondary-600 font-bold"
-          >
-            <UIcon name="i-lucide-users" class="w-8 h-8" />
-          </div>
-          <div>
-            <p
-              class="text-[10px] font-bold text-neutral-400 uppercase tracking-widest"
-            >
-              Jumlah Warga
-            </p>
-            <p class="text-2xl font-black text-neutral-900">
-              {{ stats.total_citizens }}
-            </p>
-          </div>
-        </div>
-      </UCard>
-
-      <UCard class="border-none shadow-sm ring-1 ring-neutral-200 rounded-4xl">
-        <div class="flex items-center gap-4">
-          <div class="p-3 bg-primary-50 rounded-2xl text-primary-600">
-            <UIcon name="i-lucide-home" class="w-8 h-8" />
-          </div>
-          <div>
-            <p
-              class="text-[10px] font-bold text-neutral-400 uppercase tracking-widest"
-            >
-              Jumlah Rumah
-            </p>
-            <p class="text-2xl font-black text-neutral-900">
-              {{ stats.total_houses }}
-            </p>
-          </div>
-        </div>
-      </UCard>
-
-      <UCard class="border-none shadow-sm ring-1 ring-neutral-200 rounded-4xl">
-        <div class="flex items-center gap-4">
-          <div class="p-3 bg-neutral-100 rounded-2xl text-neutral-600">
-            <UIcon name="i-lucide-smartphone" class="w-8 h-8" />
-          </div>
-          <div>
-            <p
-              class="text-[10px] font-bold text-neutral-400 uppercase tracking-widest"
-            >
-              Pengguna Aplikasi
-            </p>
-            <p class="text-2xl font-black text-neutral-900">
-              {{ stats.app_users }}
-            </p>
-          </div>
-        </div>
-      </UCard>
+  <div class="p-1 space-y-8 animate-in fade-in duration-700">
+    <!-- LOADING STATE (Optional but recommended) -->
+    <div v-if="loading" class="flex items-center justify-center h-64">
+      <UIcon
+        name="i-lucide-loader-2"
+        class="w-8 h-8 animate-spin text-primary-600"
+      />
     </div>
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <UCard
-        class="bg-secondary-600 text-white border-none shadow-lg shadow-secondary-100 rounded-4xl"
-      >
-        <p
-          class="text-[10px] font-bold text-secondary-100 uppercase tracking-[0.2em] mb-1"
+    <template v-else>
+      <!-- TOP STATS -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div
+          v-for="(stat, idx) in [
+            {
+              label: 'Jumlah Warga',
+              val: stats.total_citizens,
+              icon: 'i-lucide-users',
+              color: 'secondary'
+            },
+            {
+              label: 'Jumlah Rumah',
+              val: stats.total_houses,
+              icon: 'i-lucide-home',
+              color: 'primary'
+            },
+            {
+              label: 'Pengguna App',
+              val: stats.app_users,
+              icon: 'i-lucide-smartphone',
+              color: 'neutral'
+            }
+          ]"
+          :key="idx"
+          class="group relative overflow-hidden bg-white p-6 rounded-[2.5rem] ring-1 ring-neutral-200 shadow-sm hover:shadow-md transition-all duration-300"
         >
-          Pemasukan Bulan Ini
-        </p>
-        <p class="text-2xl font-black">
-          {{ formatCurrency(financialData.in) }}
-        </p>
-      </UCard>
-
-      <UCard
-        class="bg-primary-600 text-white border-none shadow-lg shadow-primary-100 rounded-4xl"
-      >
-        <p
-          class="text-[10px] font-bold text-primary-100 uppercase tracking-[0.2em] mb-1"
-        >
-          Pengeluaran Bulan Ini
-        </p>
-        <p class="text-2xl font-black">
-          {{ formatCurrency(financialData.out) }}
-        </p>
-      </UCard>
-
-      <UCard
-        class="bg-neutral-900 text-white border-none shadow-lg shadow-neutral-200 rounded-4xl"
-      >
-        <p
-          class="text-[10px] font-bold text-neutral-400 uppercase tracking-[0.2em] mb-1"
-        >
-          Total Saldo
-        </p>
-        <p class="text-2xl font-black text-secondary-400">
-          {{ formatCurrency(financialData.balance) }}
-        </p>
-      </UCard>
-    </div>
-
-    <UCard class="border-none shadow-sm ring-1 ring-neutral-200 rounded-4xl">
-      <template #header>
-        <h3 class="font-bold text-neutral-800 italic uppercase tracking-tight">
-          Grafik Jumlah Warga (Berdasarkan Usia)
-        </h3>
-      </template>
-      <div class="h-75 w-full">
-        <v-chart :option="ageChartOption" autoresize />
+          <div class="flex items-center gap-5 relative z-10">
+            <div
+              :class="[
+                `p-4 rounded-2xl bg-${stat.color}-50 text-${stat.color}-600 group-hover:scale-110 transition-transform duration-500 text-3xl`
+              ]"
+            >
+              <UIcon :name="stat.icon" class="w-8 h-8" />
+            </div>
+            <div>
+              <p
+                class="text-[10px] font-black text-neutral-400 uppercase tracking-[0.2em]"
+              >
+                {{ stat.label }}
+              </p>
+              <p class="text-3xl font-black text-neutral-900 tabular-nums">
+                {{ stat.val }}
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
-    </UCard>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-      <UCard class="border-none shadow-sm ring-1 ring-neutral-200 rounded-4xl">
-        <template #header>
-          <h3
-            class="font-bold text-neutral-800 italic uppercase tracking-tight"
+      <!-- FINANCIAL CARDS -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div
+          v-for="(fin, idx) in [
+            {
+              label: 'Pemasukan Bulan Ini',
+              val: financialData.in,
+              bg: 'bg-secondary-600 shadow-secondary-200'
+            },
+            {
+              label: 'Pengeluaran Bulan Ini',
+              val: financialData.out,
+              bg: 'bg-primary-600 shadow-primary-200'
+            },
+            {
+              label: 'Total Saldo',
+              val: financialData.balance,
+              bg: 'bg-neutral-900 shadow-neutral-300',
+              isBalance: true
+            }
+          ]"
+          :key="idx"
+          class="p-8 rounded-[2.5rem] text-white shadow-sm transition-all duration-500 hover:scale-[1.02]"
+          :class="fin.bg"
+        >
+          <p
+            class="text-[10px] font-bold opacity-70 uppercase tracking-[0.2em] mb-2"
           >
-            Jumlah Berdasarkan Agama
-          </h3>
+            {{ fin.label }}
+          </p>
+          <p
+            class="text-3xl font-black tabular-nums"
+            :class="fin.isBalance ? 'text-secondary-400' : ''"
+          >
+            {{ formatCurrency(fin.val) }}
+          </p>
+        </div>
+      </div>
+
+      <!-- MAIN CHART -->
+      <UCard
+        class="border-none shadow-xl ring-1 ring-neutral-200 rounded-[3rem] overflow-hidden"
+      >
+        <template #header>
+          <div class="flex items-center justify-between px-2">
+            <h3
+              class="font-black text-neutral-800 uppercase tracking-tighter flex items-center gap-2 text-lg"
+            >
+              <div class="w-2 h-6 bg-secondary-500 rounded-full" />
+              Distribusi Usia Warga
+            </h3>
+            <UButton
+              color="neutral"
+              variant="ghost"
+              icon="i-lucide-expand"
+              size="xs"
+            />
+          </div>
         </template>
-        <div class="h-70 w-full">
-          <v-chart :option="religionChartOption" autoresize />
+        <div class="h-80 w-full px-2">
+          <v-chart :option="ageChartOption" autoresize />
         </div>
       </UCard>
 
-      <UCard class="border-none shadow-sm ring-1 ring-neutral-200 rounded-4xl">
-        <template #header>
-          <h3
-            class="font-bold text-neutral-800 italic uppercase tracking-tight"
-          >
-            Jumlah Berdasarkan Jenis Kelamin
-          </h3>
-        </template>
-        <div class="h-70 w-full">
-          <v-chart :option="genderChartOption" autoresize />
-        </div>
-      </UCard>
-    </div>
+      <!-- SECONDARY CHARTS -->
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <UCard
+          v-for="(chart, idx) in [
+            { title: 'Persentase Agama', option: religionChartOption },
+            { title: 'Rasio Jenis Kelamin', option: genderChartOption }
+          ]"
+          :key="idx"
+          class="border-none shadow-lg ring-1 ring-neutral-200 rounded-[2.5rem]"
+        >
+          <template #header>
+            <h3
+              class="font-bold text-neutral-700 text-sm uppercase tracking-widest px-2"
+            >
+              {{ chart.title }}
+            </h3>
+          </template>
+          <div class="h-72 w-full">
+            <v-chart :option="chart.option" autoresize />
+          </div>
+        </UCard>
+      </div>
+    </template>
   </div>
 </template>
 
