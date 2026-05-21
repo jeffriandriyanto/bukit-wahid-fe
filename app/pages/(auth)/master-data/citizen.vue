@@ -722,7 +722,7 @@ onMounted(() => {
         </template>
 
         <template #action-cell="{ row }">
-          <div class="flex justify-end gap-1">
+          <div class="flex gap-1">
             <UTooltip text="Ganti Password">
               <UButton
                 icon="i-lucide-key-round"

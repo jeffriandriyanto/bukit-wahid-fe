@@ -34,6 +34,11 @@ export const sidebarItems: SidebarItem[] = [
         label: 'Petugas & Staf',
         icon: 'i-lucide-user-check',
         to: '/master-data/employee'
+      },
+      {
+        label: 'Majelis',
+        icon: 'i-lucide-landmark',
+        to: '/master-data/majelis'
       }
     ]
   },
