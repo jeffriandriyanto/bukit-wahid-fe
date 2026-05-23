@@ -5,7 +5,7 @@ import { perPageLimit } from '~/const/utils'
 import { fileUpload } from '~/services/files'
 
 // Composables & Services
-const { dropdownRT, getDropdownRT } = useApiDropdown()
+const { dropdownToOrganization, getDropdownToOrganization } = useApiDropdown()
 const { reveal: confirm } = useConfirmService()
 const toast = useToast()
 
@@ -234,7 +234,7 @@ watch([activeTab, selectedRT, () => pagination.value.per_page], () => {
 })
 
 onMounted(() => {
-  getDropdownRT()
+  getDropdownToOrganization()
   getData()
 })
 
@@ -261,8 +261,8 @@ definePageMeta({
       <div class="flex items-center gap-3">
         <USelectMenu
           v-model="selectedRT"
-          placeholder="Filter RT"
-          :items="dropdownRT"
+          placeholder="Filter Organisasi"
+          :items="dropdownToOrganization"
           value-key="key"
           label-key="label"
           class="w-44"
@@ -544,15 +544,15 @@ definePageMeta({
             <UFormField
               name="fors"
               label="Ditujukan Untuk"
-              help="Pilih RT atau biarkan kosong untuk seluruh warga"
+              help="Pilih tujuan atau biarkan kosong untuk seluruh warga"
             >
               <USelect
                 v-model="form.fors"
-                :items="dropdownRT"
+                :items="dropdownToOrganization"
                 multiple
                 value-key="key"
                 label-key="label"
-                placeholder="Pilih RT"
+                placeholder="Pilih Ditujukan untuk"
                 size="lg"
               />
             </UFormField>

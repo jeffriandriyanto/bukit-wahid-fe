@@ -16,6 +16,7 @@ export const useApiDropdown = () => {
   const dropdownPosition = ref<Option[]>([])
   const dropdownPositionRW = ref<Option[]>([])
   const dropdownResidenceCategory = ref<Option[]>([])
+const dropdownToOrganization = ref<Option[]>([]);
 
   const fetchDropdown = async (
     url: string,
@@ -85,6 +86,9 @@ export const useApiDropdown = () => {
   const getDropdownResidenceCategory = () =>
     fetchDropdown(`/dropdown/resident-category`, dropdownResidenceCategory, 'ResidenceCategory')
 
+  const getDropdownToOrganization = () =>
+    fetchDropdown(`/dropdown/to-organization`, dropdownToOrganization, 'ToOrganization')
+
   return {
     dropdownRT,
     dropdownAddress,
@@ -94,6 +98,7 @@ export const useApiDropdown = () => {
     dropdownPosition,
     dropdownPositionRW,
     dropdownResidenceCategory,
+    dropdownToOrganization,
     getDropdownRT,
     getDropdownAddress,
     getDropdownResidenceType,
@@ -101,6 +106,7 @@ export const useApiDropdown = () => {
     getDropdownFamilyHead,
     getDropdownPosition,
     getDropdownPositionRW,
-    getDropdownResidenceCategory
+    getDropdownResidenceCategory,
+    getDropdownToOrganization
   }
 }
