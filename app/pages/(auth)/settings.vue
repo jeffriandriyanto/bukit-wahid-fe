@@ -52,7 +52,7 @@ const form = reactive<WebsiteConfigSchema>({
 const transformToForm = (apiData: any[]) => {
   apiData.forEach((item) => {
     const key = Object.keys(item)[0]
-    let value = item[key]
+    const value = item[key]
 
     if (key in form) {
       if (!value) {

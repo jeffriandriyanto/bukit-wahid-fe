@@ -331,7 +331,7 @@ onMounted(() => {
                 <img
                   :src="selectedDetail.file"
                   class="w-full h-auto object-cover"
-                />
+                >
               </div>
               <UButton
                 v-else-if="selectedDetail.file"
@@ -389,7 +389,7 @@ onMounted(() => {
                     :src="action.file"
                     class="w-full h-full object-cover cursor-pointer"
                     @click="window.open(action.file, '_blank')"
-                  />
+                  >
                 </div>
                 <UButton
                   v-else

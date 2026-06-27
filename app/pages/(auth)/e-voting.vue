@@ -457,7 +457,7 @@ onMounted(() => {
                   <img
                     :src="form.image"
                     class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  />
+                  >
                   <div
                     class="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100"
                   >
@@ -551,7 +551,7 @@ onMounted(() => {
                       'https://placehold.co/100x100?text=Pilih+Foto'
                     "
                     class="h-full w-full object-cover rounded-lg border-2 border-white shadow-sm bg-gray-200"
-                  />
+                  >
                   <label
                     class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 cursor-pointer rounded-lg transition-opacity"
                   >
@@ -560,7 +560,7 @@ onMounted(() => {
                       class="hidden"
                       accept="image/*"
                       @change="handleNewOptionFile"
-                    />
+                    >
                     <UIcon name="i-lucide-camera" class="text-white text-xl" />
                   </label>
                   <button
@@ -632,7 +632,7 @@ onMounted(() => {
                         'https://placehold.co/100x100?text=No+Image'
                       "
                       class="h-full w-full object-cover rounded-lg border"
-                    />
+                    >
                     <label
                       class="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover:opacity-100 cursor-pointer rounded-lg transition-opacity"
                     >
@@ -647,7 +647,7 @@ onMounted(() => {
                               opt
                             )
                         "
-                      />
+                      >
                       <UIcon
                         name="i-lucide-camera"
                         class="text-white text-xl"

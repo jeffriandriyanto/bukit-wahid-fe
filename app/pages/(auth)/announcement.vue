@@ -278,7 +278,7 @@ definePageMeta({ middleware: ['auth'] })
                 v-if="form.image"
                 class="group relative aspect-video w-full overflow-hidden rounded-lg border bg-gray-50"
               >
-                <img :src="form.image" class="h-full w-full object-cover" />
+                <img :src="form.image" class="h-full w-full object-cover" >
                 <div
                   class="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity"
                 >
@@ -329,7 +329,7 @@ definePageMeta({ middleware: ['auth'] })
               v-if="row.original.image"
               :src="row.original.image"
               class="aspect-video w-24 object-cover rounded shadow-sm"
-            />
+            >
             <div
               v-else
               class="w-24 aspect-video bg-gray-100 rounded flex items-center justify-center text-[10px] text-gray-400"

@@ -166,7 +166,7 @@ const saveData = async (event: FormSubmitEvent<PettyFormSchema>) => {
     }
 
     let url = ''
-    let payload: any = {
+    const payload: any = {
       tag: event.data.tag,
       description: event.data.description,
       proof: finalImageUrl
@@ -445,7 +445,7 @@ onMounted(() => {
                 v-if="form.proof"
                 class="relative group aspect-video rounded-xl border-2 border-gray-100 overflow-hidden bg-gray-50"
               >
-                <img :src="form.proof" class="w-full h-full object-contain" />
+                <img :src="form.proof" class="w-full h-full object-contain" >
                 <div
                   class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                 >
@@ -563,7 +563,7 @@ onMounted(() => {
             <div
               class="max-w-md mx-auto md:mx-0 overflow-hidden rounded-2xl border shadow-sm"
             >
-              <img :src="selectedDetail.proof" class="w-full h-auto" />
+              <img :src="selectedDetail.proof" class="w-full h-auto" >
             </div>
           </div>
         </div>

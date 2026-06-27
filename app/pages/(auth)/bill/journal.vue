@@ -350,12 +350,12 @@ onMounted(() => {
 
           <div v-if="selectedDetail.ref" class="space-y-4">
             <div class="flex items-center gap-2">
-              <div class="h-px flex-1 bg-gray-100"></div>
+              <div class="h-px flex-1 bg-gray-100"/>
               <span
                 class="text-[10px] font-black text-gray-300 uppercase tracking-[0.2em]"
                 >Dokumen Referensi</span
               >
-              <div class="h-px flex-1 bg-gray-100"></div>
+              <div class="h-px flex-1 bg-gray-100"/>
             </div>
 
             <div
