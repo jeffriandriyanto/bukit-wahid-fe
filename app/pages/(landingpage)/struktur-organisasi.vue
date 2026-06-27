@@ -10,7 +10,7 @@
     <UContainer class="py-4">
       <div
         v-if="rwData"
-        class="relative bg-white border border-neutral-100 shadow-premium rounded-[3rem] p-8 md:p-16 overflow-x-auto intersect-once intersect:animate-fade-in-up"
+        v-intersect class="relative bg-white border border-neutral-100 shadow-premium rounded-[3rem] p-8 md:p-16 overflow-x-auto"
       >
         <div class="absolute top-8 right-8 flex items-center gap-2 text-neutral-400">
           <UIcon name="i-lucide-mouse-pointer-2" class="w-4 h-4" />

@@ -30,7 +30,7 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
   isLoading.value = true
   // startLoading()
   try {
-    const response = await useApi<any>('/login', {
+    const response = await $fetch<any>('/api/auth/login', {
       method: 'POST',
       body: {
         username: event.data.username,

@@ -35,7 +35,7 @@ const close = () => {
 }
 
 const onSubmit = async (event: FormSubmitEvent<Schema>) => {
-  const response = await useApi<any>(`change-password`, {
+  const response = await useApi(`change-password`, {
     method: 'PUT',
     body: {
       password: event.data.newPassword

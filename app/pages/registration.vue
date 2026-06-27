@@ -16,7 +16,7 @@ const router = useRouter()
 
 const loading = ref(false)
 
-const addressOptions = ref([])
+const addressOptions = ref<any[]>([])
 
 // =========================
 // HELPERS
@@ -120,7 +120,7 @@ const getAddress = async (rtId: string) => {
   if (!rtId) return
 
   try {
-    const res = await useApi<any>(`/dropdown/address/${rtId}`)
+    const res = await useApi(`/dropdown/address/${rtId}`)
 
     if (res.status === 1) {
       addressOptions.value = res.data.map((i: any) => ({
@@ -141,7 +141,7 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
 
     delete payload.rt_id
 
-    const res = await useApi<any>('/familly/registration', {
+    const res = await useApi('/familly/registration', {
       method: 'POST',
       body: payload
     })

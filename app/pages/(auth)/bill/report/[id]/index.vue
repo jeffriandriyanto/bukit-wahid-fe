@@ -82,7 +82,7 @@ const columns = [
 const fetchDetail = async () => {
   loading.value = true
   try {
-    const res = await useApi<any>(`/finance/bill/${userId}`, {
+    const res = await useApi(`/finance/bill/${userId}`, {
       params: {
         page: pagination.value.current_page,
         limit: pagination.value.per_page
@@ -91,7 +91,7 @@ const fetchDetail = async () => {
     })
     if (res.status === 1) {
       detailData.value = res.data
-      pagination.value = { ...res.pagination }
+      if (res.pagination) { pagination.value = { ...res.pagination } }
     }
   } catch (err) {
     console.error('Fetch error:', err)
@@ -104,14 +104,14 @@ const saveBill = async (event: FormSubmitEvent<BillFormSchema>) => {
   try {
     loading.value = true
 
-    const checkoutRes = await useApi<any>('/finance/payment/checkout', {
+    const checkoutRes = await useApi('/finance/payment/checkout', {
       method: 'POST',
       body: {
         person_id: userId,
         bills: targetBills.value.map((b) => b.id)
       }
     })
-    if (checkoutRes.status !== 1) throw new Error('Gagal melakukan checkout')
+    if (!checkoutRes.data?.id) throw new Error('Gagal melakukan checkout')
 
     const paymentId = checkoutRes.data.id
 
@@ -128,7 +128,7 @@ const saveBill = async (event: FormSubmitEvent<BillFormSchema>) => {
       description: form.description || ''
     }
 
-    const cashRes = await useApi<any>(`/finance/payment/cash/${paymentId}`, {
+    const cashRes = await useApi(`/finance/payment/cash/${paymentId}`, {
       method: 'POST',
       body: payload
     })
@@ -138,8 +138,6 @@ const saveBill = async (event: FormSubmitEvent<BillFormSchema>) => {
       isOpen.value = false
       fetchDetail()
       resetForm()
-    } else {
-      toast.add({ title: cashRes?.message || 'Error server', color: 'error' })
     }
   } catch (err: any) {
     toast.add({ title: err?.message || 'Error server', color: 'error' })

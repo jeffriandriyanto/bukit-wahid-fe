@@ -4,7 +4,7 @@ import { perPageLimit } from '~/const/utils'
 definePageMeta({ middleware: ['auth'] })
 
 // --- STATE ---
-const dataSubmission = ref([])
+const dataSubmission = ref<any[]>([])
 const loading = ref(false)
 const isOpen = ref(false)
 const selectedDetail = ref<any>(null)
@@ -37,8 +37,8 @@ const submissionTable = [
 const getOptions = async () => {
   try {
     const [statusRes, categoryRes] = await Promise.all([
-      useApi<any>('/dropdown/complaint-status'),
-      useApi<any>('/dropdown/complaint-category')
+      useApi('/dropdown/complaint-status'),
+      useApi('/dropdown/complaint-category')
     ])
 
     if (statusRes.status === 1) {
@@ -61,7 +61,7 @@ const getOptions = async () => {
 const getData = async () => {
   loading.value = true
   try {
-    const res = await useApi<any>('/complaint', {
+    const res = await useApi('/complaint', {
       params: {
         page: pagination.value.current_page,
         limit: pagination.value.per_page,
@@ -72,7 +72,7 @@ const getData = async () => {
 
     if (res.status === 1) {
       dataSubmission.value = res.data
-      pagination.value = { ...res.pagination }
+      if (res.pagination) { pagination.value = { ...res.pagination } }
     }
   } catch (err) {
     console.error('Fetch error:', err)

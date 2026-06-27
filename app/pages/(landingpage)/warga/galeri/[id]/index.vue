@@ -128,7 +128,7 @@ definePageMeta({ layout: 'landingpage' })
         <div
           v-for="(img, idx) in album.images"
           :key="idx"
-          class="group relative cursor-pointer overflow-hidden rounded-[3rem] bg-neutral-100 border border-neutral-100 shadow-premium intersect-once intersect:animate-fade-in-up"
+          v-intersect class="group relative cursor-pointer overflow-hidden rounded-[3rem] bg-neutral-100 border border-neutral-100 shadow-premium"
           :style="{ 'animation-delay': idx * 0.1 + 's' }"
           @click="openLightbox(idx)"
         >

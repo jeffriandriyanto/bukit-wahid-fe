@@ -90,7 +90,7 @@ const transformToForm = (apiData: any[]) => {
 const getData = async () => {
   loading.value = true
   try {
-    const res = await useApi<any>('/environment', { method: 'GET' })
+    const res = await useApi('/environment', { method: 'GET' })
     if (res.status === 1 && res.data?.data) {
       transformToForm(res.data.data)
       initialForm.value = JSON.stringify(form)

@@ -43,7 +43,6 @@ const dataGalleries = ref<any[]>([])
 
 const columnsGalleryTable = [
   { accessorKey: 'name', header: 'Judul Kegiatan' },
-  { accessorKey: 'description', header: 'Deskripsi' },
   { accessorKey: 'galeries_count', header: 'Jumlah Foto' },
   { accessorKey: 'action', header: 'Aksi' }
 ]
@@ -70,7 +69,7 @@ const form = reactive({
 const getData = async () => {
   loading.value = true
   try {
-    const res = await useApi<any>('/galery', {
+    const res = await useApi('/galery', {
       params: {
         page: pagination.value.current_page,
         limit: pagination.value.per_page
@@ -97,7 +96,7 @@ const openAddModal = () => {
 const openEditModal = async (row: any) => {
   loading.value = true
   try {
-    const res = await useApi<any>(`/galery/${row.id}`, { method: 'GET' })
+    const res = await useApi(`/galery/${row.id}`, { method: 'GET' })
     if (res.status === 1) {
       resetForm()
       mode.value = 'edit'
@@ -137,7 +136,7 @@ const confirmDelete = async (row: any) => {
 
   try {
     loading.value = true
-    const res = await useApi<any>(`/galery/${row.id}`, { method: 'DELETE' })
+    const res = await useApi(`/galery/${row.id}`, { method: 'DELETE' })
     if (res.status === 1) {
       toast.add({ title: 'Galeri berhasil dihapus', color: 'success' })
       getData()
@@ -190,7 +189,7 @@ const saveData = async (event: FormSubmitEvent<GalleryFormSchema>) => {
     const url = mode.value === 'add' ? '/galery' : `/galery/${editingId.value}`
     const method = mode.value === 'add' ? 'POST' : 'PUT'
 
-    const res = await useApi<any>(url, { method, body: payload })
+    const res = await useApi(url, { method, body: payload })
 
     if (res.status === 1) {
       // 3. Cleanup file yang dihapus user

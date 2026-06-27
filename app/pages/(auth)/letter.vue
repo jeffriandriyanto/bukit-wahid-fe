@@ -34,7 +34,7 @@ const columns = [
 const getData = async () => {
   loading.value = true
   try {
-    const res = await useApi<any>('/letter/admin', {
+    const res = await useApi('/letter/admin', {
       params: {
         rt: selectedRT.value,
         page: pagination.value.current_page,
@@ -45,7 +45,7 @@ const getData = async () => {
 
     if (res.status === 1) {
       dataLetters.value = res.data
-      pagination.value = { ...res.pagination }
+      if (res.pagination) { pagination.value = { ...res.pagination } }
     }
   } catch (err) {
     console.error('Fetch error:', err)

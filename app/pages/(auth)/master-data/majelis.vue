@@ -54,7 +54,7 @@ watchWithFilter(
 const getData = async () => {
   loading.value = true
   try {
-    const res = await useApi<any>('/majelis', {
+    const res = await useApi('/majelis', {
       params: {
         search: search.value,
         page: pagination.value.current_page,
@@ -65,7 +65,7 @@ const getData = async () => {
 
     if (res.status === 1) {
       dataMajelis.value = res.data
-      pagination.value = { ...res.pagination }
+      if (res.pagination) { pagination.value = { ...res.pagination } }
     }
   } catch (err) {
     console.error('Fetch error:', err)
@@ -83,7 +83,7 @@ const saveData = async (event: FormSubmitEvent<MajelisFormSchema>) => {
   try {
     loading.value = true
 
-    const res = await useApi<any>('/majelis', {
+    const res = await useApi('/majelis', {
       method: 'POST',
       body: {
         person: event.data.person
@@ -121,7 +121,7 @@ const confirmDelete = async (id: string) => {
 
   try {
     loading.value = true
-    const res = await useApi<any>(`/majelis/${id}`, { method: 'DELETE' })
+    const res = await useApi(`/majelis/${id}`, { method: 'DELETE' })
     if (res.status === 1) {
       toast.add({ title: 'Data berhasil dihapus', color: 'success' })
       getData()

@@ -106,7 +106,7 @@ const confirmDelete = async (row: any) => {
   try {
     loading.value = true
     // Menggunakan tag sebagai parameter delete sesuai instruksi
-    const res = await useApi<any>(`/finance/coa/${row.tag}`, {
+    const res = await useApi(`/finance/coa/${row.tag}`, {
       method: 'DELETE'
     })
     if (res.status === 1) {
@@ -129,7 +129,7 @@ const resetForm = () => {
 const getData = async () => {
   loading.value = true
   try {
-    const res = await useApi<any>('/finance/coa', {
+    const res = await useApi('/finance/coa', {
       params: {
         page: pagination.value.current_page,
         limit: pagination.value.per_page
@@ -139,8 +139,10 @@ const getData = async () => {
 
     if (res.status === 1) {
       dataCoa.value = res.data
-      pagination.value = {
-        ...res.pagination
+      if (res.pagination) {
+        pagination.value = {
+          ...res.pagination
+        }
       }
     }
   } catch (err) {
@@ -160,7 +162,7 @@ const saveData = async (event: FormSubmitEvent<CoaFormSchema>) => {
     }
 
     // Berdasarkan instruksi: POST ke /finance/coa untuk add & edit
-    const res = await useApi<any>('/finance/coa', {
+    const res = await useApi('/finance/coa', {
       method: 'POST',
       body: payload
     })

@@ -4,7 +4,6 @@ export default defineNuxtConfig({
     '@nuxt/ui',
     '@vueuse/nuxt',
     '@nuxt/image',
-    'nuxt-charts',
     '@pinia/nuxt'
   ],
   experimental: {

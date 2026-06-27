@@ -30,7 +30,7 @@ const form = reactive<EnvironmentSchema>({
 const getData = async () => {
   loading.value = true
   try {
-    const res = await useApi<any>('/finance/environment', { method: 'GET' })
+    const res = await useApi('/finance/environment', { method: 'GET' })
     if (res.status === 1 && res.data) {
       Object.assign(form, res.data)
     }
@@ -45,7 +45,7 @@ const getData = async () => {
 const updateData = async (event: any) => {
   loading.value = true
   try {
-    const res = await useApi<any>('/finance/environment', {
+    const res = await useApi('/finance/environment', {
       method: 'POST',
       body: event.data
     })

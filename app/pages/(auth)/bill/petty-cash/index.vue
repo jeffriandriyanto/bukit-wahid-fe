@@ -9,7 +9,7 @@ definePageMeta({ middleware: ['auth'] })
 const toast = useToast()
 
 // --- STATE ---
-const dataPetty = ref([])
+const dataPetty = ref<any[]>([])
 const loading = ref(false)
 const isOpenDetail = ref(false)
 const isOpenForm = ref(false)
@@ -67,8 +67,8 @@ const pettyTable = [
 const getOptions = async () => {
   try {
     const [statusRes, coaRes] = await Promise.all([
-      useApi<any>('/dropdown/petty-status'),
-      useApi<any>('/dropdown/coa')
+      useApi('/dropdown/petty-status'),
+      useApi('/dropdown/coa')
     ])
 
     if (statusRes.status === 1) {
@@ -89,7 +89,7 @@ const getOptions = async () => {
 const getData = async () => {
   loading.value = true
   try {
-    const res = await useApi<any>('/finance/petty-cash', {
+    const res = await useApi('/finance/petty-cash', {
       params: {
         page: pagination.value.current_page,
         limit: pagination.value.per_page,
@@ -99,7 +99,7 @@ const getData = async () => {
     })
     if (res.status === 1) {
       dataPetty.value = res.data
-      pagination.value = { ...res.pagination }
+      if (res.pagination) { pagination.value = { ...res.pagination } }
     }
   } catch (err) {
     console.error('Fetch error:', err)
@@ -110,7 +110,7 @@ const getData = async () => {
 
 const getDetail = async (id: string) => {
   try {
-    const res = await useApi<any>(`/finance/petty-cash/${id}`)
+    const res = await useApi(`/finance/petty-cash/${id}`)
     if (res.status === 1) {
       selectedDetail.value = res.data
       isOpenDetail.value = true
@@ -187,7 +187,7 @@ const saveData = async (event: FormSubmitEvent<PettyFormSchema>) => {
       payload.debit = '0.00'
     }
 
-    const res = await useApi<any>(url, { method: 'POST', body: payload })
+    const res = await useApi(url, { method: 'POST', body: payload })
 
     if (res.status === 1) {
       toast.add({
@@ -205,16 +205,6 @@ const saveData = async (event: FormSubmitEvent<PettyFormSchema>) => {
   } finally {
     loading.value = false
   }
-}
-
-// --- HELPERS ---
-const formatCurrency = (value: string | number) => {
-  const num = typeof value === 'string' ? parseFloat(value) : value
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0
-  }).format(num)
 }
 
 const getStatusColor = (status: string) => {

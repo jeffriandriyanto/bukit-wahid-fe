@@ -4,7 +4,7 @@ import { perPageLimit } from '~/const/utils'
 definePageMeta({ middleware: ['auth'] })
 
 // --- STATE ---
-const dataJournal = ref([])
+const dataJournal = ref<any[]>([])
 const summaryData = ref({
   in: '0.00',
   out: '0.00',
@@ -38,7 +38,7 @@ const journalTable = [
 // Fetch Summary Stats (In, Out, Balance)
 const getSummary = async () => {
   try {
-    const res = await useApi<any>('/finance/journal/data')
+    const res = await useApi('/finance/journal/data')
     if (res.status === 1) {
       summaryData.value = res.data
     }
@@ -51,7 +51,7 @@ const getSummary = async () => {
 const getData = async () => {
   loading.value = true
   try {
-    const res = await useApi<any>('/finance/journal/get', {
+    const res = await useApi('/finance/journal/get', {
       params: {
         page: pagination.value.current_page,
         limit: pagination.value.per_page,
@@ -61,7 +61,7 @@ const getData = async () => {
 
     if (res.status === 1) {
       dataJournal.value = res.data
-      pagination.value = { ...res.pagination }
+      if (res.pagination) { pagination.value = { ...res.pagination } }
     }
   } catch (err) {
     console.error('Fetch error:', err)
@@ -73,7 +73,7 @@ const getData = async () => {
 // Fetch Detail Journal
 const getDetail = async (id: string) => {
   try {
-    const res = await useApi<any>(`/finance/journal/show/${id}`)
+    const res = await useApi(`/finance/journal/show/${id}`)
     if (res.status === 1) {
       selectedDetail.value = res.data
       isOpenDetail.value = true

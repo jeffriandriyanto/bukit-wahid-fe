@@ -70,7 +70,7 @@ const generalInfoMap = computed(() => ({
     <UContainer class="py-4">
       <div class="max-w-5xl mx-auto space-y-12">
         <UCard
-          class="overflow-hidden border-none shadow-premium intersect-once intersect:animate-fade-in-up"
+          v-intersect class="overflow-hidden border-none shadow-premium"
           :ui="{ body: 'p-0' }"
         >
           <div class="bg-primary-600 p-8 flex items-center gap-4">
@@ -141,7 +141,7 @@ const generalInfoMap = computed(() => ({
 
         <div class="grid grid-cols-1 gap-10">
           <!-- <UCard
-            class="border-none shadow-premium rounded-[2.5rem] intersect-once intersect:animate-fade-in-up"
+            v-intersect class="border-none shadow-premium rounded-[2.5rem]"
           >
             <template #header>
               <div
@@ -204,7 +204,7 @@ const generalInfoMap = computed(() => ({
           </UCard> -->
 
           <UCard
-            class="border-none shadow-premium rounded-[2.5rem] intersect-once intersect:animate-fade-in-up"
+            v-intersect class="border-none shadow-premium rounded-[2.5rem]"
           >
             <template #header>
               <div

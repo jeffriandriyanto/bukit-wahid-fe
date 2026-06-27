@@ -64,7 +64,7 @@ const form = reactive({
 
 const getOptions = async () => {
   try {
-    const res = await useApi<any>('/dropdown/employee-category')
+    const res = await useApi('/dropdown/employee-category')
     if (res.status === 1) {
       // Kita simpan di state agar bisa dipakai Filter & Modal
       categoryOptions.value = res.data
@@ -77,7 +77,7 @@ const getOptions = async () => {
 const getData = async () => {
   loading.value = true
   try {
-    const res = await useApi<any>('/employee', {
+    const res = await useApi('/employee', {
       params: {
         search: search.value,
         category: selectedCategory.value, // Tambahan filter category
@@ -87,7 +87,7 @@ const getData = async () => {
     })
     if (res.status === 1) {
       dataEmployee.value = res.data
-      pagination.value = { ...res.pagination }
+      if (res.pagination) { pagination.value = { ...res.pagination } }
     }
   } catch (err) {
     console.error('Fetch error:', err)
@@ -114,7 +114,7 @@ const handleUpdatePassword = async (event: FormSubmitEvent<PasswordSchema>) => {
 
   try {
     loading.value = true
-    const res = await useApi<any>(
+    const res = await useApi(
       `/employee/${passwordTargetId.value}/change-password`,
       {
         method: 'PUT',
@@ -174,7 +174,7 @@ const saveData = async (event: FormSubmitEvent<EmployeeSchema>) => {
       mode.value === 'add' ? '/employee' : `/employee/${editingId.value}`
     const method = mode.value === 'add' ? 'POST' : 'PUT'
 
-    const res = await useApi<any>(url, { method, body: event.data })
+    const res = await useApi(url, { method, body: event.data })
 
     if (res.status === 1) {
       toast.add({
@@ -209,7 +209,7 @@ const confirmDelete = async (row: any) => {
 
   try {
     loading.value = true
-    const res = await useApi<any>(`/employee/${row.id}`, { method: 'DELETE' })
+    const res = await useApi(`/employee/${row.id}`, { method: 'DELETE' })
     if (res.status === 1) {
       toast.add({ title: 'Data berhasil dihapus', color: 'success' })
       getData()

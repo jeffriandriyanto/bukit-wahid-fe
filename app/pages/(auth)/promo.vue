@@ -64,7 +64,7 @@ const form = reactive({
 const getData = async () => {
   loading.value = true
   try {
-    const res = await useApi<any>('/promo', {
+    const res = await useApi('/promo', {
       params: {
         page: pagination.value.current_page,
         limit: pagination.value.per_page
@@ -91,7 +91,7 @@ const openAddModal = () => {
 const openEditModal = async (row: any) => {
   loading.value = true
   try {
-    const res = await useApi<any>(`/promo/${row.id}`, { method: 'GET' })
+    const res = await useApi(`/promo/${row.id}`, { method: 'GET' })
     if (res.status === 1) {
       resetForm()
       mode.value = 'edit'
@@ -148,7 +148,7 @@ const saveData = async (event: FormSubmitEvent<PromoFormSchema>) => {
     const url = mode.value === 'add' ? '/promo' : `/promo/${editingId.value}`
     const method = mode.value === 'add' ? 'POST' : 'PUT'
 
-    const res = await useApi<any>(url, { method, body: payload })
+    const res = await useApi(url, { method, body: payload })
 
     if (res.status === 1) {
       toast.add({
@@ -179,7 +179,7 @@ const confirmDelete = async (row: any) => {
 
   try {
     loading.value = true
-    const res = await useApi<any>(`/promo/${row.id}`, { method: 'DELETE' })
+    const res = await useApi(`/promo/${row.id}`, { method: 'DELETE' })
     if (res.status === 1) {
       toast.add({ title: 'Promo berhasil dihapus', color: 'success' })
       getData()

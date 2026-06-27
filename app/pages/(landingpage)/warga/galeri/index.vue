@@ -26,7 +26,7 @@
         <div
           v-for="(album, idx) in galleries"
           :key="album.id"
-          class="group relative intersect-once intersect:animate-fade-in-up"
+          v-intersect class="group relative"
           :style="{ 'animation-delay': idx * 0.1 + 's' }"
         >
           <div

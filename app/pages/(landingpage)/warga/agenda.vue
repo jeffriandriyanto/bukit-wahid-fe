@@ -107,7 +107,7 @@ onMounted(() => getDropdownRT())
 
     <UContainer class="py-4">
       <div
-        class="bg-white p-6 rounded-[2rem] shadow-premium mb-12 flex flex-col md:flex-row gap-6 items-center border border-neutral-100 intersect-once intersect:animate-fade-in-up"
+        v-intersect class="bg-white p-6 rounded-[2rem] shadow-premium mb-12 flex flex-col md:flex-row gap-6 items-center border border-neutral-100"
       >
         <div class="flex items-center gap-4 grow">
           <div class="p-3 bg-primary-50 rounded-2xl text-primary-600">
@@ -158,7 +158,7 @@ onMounted(() => getDropdownRT())
         <div
           v-for="(item, idx) in allAgendas"
           :key="item.id"
-          class="group relative bg-white rounded-[2.5rem] border border-neutral-100 shadow-premium hover:shadow-premium-hover transition-all duration-500 flex flex-col intersect-once intersect:animate-fade-in-up"
+          v-intersect class="group relative bg-white rounded-[2.5rem] border border-neutral-100 shadow-premium hover:shadow-premium-hover transition-all duration-500 flex flex-col"
           :style="{ 'animation-delay': idx * 0.1 + 's' }"
         >
           <div class="absolute top-6 right-6 z-10">

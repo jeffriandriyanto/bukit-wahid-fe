@@ -68,7 +68,7 @@ const votingTable = [
 const getData = async () => {
   loading.value = true
   try {
-    const res = await useApi<any>('/voting', {
+    const res = await useApi('/voting', {
       params: {
         page: pagination.value.current_page,
         limit: pagination.value.per_page,
@@ -77,7 +77,7 @@ const getData = async () => {
     })
     if (res.status === 1) {
       dataVoting.value = res.data
-      pagination.value = { ...res.pagination }
+      if (res.pagination) { pagination.value = { ...res.pagination } }
     }
   } finally {
     loading.value = false
@@ -109,7 +109,7 @@ const saveVoting = async () => {
 
     const url = isEditing.value ? `/voting/${form.id}` : '/voting'
     const method = isEditing.value ? 'PUT' : 'POST'
-    const res = await useApi<any>(url, { method, body: payload })
+    const res = await useApi(url, { method, body: payload })
 
     if (res.status === 1) {
       toast.add({ title: 'Voting berhasil disimpan', color: 'success' })
@@ -130,7 +130,7 @@ const saveVoting = async () => {
 const getOptions = async (votingId: string) => {
   optionLoading.value = true
   try {
-    const res = await useApi<any>(`/voting-option/${votingId}`)
+    const res = await useApi(`/voting-option/${votingId}`)
     if (res.status === 1) votingOptions.value = res.data
   } finally {
     optionLoading.value = false
@@ -156,7 +156,7 @@ const submitNewOption = async () => {
       image: finalOptionUrl
     }
 
-    const res = await useApi<any>('/voting-option', {
+    const res = await useApi('/voting-option', {
       method: 'POST',
       body: payload
     })
@@ -216,7 +216,7 @@ const updateOption = async (opt: any) => {
       description: opt.description
     }
 
-    const res = await useApi<any>(`/voting-option/${opt.id}`, {
+    const res = await useApi(`/voting-option/${opt.id}`, {
       method: 'PUT',
       body: payload
     })
@@ -235,7 +235,7 @@ const updateOption = async (opt: any) => {
 
 const deleteOption = async (id: string) => {
   if (!confirm('Hapus opsi ini?')) return
-  const res = await useApi<any>(`/voting-option/${id}`, { method: 'DELETE' })
+  const res = await useApi(`/voting-option/${id}`, { method: 'DELETE' })
   if (res.status === 1) getOptions(form.id)
 }
 

@@ -29,12 +29,34 @@ const editingId = ref<string | null>(null)
 const loading = ref(false)
 const summaryFileRaw = ref<File | null>(null)
 const isOpenDetail = ref(false)
-const selectedAgenda = ref<any>(null)
+const selectedAgenda = ref<any>(null as any)
+const loadingDetail = ref(false)
 
-const openDetailModal = (row: any) => {
-  selectedAgenda.value = row
+const openDetailModal = async (row: any) => {
   isOpenDetail.value = true
+  loadingDetail.value = true
+  try {
+    const res = await useApi(`/agenda/${row.id}`, { silent: true })
+    if (res.status === 1 && res.data) {
+      selectedAgenda.value = res.data
+      return
+    }
+  } catch {
+    // fallback ke data tabel jika API gagal
+  } finally {
+    loadingDetail.value = false
+  }
+  selectedAgenda.value = row
 }
+
+const forsLabels = computed(() => {
+  if (!selectedAgenda.value?.fors) return []
+  const orgs = dropdownToOrganization.value || []
+  return selectedAgenda.value.fors.map((id: string) => {
+    const found = orgs.find((o: any) => o.key === id)
+    return found?.label || id
+  })
+})
 
 const columnsAgendaTable = [
   { accessorKey: 'title', header: 'Agenda' },
@@ -43,7 +65,7 @@ const columnsAgendaTable = [
   { accessorKey: 'action', header: 'Aksi' }
 ]
 
-const dataAgendaCard = ref([])
+const dataAgendaCard = ref<any[]>([])
 const pagination = ref({
   current_page: 1,
   last_page: 1,
@@ -91,7 +113,7 @@ const getData = async () => {
     const endpoint =
       activeTab.value === 'done' ? '/agenda?done=true' : '/agenda'
 
-    const res = await useApi<any>(endpoint, {
+    const res = await useApi(endpoint, {
       params: {
         rt: selectedRT.value,
         page: pagination.value.current_page,
@@ -102,7 +124,9 @@ const getData = async () => {
 
     if (res.status === 1) {
       dataAgendaCard.value = res.data
-      pagination.value = { ...res.pagination }
+      if (res.pagination) {
+        if (res.pagination) { pagination.value = { ...res.pagination } }
+      }
     }
   } catch (err) {
     console.error('Fetch error:', err)
@@ -154,7 +178,7 @@ const confirmDelete = async (row: any) => {
 
   try {
     loading.value = true
-    const res = await useApi<any>(`/agenda/${row.id}`, { method: 'DELETE' })
+    const res = await useApi(`/agenda/${row.id}`, { method: 'DELETE' })
     if (res.status === 1) {
       toast.add({ title: 'Data berhasil dihapus', color: 'success' })
       getData()
@@ -210,7 +234,7 @@ const saveData = async (event: FormSubmitEvent<AgendaFormSchema>) => {
     const url = mode.value === 'add' ? '/agenda' : `/agenda/${editingId.value}`
     const method = mode.value === 'add' ? 'POST' : 'PUT'
 
-    const res = await useApi<any>(url, { method, body: payload })
+    const res = await useApi(url, { method, body: payload })
 
     if (res.status === 1) {
       toast.add({ title: 'Berhasil menyimpan data', color: 'success' })
@@ -333,9 +357,7 @@ definePageMeta({
 
         <template #action-cell="{ row }">
           <div class="flex gap-1">
-            <!-- Tombol Lihat Rekapan (Hanya muncul di Tab Selesai) -->
             <UButton
-              v-if="activeTab === 'done'"
               icon="i-lucide-eye"
               variant="ghost"
               color="info"
@@ -380,122 +402,241 @@ definePageMeta({
       />
     </div>
 
-    <UModal v-model:open="isOpenDetail" :ui="{ body: 'sm:max-w-lg' }">
+    <UModal v-model:open="isOpenDetail" :ui="{ content: 'sm:max-w-lg' }">
       <template #header>
-        <div class="flex flex-col">
+        <div class="flex flex-col gap-1">
           <span class="text-lg font-bold text-gray-900">{{
             selectedAgenda?.title
           }}</span>
-          <span class="text-xs text-gray-500 italic">{{
-            formatDate(selectedAgenda?.start_date)
-          }}</span>
+          <span class="text-xs text-gray-500"
+            >Dibuat oleh {{ selectedAgenda?.author?.name || '-' }}</span
+          >
         </div>
       </template>
 
       <template #body>
-        <div class="space-y-6">
-          <div class="p-4 bg-gray-50 rounded-2xl border border-gray-100">
+        <div
+          v-if="loadingDetail"
+          class="flex items-center justify-center py-12"
+        >
+          <UIcon
+            name="i-lucide-loader-2"
+            class="w-6 h-6 animate-spin text-primary-600"
+          />
+        </div>
+
+        <div v-else class="space-y-5">
+          <!-- Waktu & Lokasi -->
+          <div class="p-4 bg-gray-50 rounded-2xl space-y-2">
+            <h4
+              class="text-xs font-black text-gray-400 uppercase tracking-widest"
+            >
+              Waktu &amp; Lokasi
+            </h4>
+            <div class="space-y-1.5 text-sm">
+              <div class="flex items-start gap-2">
+                <UIcon
+                  name="i-lucide-calendar"
+                  class="w-4 h-4 text-primary-500 shrink-0 mt-0.5"
+                />
+                <div>
+                  <span class="font-medium text-gray-800"
+                    >{{ formatDate(selectedAgenda?.start_date) }}
+                    {{ selectedAgenda?.start_time }}</span
+                  >
+                  <template v-if="selectedAgenda?.end_date">
+                    <span class="text-gray-400 mx-1">s/d</span>
+                    <span class="font-medium text-gray-800"
+                      >{{ formatDate(selectedAgenda?.end_date) }}
+                      {{ selectedAgenda?.end_time }}</span
+                    >
+                  </template>
+                </div>
+              </div>
+              <div
+                v-if="selectedAgenda?.location"
+                class="flex items-start gap-2"
+              >
+                <UIcon
+                  name="i-lucide-map-pin"
+                  class="w-4 h-4 text-primary-500 shrink-0 mt-0.5"
+                />
+                <span class="text-gray-600">{{ selectedAgenda.location }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Deskripsi -->
+          <div class="p-4 bg-gray-50 rounded-2xl">
             <h4
               class="text-xs font-black text-gray-400 uppercase mb-3 tracking-widest"
             >
-              Laporan Hasil
+              Deskripsi
             </h4>
-            <p
-              class="text-sm text-gray-700 leading-relaxed whitespace-pre-line italic"
-            >
-              "{{
-                selectedAgenda?.summary_note || 'Belum ada catatan rekapan.'
-              }}"
+            <p class="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
+              {{ selectedAgenda?.description || '-' }}
             </p>
           </div>
 
-          <!-- Di dalam UModal untuk Detail (isOpenDetail) -->
-          <div v-if="selectedAgenda?.summary_file">
+          <!-- Ditujukan Untuk -->
+          <div v-if="forsLabels.length" class="p-4 bg-gray-50 rounded-2xl">
             <h4
               class="text-xs font-black text-gray-400 uppercase mb-3 tracking-widest"
             >
-              Lampiran Dokumentasi
+              Ditujukan Untuk
             </h4>
-
-            <div class="overflow-hidden rounded-2xl border bg-white shadow-sm">
-              <!-- JIKA GAMBAR -->
-              <template
-                v-if="
-                  selectedAgenda.summary_file.match(/\.(jpg|jpeg|png|webp)$/i)
-                "
+            <div class="flex flex-wrap gap-2">
+              <UBadge
+                v-for="label in forsLabels"
+                :key="label"
+                color="neutral"
+                variant="soft"
+                size="sm"
               >
-                <img
-                  :src="selectedAgenda.summary_file"
-                  class="w-full h-auto max-h-80 object-contain bg-gray-50"
-                />
-              </template>
-
-              <!-- JIKA PDF -->
-              <template
-                v-else-if="selectedAgenda.summary_file.match(/\.pdf$/i)"
-              >
-                <div class="flex items-center justify-between p-4">
-                  <div class="flex items-center gap-3">
-                    <div class="p-2 bg-red-50 rounded-lg">
-                      <UIcon
-                        name="i-lucide-file-text"
-                        class="w-6 h-6 text-red-600"
-                      />
-                    </div>
-                    <div class="flex flex-col">
-                      <span class="text-sm font-bold text-gray-800"
-                        >Dokumen PDF</span
-                      >
-                      <span class="text-[10px] text-gray-400 uppercase"
-                        >Klik untuk membaca</span
-                      >
-                    </div>
-                  </div>
-                  <UButton
-                    :to="selectedAgenda.summary_file"
-                    target="_blank"
-                    color="neutral"
-                    variant="subtle"
-                    size="sm"
-                    icon="i-lucide-external-link"
-                    >Buka PDF</UButton
-                  >
-                </div>
-              </template>
-
-              <!-- JIKA WORD / LAINNYA -->
-              <template v-else>
-                <div class="flex items-center justify-between p-4">
-                  <div class="flex items-center gap-3">
-                    <div class="p-2 bg-blue-50 rounded-lg">
-                      <UIcon
-                        name="i-lucide-file-output"
-                        class="w-6 h-6 text-blue-600"
-                      />
-                    </div>
-                    <div class="flex flex-col">
-                      <span class="text-sm font-bold text-gray-800"
-                        >Lampiran Dokumen</span
-                      >
-                      <span class="text-[10px] text-gray-400 uppercase"
-                        >Format:
-                        {{ selectedAgenda.summary_file.split('.').pop() }}</span
-                      >
-                    </div>
-                  </div>
-                  <UButton
-                    :to="selectedAgenda.summary_file"
-                    target="_blank"
-                    color="primary"
-                    variant="soft"
-                    size="sm"
-                    icon="i-lucide-download"
-                    >Download</UButton
-                  >
-                </div>
-              </template>
+                {{ label }}
+              </UBadge>
             </div>
           </div>
+
+          <!-- Kehadiran -->
+          <div
+            v-if="selectedAgenda?.presences_present?.length"
+            class="p-4 bg-gray-50 rounded-2xl"
+          >
+            <h4
+              class="text-xs font-black text-gray-400 uppercase mb-3 tracking-widest"
+            >
+              Kehadiran ({{ selectedAgenda.presences_present.length }})
+            </h4>
+            <div class="space-y-2">
+              <div
+                v-for="presence in selectedAgenda.presences_present"
+                :key="presence.id"
+                class="flex items-center gap-3 p-2.5 bg-white rounded-xl border border-gray-100"
+              >
+                <div class="p-1.5 bg-green-50 rounded-lg">
+                  <UIcon
+                    name="i-lucide-user-check"
+                    class="w-4 h-4 text-green-600"
+                  />
+                </div>
+                <div class="flex flex-col">
+                  <span class="text-sm font-medium text-gray-900">{{
+                    presence.participant?.name || '-'
+                  }}</span>
+                  <span class="text-[10px] text-gray-400 uppercase">{{
+                    presence.participant?.username || ''
+                  }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Laporan Hasil (Summary) — hanya jika ada -->
+          <template
+            v-if="selectedAgenda?.summary_note || selectedAgenda?.summary_file"
+          >
+            <div
+              class="p-4 bg-primary-50/50 rounded-2xl border border-primary-100"
+            >
+              <h4
+                class="text-xs font-black text-primary-700 uppercase mb-3 tracking-widest"
+              >
+                Laporan Hasil
+              </h4>
+              <p
+                v-if="selectedAgenda?.summary_note"
+                class="text-sm text-gray-700 leading-relaxed whitespace-pre-line italic mb-3"
+              >
+                "{{ selectedAgenda.summary_note }}"
+              </p>
+
+              <div
+                v-if="selectedAgenda?.summary_file"
+                class="overflow-hidden rounded-2xl border bg-white shadow-sm"
+              >
+                <template
+                  v-if="
+                    selectedAgenda.summary_file.match(
+                      /\.(jpg|jpeg|png|webp)$/i
+                    )
+                  "
+                >
+                  <img
+                    :src="selectedAgenda.summary_file"
+                    class="w-full h-auto max-h-80 object-contain bg-gray-50"
+                  />
+                </template>
+
+                <template
+                  v-else-if="
+                    selectedAgenda.summary_file.match(/\.pdf$/i)
+                  "
+                >
+                  <div class="flex items-center justify-between p-4">
+                    <div class="flex items-center gap-3">
+                      <div class="p-2 bg-red-50 rounded-lg">
+                        <UIcon
+                          name="i-lucide-file-text"
+                          class="w-6 h-6 text-red-600"
+                        />
+                      </div>
+                      <div class="flex flex-col">
+                        <span class="text-sm font-bold text-gray-800"
+                          >Dokumen PDF</span
+                        >
+                        <span class="text-[10px] text-gray-400 uppercase"
+                          >Klik untuk membaca</span
+                        >
+                      </div>
+                    </div>
+                    <UButton
+                      :to="selectedAgenda.summary_file"
+                      target="_blank"
+                      color="neutral"
+                      variant="subtle"
+                      size="sm"
+                      icon="i-lucide-external-link"
+                      >Buka PDF</UButton
+                    >
+                  </div>
+                </template>
+
+                <template v-else>
+                  <div class="flex items-center justify-between p-4">
+                    <div class="flex items-center gap-3">
+                      <div class="p-2 bg-blue-50 rounded-lg">
+                        <UIcon
+                          name="i-lucide-file-output"
+                          class="w-6 h-6 text-blue-600"
+                        />
+                      </div>
+                      <div class="flex flex-col">
+                        <span class="text-sm font-bold text-gray-800"
+                          >Lampiran Dokumen</span
+                        >
+                        <span class="text-[10px] text-gray-400 uppercase"
+                          >Format:
+                          {{
+                            selectedAgenda.summary_file.split('.').pop()
+                          }}</span
+                        >
+                      </div>
+                    </div>
+                    <UButton
+                      :to="selectedAgenda.summary_file"
+                      target="_blank"
+                      color="primary"
+                      variant="soft"
+                      size="sm"
+                      icon="i-lucide-download"
+                      >Download</UButton
+                    >
+                  </div>
+                </template>
+              </div>
+            </div>
+          </template>
         </div>
       </template>
     </UModal>

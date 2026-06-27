@@ -386,7 +386,7 @@ const getData = async () => {
   loading.value = true
 
   try {
-    const res = await useApi<any>('/familly/get', {
+    const res = await useApi('/familly/get', {
       params: {
         rt: selectedRT.value,
         page: pagination.value.current_page,
@@ -396,7 +396,7 @@ const getData = async () => {
 
     if (res.status === 1) {
       dataFamilyCard.value = res.data
-      pagination.value = { ...res.pagination }
+      if (res.pagination) { pagination.value = { ...res.pagination } }
     }
   } finally {
     loading.value = false
@@ -422,7 +422,7 @@ const openEditModal = async (row: any) => {
 
     await Promise.all([getDropdownRT(), getDropdownResidenceCategory()])
 
-    const res = await useApi<any>(`/familly/show/${row.id}`)
+    const res = await useApi(`/familly/show/${row.id}`)
 
     if (res.status === 1) {
       const d = res.data
@@ -534,7 +534,7 @@ const saveData = async (event: FormSubmitEvent<FamilyCardFormSchema>) => {
         others: event.data.others
       }
 
-      const res = await useApi<any>('/familly/registration', {
+      const res = await useApi('/familly/registration', {
         method: 'POST',
         body: payload
       })
@@ -561,7 +561,7 @@ const saveData = async (event: FormSubmitEvent<FamilyCardFormSchema>) => {
         address: form.address
       }
 
-      const res = await useApi<any>(`/familly/${editingId.value}`, {
+      const res = await useApi(`/familly/${editingId.value}`, {
         method: 'PUT',
         body: payload
       })
@@ -600,7 +600,7 @@ const confirmDelete = async (id: string) => {
   try {
     loading.value = true
 
-    const res = await useApi<any>(`/familly/${id}`, {
+    const res = await useApi(`/familly/${id}`, {
       method: 'DELETE'
     })
 

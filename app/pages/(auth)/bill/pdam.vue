@@ -38,7 +38,7 @@ const columnsFinancialStatements = [
 const getData = async () => {
   loading.value = true
   try {
-    const res = await useApi<any>('/finance/pdam', {
+    const res = await useApi('/finance/pdam', {
       params: {
         rt: selectedRT.value,
         page: pagination.value.current_page,
@@ -49,7 +49,7 @@ const getData = async () => {
 
     if (res.status === 1) {
       dataFinancialStatements.value = res.data
-      pagination.value = { ...res.pagination }
+      if (res.pagination) { pagination.value = { ...res.pagination } }
     }
   } catch (err) {
     console.error('Fetch error:', err)
@@ -72,21 +72,14 @@ const publishBill = async () => {
 
   publishing.value = true
   try {
-    const res = await useApi<any>('/finance/pdam', {
+    const res = await useApi('/finance/pdam', {
       method: 'POST'
     })
 
     if (res.status === 1) {
       toast.add({ title: 'Tagihan berhasil di-publish', color: 'success' })
       navigateTo('/bill/report')
-    } else {
-      throw new Error(res.message || 'Gagal mem-publish tagihan')
     }
-  } catch (err: any) {
-    toast.add({
-      title: err.message || 'Terjadi kesalahan sistem',
-      color: 'error'
-    })
   } finally {
     publishing.value = false
   }

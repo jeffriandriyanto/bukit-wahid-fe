@@ -43,7 +43,7 @@ const columnsFinancialStatements = [
 const getData = async () => {
   loading.value = true
   try {
-    const res = await useApi<any>('/finance/bill', {
+    const res = await useApi('/finance/bill', {
       params: {
         rt: selectedRT.value,
         search: search.value,
@@ -55,7 +55,7 @@ const getData = async () => {
 
     if (res.status === 1) {
       dataFinancialStatements.value = res.data
-      pagination.value = { ...res.pagination }
+      if (res.pagination) { pagination.value = { ...res.pagination } }
     }
   } catch (err) {
     console.error('Fetch error:', err)
@@ -77,7 +77,7 @@ const handleBlastWA = async () => {
 
   loadingBlast.value = true
   try {
-    const res = await useApi<any>('/finance/bill/wa', {
+    const res = await useApi('/finance/bill/wa', {
       method: 'POST',
       body: {
         rt: selectedRT.value,
@@ -92,16 +92,7 @@ const handleBlastWA = async () => {
         icon: 'i-lucide-check-circle',
         color: 'success'
       })
-    } else {
-      throw new Error(res.message || 'Gagal mengirim WA')
     }
-  } catch (err: any) {
-    toast.add({
-      title: 'Gagal Blast WA',
-      description: err.message || 'Terjadi kesalahan sistem.',
-      icon: 'i-lucide-alert-circle',
-      color: 'error'
-    })
   } finally {
     loadingBlast.value = false
   }
@@ -110,7 +101,7 @@ const handleBlastWA = async () => {
 const getDataBill = async () => {
   loading.value = true
   try {
-    const res = await useApi<any>('/finance/my-bill-detail', {
+    const res = await useApi('/finance/my-bill-detail', {
       method: 'GET'
     })
 
@@ -127,16 +118,6 @@ const getDataBill = async () => {
 const showDetailHandler = async (data: any) => {
   navigateTo(`/bill/report/${data.id}?name=${encodeURIComponent(data.name)}`)
 }
-// --- UTILS & HANDLERS ---
-const formatCurrency = (val: string | number) => {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(Number(val))
-}
-
 const handlePageChange = (page: number) => {
   pagination.value.current_page = page
   getData()
@@ -242,20 +223,6 @@ onMounted(() => {
           <div class="font-bold text-2xl text-primary-900">
             {{ formatCurrency(bill.unpaid) }}
           </div>
-        </div>
-      </div>
-
-      <div
-        class="flex items-center gap-4 p-6 border border-success-100 rounded-2xl bg-success-50/50"
-      >
-        <div class="p-2 flex items-center bg-success-500 rounded-xl text-white">
-          <UIcon name="i-material-symbols-money-bag-outline" class="size-8" />
-        </div>
-        <div>
-          <div class="text-sm text-success-600 font-medium">
-            Estimasi Revenue Keseluruhan
-          </div>
-          <div class="font-bold text-2xl text-success-900">Rp 120.450.000</div>
         </div>
       </div>
     </div>

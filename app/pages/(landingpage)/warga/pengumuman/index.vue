@@ -84,7 +84,7 @@ const loadMore = () => {
         <div
           v-for="(post, idx) in allAnnouncements"
           :key="post.id"
-          class="group bg-white rounded-[2.5rem] border border-neutral-100 shadow-premium hover:shadow-premium-hover transition-all duration-700 flex flex-col overflow-hidden intersect-once intersect:animate-fade-in-up cursor-pointer"
+          v-intersect class="group bg-white rounded-[2.5rem] border border-neutral-100 shadow-premium hover:shadow-premium-hover transition-all duration-700 flex flex-col overflow-hidden cursor-pointer"
           :style="{ 'animation-delay': idx * 0.1 + 's' }"
           @click="navigateTo(`/warga/pengumuman/${post.id}`)"
         >

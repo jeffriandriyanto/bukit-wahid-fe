@@ -10,7 +10,7 @@
     <UContainer class="py-12">
       <div v-if="rwDataList.length > 0" class="space-y-20">
         <div
-          class="flex justify-center intersect-once intersect:animate-fade-in-up"
+          v-intersect class="flex justify-center"
         >
           <div
             v-for="leader in leaderData"
@@ -56,7 +56,7 @@
           <div
             v-for="(member, index) in staffData"
             :key="index"
-            class="group space-y-5 text-center intersect-once intersect:animate-fade-in-up"
+            v-intersect class="group space-y-5 text-center"
             :style="{ 'animation-delay': index * 0.1 + 's' }"
           >
             <div class="relative px-4">

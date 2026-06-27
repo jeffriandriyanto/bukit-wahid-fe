@@ -27,6 +27,18 @@ useSeoMeta({
   twitterCard: 'summary_large_image',
   ogUrl: 'https://rw11bukitwahid.com'
 })
+
+useHead({
+  htmlAttrs: {
+    class: 'light'
+  }
+})
+
+if (import.meta.client) {
+  document.documentElement.classList.add('light')
+  document.documentElement.classList.remove('dark')
+  localStorage.setItem('nuxt-color-mode', 'light')
+}
 </script>
 
 <template>

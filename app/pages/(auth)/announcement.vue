@@ -17,7 +17,7 @@ const mode = ref<'add' | 'edit'>('add')
 const editingId = ref<string | null>(null)
 const imageFile = ref(null)
 const loading = ref(false)
-const announcements = ref([])
+const announcements = ref<any[]>([])
 
 const pagination = ref({
   current_page: 1,
@@ -62,7 +62,7 @@ const columns = [
 const getData = async () => {
   loading.value = true
   try {
-    const res = await useApi<any>('/announcement', {
+    const res = await useApi('/announcement', {
       params: {
         rt: selectedRT.value,
         page: pagination.value.current_page,
@@ -73,7 +73,7 @@ const getData = async () => {
 
     if (res.status === 1) {
       announcements.value = res.data
-      pagination.value = { ...res.pagination }
+      if (res.pagination) { pagination.value = { ...res.pagination } }
     }
   } catch (err) {
     console.error('Fetch error:', err)
@@ -125,7 +125,7 @@ const saveData = async (event: FormSubmitEvent<AnnouncementFormSchema>) => {
         : `/announcement/${editingId.value}`
     const method = mode.value === 'add' ? 'POST' : 'PUT'
 
-    const res = await useApi<any>(url, { method, body: payload })
+    const res = await useApi(url, { method, body: payload })
 
     if (res.status === 1) {
       toast.add({
@@ -160,7 +160,7 @@ const confirmDelete = async (row: any) => {
 
   try {
     loading.value = true
-    const res = await useApi<any>(`/announcement/${row.id}`, {
+    const res = await useApi(`/announcement/${row.id}`, {
       method: 'DELETE'
     })
     if (res.status === 1) {

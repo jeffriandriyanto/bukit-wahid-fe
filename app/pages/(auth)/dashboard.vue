@@ -27,7 +27,7 @@ const rawData = ref<any>(null) // Penampung data mentah dari API
 // --- API ACTIONS ---
 const fetchDashboardData = async () => {
   try {
-    const res = await useApi<any>('/dashboard')
+    const res = await useApi('/dashboard')
     if (res.status === 1) {
       rawData.value = res.data
     }
@@ -166,14 +166,6 @@ const genderChartOption = computed(() => {
     ]
   }
 })
-
-const formatCurrency = (val: number) => {
-  return new Intl.NumberFormat('id-ID', {
-    style: 'currency',
-    currency: 'IDR',
-    maximumFractionDigits: 0
-  }).format(val)
-}
 
 onMounted(() => fetchDashboardData())
 </script>

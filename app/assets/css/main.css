@@ -1,8 +1,6 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
 
-@plugin "tailwindcss-intersect";
-
 @theme {
   --animate-fade-in-up: fade-in-up 0.8s cubic-bezier(0.21, 0.45, 0.32, 0.9) forwards;
   --animate-ken-burns: ken-burns 20s ease-in-out infinite;

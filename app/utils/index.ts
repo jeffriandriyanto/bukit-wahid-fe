@@ -6,10 +6,11 @@ export function randomFrom<T>(array: T[]): T {
   return array[Math.floor(Math.random() * array.length)]!
 }
 
-export const formatCurrency = (val: number) => {
+export const formatCurrency = (val: string | number) => {
+  const num = typeof val === 'string' ? parseFloat(val) : val
   return new Intl.NumberFormat('id-ID', {
     style: 'currency',
     currency: 'IDR',
     maximumFractionDigits: 0
-  }).format(val)
+  }).format(num)
 }

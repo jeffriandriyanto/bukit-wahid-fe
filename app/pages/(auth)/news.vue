@@ -28,7 +28,7 @@ const AnnouncementFormSchema = z.object({
 
 type AnnouncementFormSchema = z.infer<typeof AnnouncementFormSchema>
 
-const dataAnnouncementCard = ref([])
+const dataAnnouncementCard = ref<any[]>([])
 
 const columnsNewsTable = [
   {
@@ -114,7 +114,7 @@ const confirmDelete = async (row: any) => {
 
   try {
     loading.value = true
-    const res = await useApi<any>(`/news/${row.id}`, { method: 'DELETE' })
+    const res = await useApi(`/news/${row.id}`, { method: 'DELETE' })
     if (res.status === 1) {
       toast.add({ title: 'Data berhasil dihapus', color: 'success' })
       dataAnnouncementCard.value.splice(actualIndex, 1)
@@ -155,7 +155,7 @@ const publishHandler = async (row: any) => {
 
   try {
     loading.value = true
-    const res = await useApi<any>(`/news/publish/${row.id}`, {
+    const res = await useApi(`/news/publish/${row.id}`, {
       method: 'PUT'
     })
 
@@ -186,7 +186,7 @@ const unpublishHandler = async (row: any) => {
 
   try {
     loading.value = true
-    const res = await useApi<any>(`/news/unpublish/${row.id}`, {
+    const res = await useApi(`/news/unpublish/${row.id}`, {
       method: 'PUT'
     })
 
@@ -207,7 +207,7 @@ const unpublishHandler = async (row: any) => {
 const getData = async () => {
   loading.value = true
   try {
-    const res = await useApi<any>('/news', {
+    const res = await useApi('/news', {
       params: {
         rt: selectedRT.value,
         page: pagination.value.current_page,
@@ -218,8 +218,10 @@ const getData = async () => {
 
     if (res.status === 1) {
       dataAnnouncementCard.value = res.data
-      pagination.value = {
-        ...res.pagination
+      if (res.pagination) {
+        pagination.value = {
+          ...res.pagination
+        }
       }
     }
   } catch (err) {
@@ -251,7 +253,7 @@ const saveData = async (event: FormSubmitEvent<AnnouncementFormSchema>) => {
     const url = mode.value === 'add' ? '/news' : `/news/edit/${editingId.value}`
     const method = mode.value === 'add' ? 'POST' : 'PUT'
 
-    const res = await useApi<any>(url, { method, body: payload })
+    const res = await useApi(url, { method, body: payload })
 
     if (res.status === 1) {
       toast.add({

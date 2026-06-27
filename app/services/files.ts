@@ -3,7 +3,7 @@ export const fileUpload = async (file: File) => {
   formData.append('file', file);
 
   try {
-    const res = await useApi<any>('/file/upload', {
+    const res = await useApi('/file/upload', {
       method: 'POST',
       body: formData
     })
@@ -18,7 +18,7 @@ export const fileUpload = async (file: File) => {
 
 export const fileDelete = async (file_url: string) => {
   try {
-    return await useApi<any>('/file/remove', {
+    return await useApi('/file/remove', {
       method: 'DELETE',
       body: { file: file_url }
     })
@@ -32,7 +32,7 @@ export const fileUploadFinance = async (file: File) => {
   formData.append('file', file);
 
   try {
-    const res = await useApi<any>('/finance/pdam/file', {
+    const res = await useApi('/finance/pdam/file', {
       method: 'POST',
       body: formData
     })
@@ -50,7 +50,7 @@ export const fileUploadResidence = async (file: File) => {
   formData.append('file', file);
 
   try {
-    const res = await useApi<any>('/resident/excel/upload', {
+    const res = await useApi('/resident/excel/upload', {
       method: 'POST',
       body: formData
     })

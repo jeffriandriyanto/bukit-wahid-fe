@@ -70,7 +70,7 @@ const resetForm = () => {
 const getData = async () => {
   loading.value = true
   try {
-    const res = await useApi<any>('/residence', {
+    const res = await useApi('/residence', {
       params: {
         rt: selectedRT.value,
         type: selectedKavling.value,
@@ -82,8 +82,10 @@ const getData = async () => {
 
     if (res.status === 1) {
       dataHome.value = res.data
-      pagination.value = {
-        ...res.pagination
+      if (res.pagination) {
+        pagination.value = {
+          ...res.pagination
+        }
       }
     }
   } catch (err) {
@@ -105,7 +107,7 @@ const openEditModal = async (row: any) => {
       Object.assign(form, { ...row })
       await getDropdownFamilyHead()
       await getDropdownResidenceType(rt)
-      const res = await useApi<any>(`/residence/${row.id}`)
+      const res = await useApi(`/residence/${row.id}`)
 
       if (res.status === 1) {
         console.log(res.data)
@@ -133,7 +135,7 @@ const confirmDelete = async (id: string) => {
 
   try {
     loading.value = true
-    const res = await useApi<any>(`/residence/${id}`, { method: 'DELETE' })
+    const res = await useApi(`/residence/${id}`, { method: 'DELETE' })
     if (res.status === 1) {
       toast.add({ title: 'Data berhasil dihapus', color: 'success' })
       getData()
@@ -148,7 +150,7 @@ const confirmDelete = async (id: string) => {
 const saveData = async (event: FormSubmitEvent<HomeFormSchema>) => {
   try {
     loading.value = true
-    const res = await useApi<any>(`/residence/${editingId.value}`, {
+    const res = await useApi(`/residence/${editingId.value}`, {
       method: 'PUT',
       body: { ...event.data }
     })

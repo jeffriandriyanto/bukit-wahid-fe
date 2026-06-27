@@ -1,7 +1,7 @@
 <script setup lang="ts">
 // --- STATE ---
 const loading = ref(false)
-const recapData = ref([]) as any
+const recapData = ref<any[]>([])
 
 // Filter State (Default ke tahun dan bulan berjalan)
 const now = new Date()
@@ -46,7 +46,7 @@ const recapTable = [
 const getData = async () => {
   loading.value = true
   try {
-    const res = await useApi<any>('/finance/recap', {
+    const res = await useApi('/finance/recap', {
       params: {
         year: selectedYear.value,
         month: selectedMonth.value

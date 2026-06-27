@@ -2,7 +2,7 @@ import type { OrgNode, BEWrapper } from '~/types/org'
 
 export const useRwStructure = () => {
   const rwData = ref<OrgNode | null>(null)
-  const rwDataList = ref([])
+  const rwDataList = ref<any[]>([])
 
   const toast = useToast()
 
