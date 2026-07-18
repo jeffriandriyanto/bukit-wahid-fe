@@ -16,6 +16,7 @@ interface SiteConfig {
   hero_banner: string | null
   link_googleplay: string
   link_appstore: string
+  ipl_penalty: number
 }
 
 export const useConfigStore = defineStore('configStore', () => {
@@ -32,7 +33,8 @@ export const useConfigStore = defineStore('configStore', () => {
     kegiatan: [],
     hero_banner: "",
     link_googleplay: "",
-    link_appstore: ""
+    link_appstore: "",
+    ipl_penalty: 0
   })
 
   const isLoaded = ref(false)

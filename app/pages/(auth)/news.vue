@@ -381,7 +381,7 @@ definePageMeta({
                 <img
                   :src="form.image"
                   class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                >
+                />
                 <div
                   class="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100"
                 >
@@ -438,7 +438,7 @@ definePageMeta({
             :src="row.original.image"
             alt="Announcement Image"
             class="aspect-video w-32 object-cover rounded-md"
-          >
+          />
         </template>
         <template #for-cell="{ row }">
           <UBadge

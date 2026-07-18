@@ -71,6 +71,15 @@ watch([selectedYear, selectedMonth], () => {
 onMounted(() => {
   getData()
 })
+
+const handleExport = () => {
+  const config = useRuntimeConfig()
+  const params = new URLSearchParams()
+  params.set('month', selectedMonth.value.toString())
+  params.set('year', selectedYear.value.toString())
+  const url = `${config.public.baseUrl}finance/recap/export?${params.toString()}`
+  window.open(url, '_blank')
+}
 </script>
 
 <template>
@@ -104,7 +113,7 @@ onMounted(() => {
           color="neutral"
           variant="outline"
           icon="mdi:file-excel"
-          @click="() => {}"
+          @click="handleExport"
         >
           Export
         </UButton>

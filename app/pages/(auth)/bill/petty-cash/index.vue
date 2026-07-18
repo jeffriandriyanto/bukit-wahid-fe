@@ -166,7 +166,7 @@ const saveData = async (event: FormSubmitEvent<PettyFormSchema>) => {
     }
 
     let url = ''
-    const payload: any = {
+    let payload: any = {
       tag: event.data.tag,
       description: event.data.description,
       proof: finalImageUrl
@@ -182,7 +182,7 @@ const saveData = async (event: FormSubmitEvent<PettyFormSchema>) => {
       url = `/finance/petty-cash/out/revisi/${editingId.value}`
       payload.date = event.data.date
       // Logika nominal revisi disesuaikan dengan tipe transaksi awal
-      const _isCredit = parseFloat(form.amount) > 0 // sederhananya dikirim sesuai input
+      const isCredit = parseFloat(form.amount) > 0 // sederhananya dikirim sesuai input
       payload.credit = mode.value === 'revisi' ? event.data.amount : '0.00'
       payload.debit = '0.00'
     }
@@ -247,6 +247,15 @@ onMounted(() => {
   getOptions()
   getData()
 })
+
+const handleExport = () => {
+  const config = useRuntimeConfig()
+  const params = new URLSearchParams()
+  if (searchQuery.value) params.set('search', searchQuery.value)
+  if (selectedStatus.value) params.set('status', selectedStatus.value)
+  const url = `${config.public.baseUrl}finance/petty-cash/export${params.toString() ? '?' + params.toString() : ''}`
+  window.open(url, '_blank')
+}
 </script>
 
 <template>
@@ -290,6 +299,14 @@ onMounted(() => {
           @click="openAddModal('out')"
           >Cash Out</UButton
         >
+        <UButton
+          color="neutral"
+          variant="outline"
+          icon="mdi:file-excel"
+          @click="handleExport"
+        >
+          Export
+        </UButton>
       </div>
     </SharedHeaderBg>
 
@@ -445,7 +462,7 @@ onMounted(() => {
                 v-if="form.proof"
                 class="relative group aspect-video rounded-xl border-2 border-gray-100 overflow-hidden bg-gray-50"
               >
-                <img :src="form.proof" class="w-full h-full object-contain" >
+                <img :src="form.proof" class="w-full h-full object-contain" />
                 <div
                   class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                 >
@@ -563,7 +580,7 @@ onMounted(() => {
             <div
               class="max-w-md mx-auto md:mx-0 overflow-hidden rounded-2xl border shadow-sm"
             >
-              <img :src="selectedDetail.proof" class="w-full h-auto" >
+              <img :src="selectedDetail.proof" class="w-full h-auto" />
             </div>
           </div>
         </div>

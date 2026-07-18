@@ -25,7 +25,7 @@ const columns = [
   { accessorKey: 'regarding', header: 'Perihal' },
   { accessorKey: 'author', header: 'Pemohon' },
   { accessorKey: 'created_at', header: 'Tanggal Pengajuan' },
-  { accessorKey: 'attachment', header: 'Detail' }
+  { accessorKey: 'attachment', header: 'Lampiran' }
 ]
 
 /* =========================
@@ -56,7 +56,7 @@ const getData = async () => {
 
 const openAttachment = (url: string | null) => {
   if (!url) {
-    toast.add({ title: 'Detail tidak tersedia', color: 'error' })
+    toast.add({ title: 'Lampiran tidak tersedia', color: 'error' })
     return
   }
   window.open(url, '_blank')

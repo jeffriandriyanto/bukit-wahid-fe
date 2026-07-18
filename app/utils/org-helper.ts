@@ -11,6 +11,7 @@ export const buildOrgTree = (list: any[]): OrgNode | null => {
       title: item.name,
       name: item.incumbent?.name || 'Belum diisi',
       incumbent_id: item?.incumbent?.id || null,
+      avatar: item?.incumbent?.avatar || '',
       signature: item?.incumbent?.signature || '',
       children: []
     }

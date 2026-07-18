@@ -565,7 +565,7 @@ definePageMeta({
                   <img
                     :src="selectedAgenda.summary_file"
                     class="w-full h-auto max-h-80 object-contain bg-gray-50"
-                  >
+                  />
                 </template>
 
                 <template

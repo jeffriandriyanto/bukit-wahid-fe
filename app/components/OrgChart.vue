@@ -7,7 +7,8 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'nodeClick' | 'nameClick', node: any): void
+  (e: 'nodeClick', node: any): void
+  (e: 'nameClick', node: any): void
 }>()
 
 const borderColorClassMap: Record<AccentColor, string> = {
@@ -67,6 +68,12 @@ const getInitial = (name: string | null | undefined): string => {
           @click="handleNodeClick(nodeData)"
         >
           <UAvatar
+            v-if="nodeData?.avatar"
+            size="sm"
+            :src="nodeData.avatar"
+          />
+          <UAvatar
+            v-else
             size="sm"
             :text="getInitial(nodeData?.name)"
             :class="!getInitial(nodeData?.name) ? 'bg-gray-100' : ''"

@@ -7,6 +7,7 @@ export interface OrgNode {
   parent: string
   name: string
   incumbent_id?: string
+  avatar?: string
   signature?: string
   children?: OrgNode[]
 }

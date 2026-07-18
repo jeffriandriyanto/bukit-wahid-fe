@@ -320,7 +320,7 @@ onMounted(() => {
                 v-if="form.image"
                 class="relative group aspect-video max-w-sm overflow-hidden rounded-xl border"
               >
-                <img :src="form.image" class="h-full w-full object-cover" >
+                <img :src="form.image" class="h-full w-full object-cover" />
                 <div
                   class="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity"
                 >
@@ -364,7 +364,7 @@ onMounted(() => {
       >
         <template #image-cell="{ row }">
           <div class="w-20 h-12 overflow-hidden rounded-md border">
-            <img :src="row.original.image" class="w-full h-full object-cover" >
+            <img :src="row.original.image" class="w-full h-full object-cover" />
           </div>
         </template>
 

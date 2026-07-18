@@ -51,7 +51,7 @@ const {
       accept=".xlsx, .xls"
       class="hidden"
       @change="handleExcelChange"
-    >
+    />
 
     <SharedHeaderBg>
       <div
@@ -124,7 +124,7 @@ const {
             </UButton>
           </UDropdownMenu>
 
-          <div class="h-6 w-px bg-neutral-200 mx-1 hidden sm:block"/>
+          <div class="h-6 w-px bg-neutral-200 mx-1 hidden sm:block"></div>
 
           <UButton
             color="primary"
@@ -423,7 +423,7 @@ const {
                 <img
                   :src="form.avatar"
                   class="w-full h-full object-cover rounded-lg border"
-                >
+                />
                 <UButton
                   size="xs"
                   color="error"

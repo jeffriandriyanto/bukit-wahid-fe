@@ -136,6 +136,16 @@ onMounted(() => {
   getSummary()
   getData()
 })
+
+const handleExport = () => {
+  const config = useRuntimeConfig()
+  const params = new URLSearchParams()
+  params.set('month', selectedMonth.value.toString())
+  params.set('year', selectedYear.value.toString())
+  if (searchQuery.value) params.set('search', searchQuery.value)
+  const url = `${config.public.baseUrl}finance/journal/export?${params.toString()}`
+  window.open(url, '_blank')
+}
 </script>
 
 <template>
@@ -176,6 +186,14 @@ onMounted(() => {
             @keyup.enter="getData"
           />
         </div>
+        <UButton
+          color="neutral"
+          variant="outline"
+          icon="mdi:file-excel"
+          @click="handleExport"
+        >
+          Export
+        </UButton>
       </div>
     </SharedHeaderBg>
 
