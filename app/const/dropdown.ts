@@ -10,6 +10,7 @@ export const genderItems = [
 ]
 
 export const religionOptions = [
+  { key: null, label: 'Semua Agama' },
   { key: 'Islam', label: 'Islam' },
   { key: 'Kristen', label: 'Kristen' },
   { key: 'Katolik', label: 'Katolik' },
