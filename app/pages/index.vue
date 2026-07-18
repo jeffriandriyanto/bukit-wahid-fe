@@ -524,6 +524,7 @@ definePageMeta({
 
               <div class="flex flex-wrap gap-4 pt-4">
                 <UButton
+                  v-if="store.values.link_googleplay"
                   :to="store.values.link_googleplay"
                   target="_blank"
                   class="bg-neutral-950 hover:bg-black text-white px-8 py-4 rounded-2xl flex items-center gap-3 transition-all hover:scale-105 border-none shadow-xl"
@@ -534,6 +535,20 @@ definePageMeta({
                       Get it on
                     </p>
                     <p class="text-xl font-black tracking-tight">Google Play</p>
+                  </div>
+                </UButton>
+                <UButton
+                  v-if="store.values.link_appstore"
+                  :to="store.values.link_appstore"
+                  target="_blank"
+                  class="bg-neutral-950 hover:bg-black text-white px-8 py-4 rounded-2xl flex items-center gap-3 transition-all hover:scale-105 border-none shadow-xl"
+                >
+                  <UIcon name="i-simple-icons-apple" class="w-8 h-8" />
+                  <div class="text-left leading-none">
+                    <p class="text-[10px] uppercase font-bold opacity-60">
+                      Download on the
+                    </p>
+                    <p class="text-xl font-black tracking-tight">App Store</p>
                   </div>
                 </UButton>
               </div>

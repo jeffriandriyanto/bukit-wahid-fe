@@ -100,7 +100,7 @@ const fetchDetail = async () => {
   }
 }
 
-const saveBill = async (event: FormSubmitEvent<BillFormSchema>) => {
+const saveBill = async (_event: FormSubmitEvent<BillFormSchema>) => {
   try {
     loading.value = true
 

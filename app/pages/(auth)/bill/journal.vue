@@ -16,11 +16,38 @@ const selectedDetail = ref<any>(null)
 
 // Filter States
 const searchQuery = ref('')
+const now = new Date()
+const selectedMonth = ref(now.getMonth() + 1)
+const selectedYear = ref(now.getFullYear())
 const pagination = ref({
   current_page: 1,
   last_page: 1,
   per_page: 10,
   total: 0
+})
+
+const monthOptions = [
+  { label: 'Januari', value: 1 },
+  { label: 'Februari', value: 2 },
+  { label: 'Maret', value: 3 },
+  { label: 'April', value: 4 },
+  { label: 'Mei', value: 5 },
+  { label: 'Juni', value: 6 },
+  { label: 'Juli', value: 7 },
+  { label: 'Agustus', value: 8 },
+  { label: 'September', value: 9 },
+  { label: 'Oktober', value: 10 },
+  { label: 'November', value: 11 },
+  { label: 'Desember', value: 12 }
+]
+
+const yearOptions = computed(() => {
+  const currentYear = new Date().getFullYear()
+  const years = []
+  for (let i = currentYear; i >= 2023; i--) {
+    years.push({ label: i.toString(), value: i })
+  }
+  return years
 })
 
 // --- TABLE COLUMNS ---
@@ -55,7 +82,9 @@ const getData = async () => {
       params: {
         page: pagination.value.current_page,
         limit: pagination.value.per_page,
-        search: searchQuery.value
+        search: searchQuery.value,
+        month: selectedMonth.value,
+        year: selectedYear.value
       }
     })
 
@@ -98,6 +127,11 @@ watch(
   }
 )
 
+watch([selectedMonth, selectedYear], () => {
+  pagination.value.current_page = 1
+  getData()
+})
+
 onMounted(() => {
   getSummary()
   getData()
@@ -120,6 +154,20 @@ onMounted(() => {
       </div>
 
       <div class="flex items-center gap-3">
+        <USelect
+          v-model="selectedMonth"
+          :items="monthOptions"
+          label-key="label"
+          value-key="value"
+          class="w-40"
+        />
+        <USelect
+          v-model="selectedYear"
+          :items="yearOptions"
+          label-key="label"
+          value-key="value"
+          class="w-32"
+        />
         <div class="w-64">
           <UInput
             v-model="searchQuery"

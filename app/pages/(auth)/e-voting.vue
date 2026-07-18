@@ -5,7 +5,7 @@ import { fileUpload } from '~/services/files'
 definePageMeta({ middleware: ['auth'] })
 
 // --- COMPOSABLES & UTILS ---
-const { dropdownRT, getDropdownRT } = useApiDropdown()
+const { dropdownToOrganization, getDropdownToOrganization } = useApiDropdown()
 const toast = useToast()
 
 // --- STATE ---
@@ -226,7 +226,7 @@ const updateOption = async (opt: any) => {
       toast.add({ title: 'Opsi diperbarui', color: 'success' })
       getOptions(form.id) // Refresh data
     }
-  } catch (err) {
+  } catch {
     toast.add({ title: 'Gagal update opsi', color: 'error' })
   } finally {
     optionLoading.value = false
@@ -331,7 +331,7 @@ watch(
 )
 
 onMounted(() => {
-  getDropdownRT()
+  getDropdownToOrganization()
   getData()
 })
 </script>
@@ -489,7 +489,7 @@ onMounted(() => {
             <UFormField label="Target RT (For)" required>
               <USelect
                 v-model="form.rt"
-                :items="dropdownRT"
+                :items="dropdownToOrganization"
                 multiple
                 value-key="key"
                 label-key="label"

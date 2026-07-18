@@ -54,7 +54,7 @@ const updateData = async (event: any) => {
       toast.add({ title: 'Konfigurasi berhasil diperbarui', color: 'success' })
       getData() // Refresh data terbaru
     }
-  } catch (err: any) {
+  } catch {
     toast.add({ title: 'Gagal memperbarui konfigurasi', color: 'error' })
   } finally {
     loading.value = false
@@ -157,7 +157,7 @@ onMounted(() => getData())
         <template #header>
           <div class="flex items-center gap-2">
             <UIcon name="i-lucide-droplets" class="text-cyan-600 w-5 h-5" />
-            <span class="font-bold text-gray-700">Harga Air (PAM)</span>
+            <span class="font-bold text-gray-700">Harga Air (Artesis)</span>
           </div>
         </template>
 

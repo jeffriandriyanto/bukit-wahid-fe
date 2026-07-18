@@ -1,7 +1,16 @@
+export interface AuthUser {
+  id: string
+  username: string
+  person?: {
+    name?: string
+    avatar?: string
+  }
+}
+
 export const useAuth = () => {
   const token = useState<string | null>('auth_token', () => null)
   const refreshToken = useState<string | null>('refresh_token', () => null)
-  const user = useState<any | null>('auth_user', () => null)
+  const user = useState<AuthUser | null>('auth_user', () => null)
 
   const initAuth = async () => {
     if (!import.meta.client) return
@@ -30,7 +39,7 @@ export const useAuth = () => {
     refreshToken.value = ref
   }
 
-  const setUser = (userData: any) => {
+  const setUser = (userData: AuthUser) => {
     user.value = userData
   }
 

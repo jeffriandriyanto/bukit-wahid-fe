@@ -5,7 +5,7 @@ export const useRtStructure = () => {
   const rtOrgData = ref<any>(null)
   const selectedRT = ref<string | number | null>(null)
   const toast = useToast()
-  const { reveal: confirm } = useConfirmService()
+  const { reveal: _confirm } = useConfirmService()
 
   const fetchRt = async () => {
     if (!selectedRT.value) return

@@ -11,7 +11,7 @@ export const cleanEnvData = (rawData: any[]) => {
 
       // Jika isinya string array (seperti fasum/kegiatan), parse jadi array beneran
       if (value.startsWith('[') && value.endsWith(']')) {
-        try { value = JSON.parse(value) } catch (e) { }
+        try { value = JSON.parse(value) } catch { /* not a valid JSON array */ }
       }
     }
     result[key] = value

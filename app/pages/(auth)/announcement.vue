@@ -1,34 +1,17 @@
 <script setup lang="ts">
-import type { FormSubmitEvent } from '@nuxt/ui'
 import { z } from 'zod'
 import { format } from 'date-fns'
 import { fileUpload } from '~/services/files'
-import { perPageLimit } from '~/const/utils'
+
+definePageMeta({ middleware: ['auth'] })
 
 // Composables
 const { dropdownRT, getDropdownRT } = useApiDropdown()
-const { reveal: confirm } = useConfirmService()
-const toast = useToast()
 
-// State
-const selectedRT = ref()
-const isOpen = ref(false)
-const mode = ref<'add' | 'edit'>('add')
-const editingId = ref<string | null>(null)
-const imageFile = ref(null)
-const loading = ref(false)
-const announcements = ref<any[]>([])
+// Image state (page-specific)
+const imageFile = ref<File | null>(null)
 
-const pagination = ref({
-  current_page: 1,
-  last_page: 1,
-  per_page: 10,
-  total: 0
-})
-
-/* =========================
-  FORM & SCHEMA
-========================= */
+// Schema
 const AnnouncementFormSchema = z.object({
   title: z.string().min(1, 'Judul wajib diisi'),
   for: z.array(z.string()).default([]),
@@ -36,18 +19,60 @@ const AnnouncementFormSchema = z.object({
   image: z.string().nullable().optional()
 })
 
-type AnnouncementFormSchema = z.infer<typeof AnnouncementFormSchema>
+type AnnouncementForm = z.infer<typeof AnnouncementFormSchema>
 
-const form = reactive({
-  title: '',
-  for: [],
-  body: '',
-  image: ''
+// CRUD Composable
+const {
+  loading, data: announcements, pagination, isOpen, mode, form,
+  perPageLimit, getData, openAddModal, openEditModal, saveData, confirmDelete
+} = useCrudTable<AnnouncementForm>({
+  endpoint: '/announcement',
+  defaultForm: () => ({ title: '', for: [], body: '', image: '' }),
+  displayField: 'title',
+  extraParams: () => ({ rt: selectedRT.value }),
+  transformPayload: async (data, _mode) => {
+    let finalImageUrl = data.image
+    if (imageFile.value) {
+      const uploadRes = await fileUpload(imageFile.value)
+      if (uploadRes) finalImageUrl = uploadRes
+      else throw new Error('Gagal mengunggah gambar')
+    }
+    return { ...data, image: finalImageUrl }
+  },
+  transformRowToForm: (row) => ({
+    title: row.title,
+    for: Array.isArray(row.for) ? row.for : [],
+    body: row.body,
+    image: row.image
+  }),
+  confirmLabels: {
+    deleteTitle: 'Hapus Pengumuman?',
+    successDelete: 'Pengumuman berhasil dihapus'
+  }
 })
 
-/* =========================
-  COLUMNS
-========================= */
+// Filter
+const selectedRT = ref()
+watch(selectedRT, () => {
+  pagination.value.current_page = 1
+  getData()
+})
+
+// Image helpers
+const clearImage = () => {
+  if (form.image?.startsWith('blob:')) URL.revokeObjectURL(form.image)
+  form.image = ''
+  imageFile.value = null
+}
+
+watch(imageFile, (newFile) => {
+  if (newFile) {
+    if (form.image?.startsWith('blob:')) URL.revokeObjectURL(form.image)
+    form.image = URL.createObjectURL(newFile)
+  }
+})
+
+// Columns
 const columns = [
   { accessorKey: 'title', header: 'Judul' },
   { accessorKey: 'created_at', header: 'Tanggal Dibuat' },
@@ -56,156 +81,10 @@ const columns = [
   { accessorKey: 'action', header: 'Aksi' }
 ]
 
-/* =========================
-  METHODS
-========================= */
-const getData = async () => {
-  loading.value = true
-  try {
-    const res = await useApi('/announcement', {
-      params: {
-        rt: selectedRT.value,
-        page: pagination.value.current_page,
-        limit: pagination.value.per_page
-      },
-      method: 'GET'
-    })
-
-    if (res.status === 1) {
-      announcements.value = res.data
-      if (res.pagination) { pagination.value = { ...res.pagination } }
-    }
-  } catch (err) {
-    console.error('Fetch error:', err)
-  } finally {
-    loading.value = false
-  }
-}
-
-const openAddModal = () => {
-  resetForm()
-  mode.value = 'add'
-  isOpen.value = true
-}
-
-const openEditModal = (row: any) => {
-  resetForm()
-  mode.value = 'edit'
-  editingId.value = row.id
-
-  Object.assign(form, {
-    title: row.title,
-    for: Array.isArray(row.for) ? row.for : [],
-    body: row.body,
-    image: row.image
-  })
-  isOpen.value = true
-}
-
-const saveData = async (event: FormSubmitEvent<AnnouncementFormSchema>) => {
-  try {
-    loading.value = true
-
-    // Image Upload Logic
-    let finalImageUrl = form.image
-    if (imageFile.value) {
-      const uploadRes = await fileUpload(imageFile.value)
-      if (uploadRes) finalImageUrl = uploadRes
-      else throw new Error('Gagal mengunggah gambar')
-    }
-
-    const payload = {
-      ...event.data,
-      image: finalImageUrl
-    }
-
-    const url =
-      mode.value === 'add'
-        ? '/announcement'
-        : `/announcement/${editingId.value}`
-    const method = mode.value === 'add' ? 'POST' : 'PUT'
-
-    const res = await useApi(url, { method, body: payload })
-
-    if (res.status === 1) {
-      toast.add({
-        title: `Berhasil ${
-          mode.value === 'add' ? 'menambah' : 'mengubah'
-        } pengumuman`,
-        color: 'success'
-      })
-      isOpen.value = false
-      getData()
-    }
-  } catch (err: any) {
-    toast.add({
-      title: err?.message || 'Terjadi kesalahan server',
-      color: 'error'
-    })
-  } finally {
-    loading.value = false
-  }
-}
-
-const confirmDelete = async (row: any) => {
-  const ok = await confirm({
-    title: 'Hapus Pengumuman?',
-    description: `Apakah Anda yakin ingin menghapus "${row.title}"?`,
-    confirmLabel: 'Hapus',
-    cancelLabel: 'Batal',
-    color: 'error'
-  })
-
-  if (!ok) return
-
-  try {
-    loading.value = true
-    const res = await useApi(`/announcement/${row.id}`, {
-      method: 'DELETE'
-    })
-    if (res.status === 1) {
-      toast.add({ title: 'Pengumuman berhasil dihapus', color: 'success' })
-      getData()
-    }
-  } catch (err: any) {
-    toast.add({ title: err?.message || 'Gagal menghapus data', color: 'error' })
-  } finally {
-    loading.value = false
-  }
-}
-
-const resetForm = () => {
-  form.title = ''
-  form.for = []
-  form.body = ''
-  clearImage()
-}
-
-const clearImage = () => {
-  if (form.image?.startsWith('blob:')) URL.revokeObjectURL(form.image)
-  form.image = ''
-  imageFile.value = null
-}
-
-// Watchers
-watch(imageFile, (newFile) => {
-  if (newFile) {
-    if (form.image?.startsWith('blob:')) URL.revokeObjectURL(form.image)
-    form.image = URL.createObjectURL(newFile)
-  }
-})
-
-watch([selectedRT, () => pagination.value.per_page], () => {
-  pagination.value.current_page = 1
-  getData()
-})
-
 onMounted(() => {
   getDropdownRT()
   getData()
 })
-
-definePageMeta({ middleware: ['auth'] })
 </script>
 
 <template>

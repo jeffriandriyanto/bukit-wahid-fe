@@ -15,6 +15,7 @@ const { reveal: confirm } = useConfirmService()
 const router = useRouter()
 
 const loading = ref(false)
+const currentStep = ref(1)
 
 const addressOptions = ref<any[]>([])
 
@@ -170,6 +171,11 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
 // =========================
 // HELPERS
 // =========================
+const goToForm = () => {
+  currentStep.value = 2
+  window.scrollTo({ top: 0, behavior: 'smooth' })
+}
+
 const enableSpouse = () => {
   state.spouse = {
     ...createResident(),
@@ -267,12 +273,115 @@ onMounted(() => {
         </header>
 
         <div class="p-5">
-          <div class="mb-8">
-            <p class="text-slate-500 text-sm">
-              Selamat datang! Mohon lengkapi data kependudukan Anda untuk
-              pendataan wilayah.
-            </p>
+          <!-- STEP 1: DISCLAIMER & CONSENT -->
+          <div v-if="currentStep === 1" class="space-y-6">
+            <div class="mb-6">
+              <h2 class="text-lg font-bold text-slate-800 mb-1">
+                Kebijakan Privasi Pengumpulan Data Warga
+              </h2>
+              <p class="text-xs text-slate-500">
+                Bukit Wahid Regency RW 11 Manyaran, Semarang
+              </p>
+            </div>
+
+            <div class="bg-white rounded-2xl p-5 border border-slate-100 shadow-sm space-y-5 text-sm text-slate-700 leading-relaxed">
+              <p class="pb-2">
+                Pengurus RW berkomitmen untuk menjaga keamanan dan kerahasiaan data pribadi warga yang dikumpulkan melalui formulir ini. Data yang diminta digunakan semata-mata untuk kepentingan administrasi dan pelayanan lingkungan RW, dan tidak akan digunakan di luar tujuan tersebut.
+              </p>
+
+              <div>
+                <h3 class="font-bold text-slate-800 text-xs uppercase tracking-wider mb-2">1. Jenis Data yang Dikumpulkan</h3>
+                <ul class="list-disc pl-5 space-y-1 text-slate-600">
+                  <li>Nama lengkap</li>
+                  <li>Nomor Induk Kependudukan (NIK)</li>
+                  <li>Nomor telepon</li>
+                  <li>Alamat email</li>
+                  <li>Alamat tempat tinggal</li>
+                  <li>Famili lain dalam KK</li>
+                  <li>Informasi Asisten Rumah Tangga</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 class="font-bold text-slate-800 text-xs uppercase tracking-wider mb-2">2. Tujuan Pengumpulan Data</h3>
+                <ul class="list-disc pl-5 space-y-1 text-slate-600">
+                  <li>Pendataan resmi warga RW</li>
+                  <li>Keperluan administrasi dan pelayanan lingkungan</li>
+                  <li>Penyampaian informasi, pengumuman, dan agenda RW</li>
+                  <li>Mendukung penggunaan aplikasi dan layanan digital RW</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 class="font-bold text-slate-800 text-xs uppercase tracking-wider mb-2">3. Pengelolaan dan Akses Data</h3>
+                <ul class="list-disc pl-5 space-y-1 text-slate-600">
+                  <li>Seluruh data dikelola langsung oleh Pengurus RW, bukan oleh pihak luar.</li>
+                  <li>Akses data dibatasi hanya kepada pengurus yang berwenang.</li>
+                  <li>Data disimpan secara digital dengan pengamanan yang wajar dan bertanggung jawab.</li>
+                  <li>Data tidak diperjualbelikan, tidak dibagikan, dan tidak disebarkan kepada pihak mana pun tanpa persetujuan warga.</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 class="font-bold text-slate-800 text-xs uppercase tracking-wider mb-2">4. Keamanan Data Pribadi</h3>
+                <p class="text-slate-600 mb-2">
+                  Pengurus RW memahami bahwa data seperti NIK, nomor telepon, dan email merupakan data pribadi yang dilindungi oleh peraturan perundang-undangan di Indonesia, termasuk ketentuan perlindungan data pribadi.
+                </p>
+                <p class="text-slate-600 mb-1">Untuk itu, Pengurus RW berupaya:</p>
+                <ul class="list-disc pl-5 space-y-1 text-slate-600">
+                  <li>Menjaga kerahasiaan data warga</li>
+                  <li>Menghindari penyalahgunaan data</li>
+                  <li>Menggunakan data hanya sesuai tujuan yang telah dijelaskan</li>
+                </ul>
+              </div>
+
+              <div>
+                <h3 class="font-bold text-slate-800 text-xs uppercase tracking-wider mb-2">5. Hak Warga</h3>
+                <p class="text-slate-600 mb-1">Warga berhak untuk:</p>
+                <ul class="list-disc pl-5 space-y-1 text-slate-600">
+                  <li>Mengetahui tujuan penggunaan data pribadi</li>
+                  <li>Meminta perbaikan data jika terdapat kesalahan</li>
+                  <li>Menanyakan pengelolaan data kepada Pengurus RW</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="bg-primary-50/50 rounded-2xl p-5 border border-primary-100 text-sm text-slate-700 leading-relaxed">
+              <p class="font-medium">
+                Dengan mengisi formulir ini, warga menyatakan telah membaca dan memahami kebijakan privasi ini, serta memberikan persetujuan kepada Pengurus RW untuk mengelola data sesuai dengan tujuan yang telah dijelaskan.
+              </p>
+            </div>
+
+            <div class="flex flex-col gap-3 pt-2 pb-4">
+              <UButton
+                size="xl"
+                block
+                class="rounded-2xl py-4 font-bold shadow-lg shadow-primary-200"
+                @click="goToForm"
+              >
+                Setuju, dan lanjutkan isi formulir
+              </UButton>
+              <UButton
+                size="xl"
+                variant="ghost"
+                color="neutral"
+                block
+                class="rounded-2xl py-4 font-medium"
+                @click="router.push('/')"
+              >
+                Tidak
+              </UButton>
+            </div>
           </div>
+
+          <!-- STEP 2: FORM REGISTRASI -->
+          <div v-if="currentStep === 2">
+            <div class="mb-8">
+              <p class="text-slate-500 text-sm">
+                Selamat datang! Mohon lengkapi data kependudukan Anda untuk
+                pendataan wilayah.
+              </p>
+            </div>
 
           <UForm
             :schema="schema"
@@ -619,7 +728,7 @@ onMounted(() => {
                 <h2
                   class="font-bold text-slate-800 uppercase tracking-wider text-xs"
                 >
-                  Anggota Lain (ART / Lainnya)
+                  Anggota Lain (Saudara / ART / Lainnya)
                 </h2>
               </div>
 
@@ -744,6 +853,7 @@ onMounted(() => {
               </div>
             </div>
           </UForm>
+          </div>
         </div>
       </div>
     </div>

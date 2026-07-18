@@ -7,8 +7,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  (e: 'nodeClick', node: any): void
-  (e: 'nameClick', node: any): void
+  (e: 'nodeClick' | 'nameClick', node: any): void
 }>()
 
 const borderColorClassMap: Record<AccentColor, string> = {

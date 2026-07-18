@@ -15,6 +15,7 @@ interface SiteConfig {
   kegiatan: string[]
   hero_banner: string | null
   link_googleplay: string
+  link_appstore: string
 }
 
 export const useConfigStore = defineStore('configStore', () => {
@@ -30,7 +31,8 @@ export const useConfigStore = defineStore('configStore', () => {
     fasum: [],
     kegiatan: [],
     hero_banner: "",
-    link_googleplay: ""
+    link_googleplay: "",
+    link_appstore: ""
   })
 
   const isLoaded = ref(false)
@@ -50,7 +52,7 @@ export const useConfigStore = defineStore('configStore', () => {
         if (value.startsWith('[') && value.endsWith(']')) {
           try {
             value = JSON.parse(value)
-          } catch (e) {
+          } catch {
             value = []
           }
         }

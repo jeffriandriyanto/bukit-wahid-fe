@@ -25,7 +25,8 @@ const WebsiteConfigSchema = z.object({
   kegiatan: z.array(z.string()).default([]),
   // New Env Fields
   hero_banner: z.string().nullable().optional(),
-  link_googleplay: z.string().nullable().optional()
+  link_googleplay: z.string().nullable().optional(),
+  link_appstore: z.string().nullable().optional()
 })
 
 type WebsiteConfigSchema = z.infer<typeof WebsiteConfigSchema>
@@ -42,7 +43,8 @@ const form = reactive<WebsiteConfigSchema>({
   fasum: [],
   kegiatan: [],
   hero_banner: '',
-  link_googleplay: ''
+  link_googleplay: '',
+  link_appstore: ''
 })
 
 /* =========================
@@ -72,7 +74,7 @@ const transformToForm = (apiData: any[]) => {
           const sanitized = typeof value === 'string' ? unescape(value) : value
           form[key as keyof WebsiteConfigSchema] =
             typeof sanitized === 'string' ? JSON.parse(sanitized) : sanitized
-        } catch (e) {
+        } catch {
           form[key as keyof WebsiteConfigSchema] = []
         }
       } else {
@@ -105,7 +107,7 @@ const getData = async () => {
   }
 }
 
-const updateData = async (event: any) => {
+const updateData = async (_event: any) => {
   loading.value = true
 
   try {
@@ -220,6 +222,13 @@ onMounted(() => getData())
                 v-model="form.link_googleplay"
                 icon="i-simple-icons-googleplay"
                 placeholder="https://play.google.com/..."
+              />
+            </UFormField>
+            <UFormField name="link_appstore" label="Link Apple App Store">
+              <UInput
+                v-model="form.link_appstore"
+                icon="i-simple-icons-apple"
+                placeholder="https://apps.apple.com/..."
               />
             </UFormField>
           </div>

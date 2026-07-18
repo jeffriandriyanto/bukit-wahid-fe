@@ -182,7 +182,7 @@ const saveData = async (event: FormSubmitEvent<PettyFormSchema>) => {
       url = `/finance/petty-cash/out/revisi/${editingId.value}`
       payload.date = event.data.date
       // Logika nominal revisi disesuaikan dengan tipe transaksi awal
-      const isCredit = parseFloat(form.amount) > 0 // sederhananya dikirim sesuai input
+      const _isCredit = parseFloat(form.amount) > 0 // sederhananya dikirim sesuai input
       payload.credit = mode.value === 'revisi' ? event.data.amount : '0.00'
       payload.debit = '0.00'
     }
