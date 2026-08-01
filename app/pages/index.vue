@@ -214,7 +214,7 @@ definePageMeta({
     </section>
 
     <section
-      class="py-32 bg-white relative intersect-once intersect:animate-fade-in-up opacity-0"
+      class="py-32 bg-white relative intersect-once intersect:animate-fade-in-up"
     >
       <UContainer>
         <div class="grid md:grid-cols-12 gap-16 items-center">
@@ -289,7 +289,7 @@ definePageMeta({
     </section>
 
     <section
-      class="bg-neutral-50 py-32 relative overflow-hidden intersect-once intersect:animate-fade-in-up opacity-0"
+      class="bg-neutral-50 py-32 relative overflow-hidden intersect-once intersect:animate-fade-in-up"
     >
       <div class="absolute inset-0 opacity-[0.02] z-0">
         <svg width="100%" height="100%">
@@ -375,7 +375,7 @@ definePageMeta({
     </section>
 
     <section
-      class="py-32 bg-white relative intersect-once intersect:animate-fade-in-up opacity-0"
+      class="py-32 bg-white relative intersect-once intersect:animate-fade-in-up"
     >
       <div
         class="absolute bottom-0 right-0 w-96 h-96 bg-primary-50 rounded-full blur-[120px] opacity-70 translate-x-1/3 translate-y-1/3"
@@ -584,7 +584,7 @@ definePageMeta({
     </section>
 
     <section
-      class="py-32 bg-neutral-950 text-white relative overflow-hidden intersect-once intersect:animate-fade-in-up opacity-0"
+      class="py-32 bg-neutral-950 text-white relative overflow-hidden intersect-once intersect:animate-fade-in-up"
     >
       <UContainer class="relative z-10">
         <div

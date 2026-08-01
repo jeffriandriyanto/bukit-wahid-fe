@@ -15,6 +15,7 @@ const {
 // ===== 1. SCHEMAS =====
 
 const HomeFormSchema = z.object({
+  owner_id: z.string().min(1, 'Pemilik wajib diisi'),
   pic: z.string().min(1, 'Penanggung Jawab wajib diisi'),
   rt: z.string().min(1, 'RT wajib diisi'),
   type: z.string().min(1, 'Tipe Kavling wajib diisi'),
@@ -46,6 +47,7 @@ const pagination = ref({
 })
 
 const form = reactive<HomeFormSchema>({
+  owner_id: '',
   pic: '',
   rt: '',
   type: '',
@@ -58,6 +60,7 @@ const form = reactive<HomeFormSchema>({
 const resetForm = () => {
   editingId.value = null
   Object.assign(form, {
+    owner_id: '',
     pic: '',
     rt: '',
     type: '',
@@ -192,6 +195,7 @@ onMounted(() => {
 })
 
 const columnsFamilyTable = [
+  { accessorKey: 'owner.name', header: 'Pemilik Rumah' },
   { accessorKey: 'head', header: 'Penanggung Jawab' },
   { accessorKey: 'type', header: 'Tipe' },
   { accessorKey: 'kavling', header: 'Kavling' },
@@ -255,6 +259,9 @@ const columnsFamilyTable = [
         :columns="columnsFamilyTable"
         :loading="loading"
       >
+        <template #owner_name-cell="{ row }">
+          {{ row.original.owner?.name || 'Pemilik Belum diisi' }}
+        </template>
         <template #head-cell="{ row }">
           {{ row.original.pic_profile?.name || 'PIC Belum diisi' }}
         </template>
@@ -335,10 +342,25 @@ const columnsFamilyTable = [
             </UFormField>
 
             <UFormField
+              name="owner_id"
+              label="Pilih Nama Pemilik"
+              required
+              class="col-span-5"
+            >
+              <USelect
+                v-model="form.owner_id"
+                :items="dropdownFamilyHead"
+                value-key="key"
+                label-key="label"
+                placeholder="Pilih Nama Pemilik"
+              />
+            </UFormField>
+
+            <UFormField
               name="pic"
               label="Pilih Penanggung Jawab"
               required
-              class="col-span-10"
+              class="col-span-5"
             >
               <USelect
                 v-model="form.pic"

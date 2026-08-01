@@ -112,6 +112,7 @@ const editingId = ref<string | null>(null)
 
 const loading = ref(false)
 const loadingEdit = ref(false)
+const loadingToggle = ref(false)
 
 const selectedRT = ref()
 const currentStep = ref(0)
@@ -176,6 +177,7 @@ const form = reactive<FamilyCardFormSchema>({
 const columnsFamilyTable = [
   { accessorKey: 'head', header: 'Kepala Keluarga' },
   { accessorKey: 'total', header: 'Total Anggota' },
+  { id: 'status', header: 'Status' },
   { accessorKey: 'spouse', header: 'Pasangan' },
   { id: 'action', header: 'Aksi' }
 ]
@@ -617,6 +619,42 @@ const confirmDelete = async (id: string) => {
   }
 }
 
+const toggleFamily = async (row: any) => {
+  const isActive = row.is_active
+  const label = isActive ? 'Nonaktifkan' : 'Aktifkan'
+  const desc = isActive ? 'dinonaktifkan' : 'diaktifkan'
+
+  const ok = await confirm({
+    title: `${label} Keluarga?`,
+    description: `Keluarga dengan kepala ${row.head} akan ${desc}.`,
+    confirmLabel: `Ya, ${label}`,
+    cancelLabel: 'Batal',
+    color: isActive ? 'error' : 'primary'
+  })
+  if (!ok) return
+
+  loadingToggle.value = true
+  try {
+    const res = await useApi(`/familly/toggle/${row.id}`, {
+      method: 'PATCH'
+    })
+    if (res.status === 1) {
+      toast.add({
+        title: `Keluarga berhasil di${desc}`,
+        color: 'success'
+      })
+      getData()
+    }
+  } catch (err: any) {
+    toast.add({
+      title: err?.data?.message || err?.message || `Gagal ${desc.toLowerCase()} keluarga`,
+      color: 'error'
+    })
+  } finally {
+    loadingToggle.value = false
+  }
+}
+
 // =========================
 // WATCH
 // =========================
@@ -676,6 +714,17 @@ onMounted(() => {
         :columns="columnsFamilyTable"
         :loading="loading"
       >
+        <template #status-cell="{ row }">
+          <UButton
+            :color="row.original.is_active ? 'success' : 'error'"
+            variant="soft"
+            size="xs"
+            :loading="loadingToggle"
+            @click="toggleFamily(row.original)"
+          >
+            {{ row.original.is_active ? 'Aktif' : 'Nonaktif' }}
+          </UButton>
+        </template>
         <template #action-cell="{ row }">
           <div class="flex gap-1">
             <UButton
