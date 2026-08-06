@@ -67,11 +67,7 @@ const getInitial = (name: string | null | undefined): string => {
           :class="borderColorClassMap[accentColor ?? 'primary']"
           @click="handleNodeClick(nodeData)"
         >
-          <UAvatar
-            v-if="nodeData?.avatar"
-            size="sm"
-            :src="nodeData.avatar"
-          />
+          <UAvatar v-if="nodeData?.avatar" size="sm" :src="nodeData.avatar" />
           <UAvatar
             v-else
             size="sm"
