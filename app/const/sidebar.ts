@@ -77,6 +77,11 @@ export const sidebarItems: SidebarItem[] = [
         to: '/bill/recapitulation'
       },
       {
+        label: 'Pembayaran',
+        icon: 'i-lucide-receipt-text',
+        to: '/bill/payment'
+      },
+      {
         label: 'Pembayaran Tagihan Air',
         icon: 'i-lucide-droplets',
         isHide: true,
