@@ -26,6 +26,8 @@ const {
   form,
   passwordForm,
   getAge,
+  getStatusActive,
+  getCategory,
   clearFile,
   getData,
   openAddModal,
@@ -276,13 +278,27 @@ const {
           <div>{{ row.original.blood_type || '-' }}</div>
         </template>
 
-        <template #type-cell="{ row }">
-          <div
-            class="flex items-center gap-1.5 capitalize text-xs font-medium text-gray-600"
+        <template #category-cell="{ row }">
+          <UBadge
+            v-if="getCategory(row.original)"
+            variant="subtle"
+            color="neutral"
+            size="sm"
           >
-            <div class="w-1.5 h-1.5 rounded-full bg-green-500" />
-            {{ row.original.type }}
-          </div>
+            {{ getCategory(row.original) }}
+          </UBadge>
+          <span v-else class="text-gray-300 italic">-</span>
+        </template>
+
+        <template #status-cell="{ row }">
+          <UBadge
+            :color="getStatusActive(row.original) ? 'success' : 'error'"
+            variant="soft"
+            size="sm"
+            class="font-bold"
+          >
+            {{ getStatusActive(row.original) ? 'Aktif' : 'Nonaktif' }}
+          </UBadge>
         </template>
 
         <template #action-cell="{ row }">

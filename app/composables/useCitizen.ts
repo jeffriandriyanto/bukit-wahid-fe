@@ -50,7 +50,8 @@ const columnsFamilyTable = [
   { accessorKey: 'ttl', header: 'Tempat, Tgl Lahir' },
   { accessorKey: 'gender', header: 'L/P' },
   { accessorKey: 'blood_type', header: 'Gol. Darah', class: 'text-center' },
-  { accessorKey: 'type', header: 'Status' },
+  { accessorKey: 'category', header: 'Kategori' },
+  { accessorKey: 'status', header: 'Status' },
   { id: 'action', header: 'Aksi', class: 'text-right' }
 ]
 
@@ -148,6 +149,11 @@ export const useCitizen = () => {
     if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--
     return age
   }
+
+  const getStatusActive = (row: any) => !!row?.familly_member?.is_active
+
+  const getCategory = (row: any) =>
+    row?.familly_member?.familly?.category ?? row?.category ?? null
 
   const resetForm = () => {
     editingId.value = null
@@ -473,6 +479,8 @@ export const useCitizen = () => {
     passwordForm,
     // Helpers
     getAge,
+    getStatusActive,
+    getCategory,
     clearFile,
     // Data Actions
     getData,
