@@ -45,19 +45,28 @@ export const useAuth = () => {
   }
 
   const refreshSession = async () => {
-    try {
-      const response = await $fetch<any>('/api/auth/refresh')
+    const maxRetries = 2
 
-      if (response?.data?.auth?.access_token) {
-        token.value = response.data.auth.access_token
-        refreshToken.value = response.data.auth.refresh.token
-        user.value = response.data.user
-        return response.data.auth.access_token
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        const response = await $fetch<any>('/api/auth/refresh')
+
+        if (response?.data?.auth?.access_token) {
+          token.value = response.data.auth.access_token
+          refreshToken.value = response.data.auth.refresh.token
+          user.value = response.data.user
+          return response.data.auth.access_token
+        }
+      } catch (err: any) {
+        const isTimeout = err?.message?.includes('timeout') || err?.statusCode === 504
+        if (isTimeout && attempt < maxRetries) {
+          await new Promise((resolve) => setTimeout(resolve, 1000))
+          continue
+        }
+        clearClientAuth()
+        navigateTo('/login')
+        return null
       }
-    } catch {
-      clearClientAuth()
-      navigateTo('/login')
-      return null
     }
 
     return null

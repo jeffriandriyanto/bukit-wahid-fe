@@ -7,13 +7,25 @@ export default defineEventHandler(async (event) => {
 
   const config = useRuntimeConfig()
 
-  const response = await $fetch('/refresh-token', {
-    baseURL: config.public.baseUrl,
-    method: 'PUT',
-    headers: {
-      Authorization: 'Bearer ' + refreshToken
-    }
-  })
+  let response
+  try {
+    response = await $fetch('/refresh-token', {
+      baseURL: config.public.baseUrl,
+      method: 'PUT',
+      headers: {
+        Authorization: 'Bearer ' + refreshToken
+      },
+      timeout: 15000,
+      retry: 2,
+      retryDelay: 1000
+    })
+  } catch (err: any) {
+    const isTimeout = err?.cause?.code === 'UND_ERR_CONNECT_TIMEOUT' || err?.message?.includes('timeout')
+    throw createError({
+      statusCode: isTimeout ? 504 : 502,
+      message: isTimeout ? 'API server timeout, coba lagi nanti' : 'Gagal menghubungi API server'
+    })
+  }
 
   if (response?.data?.auth?.refresh?.token) {
     setCookie(event, 'refresh_token', response.data.auth.refresh.token, {

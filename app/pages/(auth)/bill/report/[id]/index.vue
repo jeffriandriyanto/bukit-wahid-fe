@@ -407,7 +407,12 @@ onMounted(() => {
         </template>
 
         <template #bill_date-cell="{ row }">
-          {{ formatDate(row.original.bill_date) }}
+          <div class="flex flex-col">
+            <span>{{ formatDate(row.original.bill_date) }}</span>
+            <span v-if="row.original.description" class="text-xs text-gray-400">
+              {{ row.original.description }}
+            </span>
+          </div>
         </template>
 
         <template #amount-cell="{ row }">

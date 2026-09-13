@@ -5,7 +5,13 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
 
   if (!token.value) {
     if (refreshToken.value) {
-      const ok = await refreshSession()
+      let ok = await refreshSession()
+
+      if (!ok) {
+        await new Promise((resolve) => setTimeout(resolve, 1000))
+        ok = await refreshSession()
+      }
+
       if (ok) return
     }
 
