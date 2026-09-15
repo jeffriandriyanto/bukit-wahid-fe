@@ -8,6 +8,7 @@ const initialForm = ref<string>('')
 
 // Ref untuk menampung file banner mentah
 const bannerFile = ref<File | null>(null)
+const docsFile = ref<File | null>(null)
 
 /* =========================
   SCHEMA & STATE
@@ -26,7 +27,8 @@ const WebsiteConfigSchema = z.object({
   // New Env Fields
   hero_banner: z.string().nullable().optional(),
   link_googleplay: z.string().nullable().optional(),
-  link_appstore: z.string().nullable().optional()
+  link_appstore: z.string().nullable().optional(),
+  docs_terms: z.string().nullable().optional()
 })
 
 type WebsiteConfigSchema = z.infer<typeof WebsiteConfigSchema>
@@ -44,7 +46,8 @@ const form = reactive<WebsiteConfigSchema>({
   kegiatan: [],
   hero_banner: '',
   link_googleplay: '',
-  link_appstore: ''
+  link_appstore: '',
+  docs_terms: ''
 })
 
 /* =========================
@@ -119,6 +122,14 @@ const updateData = async (_event: any) => {
       }
     }
 
+    // 2. Handle Upload Docs jika ada file baru dipilih
+    if (docsFile.value) {
+      const uploadedUrl = await fileUpload(docsFile.value)
+      if (uploadedUrl) {
+        form.docs_terms = uploadedUrl
+      }
+    }
+
     const currentData = form // Gunakan data form terbaru setelah upload
     const original = initialForm.value ? JSON.parse(initialForm.value) : {}
 
@@ -131,7 +142,7 @@ const updateData = async (_event: any) => {
       }
     )
 
-    if (changedEntries.length === 0 && !bannerFile.value) {
+    if (changedEntries.length === 0 && !bannerFile.value && !docsFile.value) {
       toast.add({ title: 'Tidak ada perubahan', color: 'neutral' })
       loading.value = false
       return
@@ -149,6 +160,7 @@ const updateData = async (_event: any) => {
 
     toast.add({ title: 'Konfigurasi berhasil diperbarui', color: 'success' })
     bannerFile.value = null // Reset file input
+    docsFile.value = null // Reset file input
     await getData()
   } catch (err: any) {
     toast.add({
@@ -232,6 +244,38 @@ onMounted(() => getData())
               />
             </UFormField>
           </div>
+        </div>
+      </UCard>
+
+      <UCard>
+        <template #header>
+          <div class="flex items-center gap-2 font-bold">
+            <UIcon name="i-lucide-file-text" class="text-primary-500" />
+            Dokumen Organisasi
+          </div>
+        </template>
+        <UFormField
+          name="docs_terms"
+          label="Buku Tata Tertib"
+          help="Upload file PDF buku tata tertib. Link download akan tersedia di mobile app."
+        >
+          <UFileUpload
+            v-model="docsFile"
+            accept=".pdf,application/pdf"
+            icon="i-lucide-file-up"
+            label="Pilih File PDF"
+          />
+        </UFormField>
+        <div v-if="form.docs_terms && !docsFile" class="mt-3">
+          <UButton
+            :to="form.docs_terms"
+            target="_blank"
+            variant="soft"
+            icon="i-lucide-download"
+            size="sm"
+          >
+            Download Dokumen Saat Ini
+          </UButton>
         </div>
       </UCard>
 
