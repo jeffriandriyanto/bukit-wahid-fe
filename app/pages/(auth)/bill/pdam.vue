@@ -104,7 +104,7 @@ const handleExcelChange = async (event: Event) => {
   try {
     loadingExcel.value = true
     const res = await fileUploadFinance(file)
-    if (res.status === 1) {
+    if (res?.status === 1) {
       toast.add({ title: 'Data berhasil diunggah', color: 'success' })
       getData()
     }

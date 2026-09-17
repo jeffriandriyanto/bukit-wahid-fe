@@ -37,7 +37,7 @@ export const fileUploadFinance = async (file: File) => {
       body: formData
     })
 
-    if (res.status === 1) return res.data;
+    if (res.status === 1) return res;
     return null;
   } catch (e) {
     console.error('Upload Error:', e);
@@ -55,7 +55,7 @@ export const fileUploadResidence = async (file: File) => {
       body: formData
     })
 
-    if (res.status === 1) return res.data;
+    if (res.status === 1) return res;
     return null;
   } catch (e) {
     console.error('Upload Error:', e);
