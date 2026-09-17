@@ -155,8 +155,8 @@ const deletePosition = async () => {
   }
 }
 
-const handleOrganizationSubmit = (event: FormSubmitEvent<any>) => {
-  addRT(event.data.name)
+const handleOrganizationSubmit = async (event: FormSubmitEvent<any>) => {
+  await addRT(event.data.name)
   toast.add({ title: 'Berhasil menambahkan struktur', color: 'success' })
   formOrganization.name = ''
 }
@@ -403,14 +403,14 @@ definePageMeta({
         >
           <!-- LEVEL -->
           <UFormField name="person" required class="w-full">
-            <USelect
+            <USelectMenu
               v-model="formAssign.person"
               :items="dropdownFamilyHead"
-              orientation="horizontal"
+              :search-input="{ placeholder: 'Cari nama pejabat...' }"
+              searchable
               class="w-full"
               placeholder="Pilih Pejabat"
               value-key="key"
-              value-label="label"
             />
           </UFormField>
 

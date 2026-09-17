@@ -386,7 +386,7 @@ onMounted(() => {
     </UModal>
 
     <div
-      class="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm"
+      class="bg-white rounded-2xl border border-gray-200 overflow-x-auto shadow-sm"
     >
       <UTable
         ref="table"
@@ -409,9 +409,15 @@ onMounted(() => {
         <template #bill_date-cell="{ row }">
           <div class="flex flex-col">
             <span>{{ formatDate(row.original.bill_date) }}</span>
-            <span v-if="row.original.description" class="text-xs text-gray-400">
-              {{ row.original.description }}
-            </span>
+            <UTooltip
+              v-if="row.original.description"
+              :text="row.original.description"
+              :delay-duration="300"
+            >
+              <span class="text-xs text-gray-400 truncate max-w-[200px]">
+                {{ row.original.description }}
+              </span>
+            </UTooltip>
           </div>
         </template>
 
@@ -497,3 +503,20 @@ onMounted(() => {
     </div>
   </div>
 </template>
+
+<style scoped>
+:deep(table) {
+  min-width: 100%;
+}
+:deep(th:last-child),
+:deep(td:last-child) {
+  position: sticky;
+  right: 0;
+  z-index: 1;
+  background: white;
+  box-shadow: -4px 0 8px -4px rgba(0, 0, 0, 0.08);
+}
+:deep(th:last-child) {
+  background: #f9fafb;
+}
+</style>
