@@ -38,14 +38,16 @@ const getData = async () => {
       params: {
         rt: selectedRT.value,
         page: pagination.value.current_page,
-        limit: pagination.value.per_page,
+        limit: pagination.value.per_page
       },
       method: 'GET'
     })
 
     if (res.status === 1) {
       dataLetters.value = res.data
-      if (res.pagination) { pagination.value = { ...res.pagination } }
+      if (res.pagination) {
+        pagination.value = { ...res.pagination }
+      }
     }
   } catch (err) {
     console.error('Fetch error:', err)
@@ -150,6 +152,7 @@ definePageMeta({
 
         <template #download-cell="{ row }">
           <UButton
+            :disabled="!row.original.code"
             icon="i-lucide-download"
             size="xs"
             variant="soft"
