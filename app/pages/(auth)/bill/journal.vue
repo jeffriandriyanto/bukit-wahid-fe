@@ -199,50 +199,69 @@ const handleExport = () => {
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div
-        class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4"
+        class="group relative overflow-hidden bg-white p-6 rounded-2xl border border-gray-100/80 shadow-sm hover:shadow-md transition-all duration-500"
       >
-        <div class="p-3 bg-green-50 rounded-xl text-green-600">
-          <UIcon name="i-lucide-trending-up" class="w-8 h-8" />
-        </div>
-        <div>
-          <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">
-            Total Masuk (In)
-          </p>
-          <p class="text-xl font-black text-green-600">
-            {{ formatCurrency(summaryData.in) }}
-          </p>
+        <div class="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-green-500/[0.07] group-hover:scale-125 transition-transform duration-500" />
+        <div class="flex items-center gap-4 relative z-10">
+          <div class="p-3 bg-green-50 rounded-xl text-green-600 group-hover:scale-110 transition-transform duration-500">
+            <UIcon name="i-lucide-trending-up" class="w-8 h-8" />
+          </div>
+          <div>
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">
+              Total Masuk (In)
+            </p>
+            <p class="text-xl font-black text-green-600">
+              {{ formatCurrencyCompact(summaryData.in) }}
+            </p>
+            <p class="text-[11px] text-gray-400 tabular-nums">
+              {{ formatCurrency(summaryData.in) }}
+            </p>
+          </div>
         </div>
       </div>
 
       <div
-        class="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4"
+        class="group relative overflow-hidden bg-white p-6 rounded-2xl border border-gray-100/80 shadow-sm hover:shadow-md transition-all duration-500"
       >
-        <div class="p-3 bg-red-50 rounded-xl text-red-600">
-          <UIcon name="i-lucide-trending-down" class="w-8 h-8" />
-        </div>
-        <div>
-          <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">
-            Total Keluar (Out)
-          </p>
-          <p class="text-xl font-black text-red-600">
-            {{ formatCurrency(summaryData.out) }}
-          </p>
+        <div class="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-red-500/[0.07] group-hover:scale-125 transition-transform duration-500" />
+        <div class="flex items-center gap-4 relative z-10">
+          <div class="p-3 bg-red-50 rounded-xl text-red-600 group-hover:scale-110 transition-transform duration-500">
+            <UIcon name="i-lucide-trending-down" class="w-8 h-8" />
+          </div>
+          <div>
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">
+              Total Keluar (Out)
+            </p>
+            <p class="text-xl font-black text-red-600">
+              {{ formatCurrencyCompact(summaryData.out) }}
+            </p>
+            <p class="text-[11px] text-gray-400 tabular-nums">
+              {{ formatCurrency(summaryData.out) }}
+            </p>
+          </div>
         </div>
       </div>
 
       <div
-        class="bg-primary-600 p-6 rounded-2xl shadow-lg shadow-primary-100 flex items-center gap-4 text-white"
+        class="relative overflow-hidden bg-gradient-to-br from-primary-500 to-primary-700 p-6 rounded-2xl shadow-lg shadow-primary-100 text-white transition-all duration-500 hover:shadow-xl hover:scale-[1.01]"
       >
-        <div class="p-3 bg-white/20 rounded-xl">
-          <UIcon name="i-lucide-wallet" class="w-8 h-8" />
-        </div>
-        <div>
-          <p class="text-xs font-bold text-white/70 uppercase tracking-widest">
-            Saldo Saat Ini
-          </p>
-          <p class="text-xl font-black">
-            {{ formatCurrency(summaryData.balance) }}
-          </p>
+        <div class="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
+        <div class="absolute -bottom-6 -left-6 w-24 h-24 rounded-full bg-white/5 blur-xl" />
+        <div class="flex items-center gap-4 relative z-10">
+          <div class="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
+            <UIcon name="i-lucide-wallet" class="w-8 h-8" />
+          </div>
+          <div>
+            <p class="text-xs font-bold text-white/70 uppercase tracking-widest">
+              Saldo Saat Ini
+            </p>
+            <p class="text-xl font-black">
+              {{ formatCurrencyCompact(summaryData.balance) }}
+            </p>
+            <p class="text-[11px] text-white/50 tabular-nums">
+              {{ formatCurrency(summaryData.balance) }}
+            </p>
+          </div>
         </div>
       </div>
     </div>

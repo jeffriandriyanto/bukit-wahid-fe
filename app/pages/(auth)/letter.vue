@@ -25,7 +25,7 @@ const columns = [
   { accessorKey: 'regarding', header: 'Perihal' },
   { accessorKey: 'author', header: 'Pemohon' },
   { accessorKey: 'created_at', header: 'Tanggal Pengajuan' },
-  { accessorKey: 'attachment', header: 'Lampiran' }
+  { accessorKey: 'download', header: 'Download' }
 ]
 
 /* =========================
@@ -59,6 +59,12 @@ const openAttachment = (url: string | null) => {
     toast.add({ title: 'Lampiran tidak tersedia', color: 'error' })
     return
   }
+  window.open(url, '_blank')
+}
+
+const downloadLetter = (letterId: string) => {
+  const config = useRuntimeConfig()
+  const url = `${config.public.baseUrl}letter/download/${letterId}`
   window.open(url, '_blank')
 }
 
@@ -140,6 +146,17 @@ definePageMeta({
           <span v-else class="text-xs text-gray-400 italic"
             >Tidak ada file</span
           >
+        </template>
+
+        <template #download-cell="{ row }">
+          <UButton
+            icon="i-lucide-download"
+            size="xs"
+            variant="soft"
+            color="primary"
+            label="Download"
+            @click="downloadLetter(row.original.id)"
+          />
         </template>
       </UTable>
     </div>

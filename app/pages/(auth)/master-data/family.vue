@@ -715,15 +715,23 @@ onMounted(() => {
         :loading="loading"
       >
         <template #status-cell="{ row }">
-          <UButton
+          <UBadge
             :color="row.original.is_active ? 'success' : 'error'"
-            variant="soft"
-            size="xs"
-            :loading="loadingToggle"
+            variant="subtle"
+            size="sm"
+            class="cursor-pointer hover:ring-2 hover:ring-offset-1 transition-all duration-200"
+            :class="[
+              row.original.is_active ? 'hover:ring-success-300' : 'hover:ring-error-300',
+              loadingToggle ? 'opacity-50 pointer-events-none' : ''
+            ]"
             @click="toggleFamily(row.original)"
           >
+            <UIcon
+              :name="row.original.is_active ? 'i-lucide-check-circle' : 'i-lucide-x-circle'"
+              class="w-3.5 h-3.5 mr-1"
+            />
             {{ row.original.is_active ? 'Aktif' : 'Nonaktif' }}
-          </UButton>
+          </UBadge>
         </template>
         <template #action-cell="{ row }">
           <div class="flex gap-1">

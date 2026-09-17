@@ -128,7 +128,7 @@ const {
 
           <div class="h-6 w-px bg-neutral-200 mx-1 hidden sm:block"></div>
 
-          <UButton
+          <!-- <UButton
             color="primary"
             icon="i-lucide-plus"
             size="md"
@@ -136,7 +136,7 @@ const {
             @click="openAddModal"
           >
             <span class="hidden sm:inline">Tambah Warga</span>
-          </UButton>
+          </UButton> -->
         </div>
       </div>
     </SharedHeaderBg>
@@ -313,7 +313,7 @@ const {
               />
             </UTooltip>
 
-            <UTooltip text="Edit Data">
+            <!-- <UTooltip text="Edit Data">
               <UButton
                 icon="i-lucide-pencil"
                 variant="ghost"
@@ -321,7 +321,7 @@ const {
                 size="sm"
                 @click="openEditModal(row.original)"
               />
-            </UTooltip>
+            </UTooltip> -->
             <UTooltip text="Hapus Data">
               <UButton
                 icon="i-lucide-trash-2"

@@ -205,12 +205,16 @@ onMounted(() => fetchDashboardData())
             }
           ]"
           :key="idx"
-          class="group relative overflow-hidden bg-white p-6 rounded-[2.5rem] ring-1 ring-neutral-200 shadow-sm hover:shadow-md transition-all duration-300"
+          class="group relative overflow-hidden bg-white p-6 rounded-[2.5rem] ring-1 ring-neutral-200/80 shadow-sm hover:shadow-lg hover:ring-neutral-300 transition-all duration-500"
         >
+          <div
+            class="absolute -top-6 -right-6 w-24 h-24 rounded-full opacity-[0.07] group-hover:opacity-[0.12] transition-opacity duration-500"
+            :class="`bg-${stat.color}-500`"
+          />
           <div class="flex items-center gap-5 relative z-10">
             <div
               :class="[
-                `p-4 rounded-2xl bg-${stat.color}-50 text-${stat.color}-600 group-hover:scale-110 transition-transform duration-500 text-3xl`
+                `p-4 rounded-2xl bg-${stat.color}-50 text-${stat.color}-600 group-hover:scale-110 group-hover:shadow-lg transition-all duration-500`
               ]"
             >
               <UIcon :name="stat.icon" class="w-8 h-8" />
@@ -236,42 +240,56 @@ onMounted(() => fetchDashboardData())
             {
               label: 'Pemasukan Bulan Ini',
               val: financialData.in,
-              bg: 'bg-secondary-600 shadow-secondary-200'
+              bg: 'bg-gradient-to-br from-secondary-500 to-secondary-700',
+              icon: 'i-lucide-trending-up'
             },
             {
               label: 'Pengeluaran Bulan Ini',
               val: financialData.out,
-              bg: 'bg-primary-600 shadow-primary-200'
+              bg: 'bg-gradient-to-br from-primary-500 to-primary-700',
+              icon: 'i-lucide-trending-down'
             },
             {
               label: 'Total Saldo',
               val: financialData.balance,
-              bg: 'bg-neutral-900 shadow-neutral-300',
+              bg: 'bg-gradient-to-br from-neutral-800 to-neutral-950',
+              icon: 'i-lucide-wallet',
               isBalance: true
             }
           ]"
           :key="idx"
-          class="p-8 rounded-[2.5rem] text-white shadow-sm transition-all duration-500 hover:scale-[1.02]"
+          class="relative overflow-hidden p-8 rounded-[2.5rem] text-white shadow-lg transition-all duration-500 hover:scale-[1.02] hover:shadow-xl"
           :class="fin.bg"
         >
-          <p
-            class="text-[10px] font-bold opacity-70 uppercase tracking-[0.2em] mb-2"
-          >
-            {{ fin.label }}
-          </p>
-          <p
-            class="text-3xl font-black tabular-nums"
-            :class="fin.isBalance ? 'text-secondary-400' : ''"
-          >
-            {{ formatCurrency(fin.val) }}
-          </p>
+          <div class="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
+          <div class="absolute -bottom-6 -left-6 w-24 h-24 rounded-full bg-white/5 blur-xl" />
+          <div class="relative z-10">
+            <div class="flex items-center gap-2 mb-4">
+              <div class="p-2 rounded-xl bg-white/15 backdrop-blur-sm">
+                <UIcon :name="fin.icon" class="w-5 h-5" />
+              </div>
+              <p class="text-[10px] font-bold opacity-70 uppercase tracking-[0.2em]">
+                {{ fin.label }}
+              </p>
+            </div>
+            <p
+              class="text-3xl font-black tabular-nums"
+              :class="fin.isBalance ? 'text-secondary-400' : ''"
+            >
+              {{ formatCurrencyCompact(fin.val) }}
+            </p>
+            <p class="text-[11px] opacity-50 mt-1.5 tabular-nums">
+              {{ formatCurrency(fin.val) }}
+            </p>
+          </div>
         </div>
       </div>
 
       <!-- MAIN CHART -->
       <UCard
-        class="border-none shadow-xl ring-1 ring-neutral-200 rounded-[3rem] overflow-hidden"
+        class="relative border-none shadow-xl ring-1 ring-neutral-200/80 rounded-[3rem] overflow-hidden"
       >
+        <div class="absolute top-0 right-0 w-40 h-40 bg-secondary-500/[0.03] rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
         <template #header>
           <div class="flex items-center justify-between px-2">
             <h3
@@ -301,7 +319,7 @@ onMounted(() => fetchDashboardData())
             { title: 'Rasio Jenis Kelamin', option: genderChartOption }
           ]"
           :key="idx"
-          class="border-none shadow-lg ring-1 ring-neutral-200 rounded-[2.5rem]"
+          class="border-none shadow-lg ring-1 ring-neutral-200/80 rounded-[2.5rem] hover:shadow-xl transition-shadow duration-500"
         >
           <template #header>
             <h3
