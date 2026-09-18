@@ -422,9 +422,23 @@ onMounted(() => {
         </template>
 
         <template #amount-cell="{ row }">
-          <span class="font-semibold">{{
-            formatCurrency(row.original.amount)
-          }}</span>
+          <div class="flex flex-col">
+            <span class="font-semibold">{{
+              formatCurrency(row.original.amount)
+            }}</span>
+            <span
+              v-if="row.original.discount > 0"
+              class="text-[11px] text-emerald-600 font-medium"
+            >
+              Diskon: -{{ formatCurrency(row.original.discount) }}
+            </span>
+            <span
+              v-if="row.original.penalty > 0"
+              class="text-[11px] text-red-500 font-medium"
+            >
+              Denda: +{{ formatCurrency(row.original.penalty) }}
+            </span>
+          </div>
         </template>
 
         <template #status-cell="{ row }">

@@ -21,7 +21,8 @@ const HomeFormSchema = z.object({
   type: z.string().min(1, 'Tipe Kavling wajib diisi'),
   kavling: z.string().min(1, 'Kavling wajib diisi'),
   land_size: z.number(),
-  building_size: z.number()
+  building_size: z.number(),
+  is_empty_land: z.boolean().optional()
 })
 
 type HomeFormSchema = z.infer<typeof HomeFormSchema>
@@ -53,7 +54,8 @@ const form = reactive<HomeFormSchema>({
   type: '',
   kavling: '',
   land_size: 0,
-  building_size: 0
+  building_size: 0,
+  is_empty_land: false
 })
 
 // ===== 3. ACTIONS =====
@@ -66,7 +68,8 @@ const resetForm = () => {
     type: '',
     kavling: '',
     land_size: 0,
-    building_size: 0
+    building_size: 0,
+    is_empty_land: false
   })
 }
 
@@ -107,7 +110,7 @@ const openEditModal = async (row: any) => {
     const rt = row.rt
 
     if (rt) {
-      Object.assign(form, { ...row })
+      Object.assign(form, { ...row, is_empty_land: !!row.is_empty_land })
       await getDropdownFamilyHead()
       await getDropdownResidenceType(rt)
       const res = await useApi(`/residence/${row.id}`)
@@ -201,6 +204,7 @@ const columnsFamilyTable = [
   { accessorKey: 'kavling', header: 'Kavling' },
   { accessorKey: 'land_size', header: 'Luas Tanah' },
   { accessorKey: 'building_size', header: 'Luas Rumah' },
+  { accessorKey: 'is_empty_land', header: 'Status Kavling' },
   { id: 'action', header: 'Aksi' }
 ]
 </script>
@@ -272,6 +276,16 @@ const columnsFamilyTable = [
 
         <template #building_size-cell="{ row }">
           {{ row.original.building_size }} m2
+        </template>
+
+        <template #is_empty_land-cell="{ row }">
+          <UBadge
+            :color="row.original.is_empty_land ? 'warning' : 'neutral'"
+            variant="subtle"
+            size="xs"
+          >
+            {{ row.original.is_empty_land ? 'Tanah Kosong (Diskon 50%)' : 'Terbangun' }}
+          </UBadge>
         </template>
 
         <template #action-cell="{ row }">
@@ -414,6 +428,20 @@ const columnsFamilyTable = [
                 v-model.number="form.building_size"
                 placeholder="Luas Bangunan"
               />
+            </UFormField>
+
+            <UFormField
+              name="is_empty_land"
+              label="Status Kavling"
+              class="col-span-6"
+            >
+              <div class="flex items-center gap-3 p-3 bg-amber-50/60 border border-amber-200 rounded-xl">
+                <UCheckbox
+                  v-model="form.is_empty_land"
+                  label="Tanah Belum Dibangun / Kavling Kosong"
+                  description="Kavling ini otomatis mendapatkan potongan/diskon tagihan IPL saat penagihan bulanan."
+                />
+              </div>
             </UFormField>
           </div>
 

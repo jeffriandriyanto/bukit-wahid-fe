@@ -251,9 +251,17 @@ onMounted(() => {
         </template>
 
         <template #total_ipl-cell="{ row }">
-          <span class="font-mono text-gray-600">{{
-            formatCurrency(row.original.total_ipl)
-          }}</span>
+          <div class="flex flex-col">
+            <span class="font-mono text-gray-600">{{
+              formatCurrency(row.original.total_ipl)
+            }}</span>
+            <span
+              v-if="row.original.total_discount > 0"
+              class="text-[10px] text-emerald-600 font-medium"
+            >
+              Hemat: {{ formatCurrency(row.original.total_discount) }}
+            </span>
+          </div>
         </template>
 
         <template #total_pam-cell="{ row }">
