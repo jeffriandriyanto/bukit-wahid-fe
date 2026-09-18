@@ -32,7 +32,9 @@ const form = reactive({
   image: '', // URL String
   end_date: '',
   end_time: '',
-  rt: [] as string[]
+  rt: [] as string[],
+  is_published: false,
+  published_at: null as string | null
 })
 
 // Options State
@@ -47,7 +49,9 @@ const newOptionForm = reactive({
 const selectedStatus = ref('')
 const statusOptions = ref<any[]>([
   { key: null, label: 'Semua Status' },
-  { key: 'ongoing', label: 'Sedang Berlangsung' }
+  { key: 'draft', label: 'Draft' },
+  { key: 'ongoing', label: 'Sedang Berlangsung' },
+  { key: 'done', label: 'Selesai' }
 ])
 const pagination = ref({
   current_page: 1,
@@ -60,9 +64,104 @@ const pagination = ref({
 const votingTable = [
   { accessorKey: 'title', header: 'Judul Voting' },
   { accessorKey: 'author.name', header: 'Pembuat' },
+  { accessorKey: 'status', header: 'Status' },
   { accessorKey: 'end_date', header: 'Batas Akhir' },
   { accessorKey: 'action', header: 'Aksi' }
 ]
+
+const getVotingStatus = (row: any) => {
+  if (!row.is_published && !row.published_at) {
+    return { label: 'Draft', color: 'neutral' as const, variant: 'subtle' as const }
+  }
+  const now = new Date()
+  const end = new Date(row.end_date + ' ' + (row.end_time || '23:59'))
+  if (now > end) {
+    return { label: 'Selesai', color: 'error' as const, variant: 'subtle' as const }
+  }
+  return { label: 'Berlangsung', color: 'success' as const, variant: 'subtle' as const }
+}
+
+const publishLoading = ref(false)
+
+const publishVoting = async (votingId?: string) => {
+  const targetId = votingId || form.id
+  if (!targetId) return
+
+  if (targetId === form.id && votingOptions.value.length < 2) {
+    return toast.add({
+      title: 'Gagal Publikasi',
+      description: 'Voting harus memiliki minimal 2 opsi pilihan sebelum dipublikasikan.',
+      color: 'error'
+    })
+  }
+
+  if (!confirm('Apakah Anda yakin ingin mempublikasikan voting ini? Notifikasi push akan segera dikirimkan kepada seluruh warga terkait.')) {
+    return
+  }
+
+  publishLoading.value = true
+  try {
+    const res = await useApi(`/voting/publish/${targetId}`, { method: 'PUT' })
+    if (res.status === 1) {
+      toast.add({
+        title: 'Berhasil Dipublikasikan',
+        description: 'Voting telah aktif dan notifikasi dikirim ke warga.',
+        color: 'success'
+      })
+      form.is_published = true
+      form.published_at = res.data?.published_at || new Date().toISOString()
+      getData()
+    } else {
+      toast.add({
+        title: res.message || 'Gagal mempublikasikan voting',
+        color: 'error'
+      })
+    }
+  } catch (err: any) {
+    toast.add({
+      title: err.message || 'Gagal mempublikasikan voting',
+      color: 'error'
+    })
+  } finally {
+    publishLoading.value = false
+  }
+}
+
+const unpublishVoting = async (votingId?: string) => {
+  const targetId = votingId || form.id
+  if (!targetId) return
+
+  if (!confirm('Apakah Anda yakin ingin menarik voting ini kembali ke status Draft?')) {
+    return
+  }
+
+  publishLoading.value = true
+  try {
+    const res = await useApi(`/voting/unpublish/${targetId}`, { method: 'PUT' })
+    if (res.status === 1) {
+      toast.add({
+        title: 'Status Diubah ke Draft',
+        description: 'Voting berhasil ditarik ke draf.',
+        color: 'success'
+      })
+      form.is_published = false
+      form.published_at = null
+      getData()
+    } else {
+      toast.add({
+        title: res.message || 'Gagal menarik voting ke draft',
+        color: 'error'
+      })
+    }
+  } catch (err: any) {
+    toast.add({
+      title: err.message || 'Gagal menarik voting ke draft',
+      color: 'error'
+    })
+  } finally {
+    publishLoading.value = false
+  }
+}
 
 // --- API ACTIONS: VOTING MASTER ---
 const getData = async () => {
@@ -112,9 +211,14 @@ const saveVoting = async () => {
     const res = await useApi(url, { method, body: payload })
 
     if (res.status === 1) {
-      toast.add({ title: 'Voting berhasil disimpan', color: 'success' })
+      toast.add({
+        title: isEditing.value ? 'Voting berhasil diperbarui' : 'Draft voting berhasil dibuat',
+        color: 'success'
+      })
       if (!isEditing.value) {
         form.id = res.data.id
+        form.is_published = !!res.data.is_published
+        form.published_at = res.data.published_at || null
         isEditing.value = true
       }
       getData()
@@ -249,6 +353,9 @@ const clearMainImage = () => {
 const openDetail = (row: any) => {
   isEditing.value = true
   mainImageFile.value = null
+  if (!dropdownToOrganization.value?.length) {
+    getDropdownToOrganization()
+  }
   Object.assign(form, {
     id: row.id,
     title: row.title,
@@ -256,7 +363,9 @@ const openDetail = (row: any) => {
     image: row.image || '',
     end_date: row.end_date,
     end_time: row.end_time,
-    rt: row.for || []
+    rt: row.for || [],
+    is_published: !!row.is_published,
+    published_at: row.published_at || null
   })
   getOptions(row.id)
   isOpen.value = true
@@ -266,6 +375,9 @@ const openAddModal = () => {
   isEditing.value = false
   mainImageFile.value = null
   showAddOptionForm.value = false
+  if (!dropdownToOrganization.value?.length) {
+    getDropdownToOrganization()
+  }
   Object.assign(form, {
     id: '',
     title: '',
@@ -273,7 +385,9 @@ const openAddModal = () => {
     image: '',
     end_date: '',
     end_time: '',
-    rt: []
+    rt: [],
+    is_published: false,
+    published_at: null
   })
   votingOptions.value = []
   isOpen.value = true
@@ -379,6 +493,16 @@ onMounted(() => {
           </div>
         </template>
 
+        <template #status-cell="{ row }">
+          <UBadge
+            :color="getVotingStatus(row.original).color"
+            :variant="getVotingStatus(row.original).variant"
+            size="sm"
+          >
+            {{ getVotingStatus(row.original).label }}
+          </UBadge>
+        </template>
+
         <template #end_date-cell="{ row }">
           <div
             :class="`text-sm font-semibold text-${getStatusColor(
@@ -394,19 +518,42 @@ onMounted(() => {
         </template>
 
         <template #action-cell="{ row }">
-          <UButton
-            icon="i-heroicons-pencil-square"
-            variant="ghost"
-            color="neutral"
-            @click="openDetail(row.original)"
-          />
+          <div class="flex items-center gap-1">
+            <UButton
+              v-if="!row.original.is_published"
+              icon="i-lucide-send"
+              variant="soft"
+              color="primary"
+              size="xs"
+              :loading="publishLoading"
+              title="Publikasikan Voting"
+              @click="publishVoting(row.original.id)"
+            />
+            <UButton
+              v-else
+              icon="i-lucide-undo-2"
+              variant="soft"
+              color="neutral"
+              size="xs"
+              :loading="publishLoading"
+              title="Tarik ke Draft"
+              @click="unpublishVoting(row.original.id)"
+            />
 
-          <UButton
-            icon="i-heroicons-eye"
-            variant="soft"
-            color="neutral"
-            @click="viewVote(row.original)"
-          />
+            <UButton
+              icon="i-heroicons-pencil-square"
+              variant="ghost"
+              color="neutral"
+              @click="openDetail(row.original)"
+            />
+
+            <UButton
+              icon="i-heroicons-eye"
+              variant="soft"
+              color="neutral"
+              @click="viewVote(row.original)"
+            />
+          </div>
         </template>
       </UTable>
     </div>
@@ -433,13 +580,22 @@ onMounted(() => {
 
     <UModal v-model:open="isOpen" :ui="{ content: 'sm:max-w-3xl' }">
       <template #header>
-        <div class="flex flex-col">
-          <span class="text-xs text-gray-400 uppercase font-bold">{{
-            isEditing ? 'Edit Voting' : 'Buat Voting Baru'
-          }}</span>
-          <span class="text-lg font-bold">{{
-            form.title || 'Draft E-Voting'
-          }}</span>
+        <div class="flex items-center justify-between w-full pr-4">
+          <div class="flex flex-col">
+            <span class="text-xs text-gray-400 uppercase font-bold">{{
+              isEditing ? 'Edit Voting' : 'Buat Voting Baru'
+            }}</span>
+            <span class="text-lg font-bold">{{
+              form.title || 'Draft E-Voting'
+            }}</span>
+          </div>
+          <UBadge
+            v-if="form.id"
+            :color="form.is_published ? 'success' : 'neutral'"
+            variant="subtle"
+          >
+            {{ form.is_published ? 'Terpublikasi' : 'Draft' }}
+          </UBadge>
         </div>
       </template>
 
@@ -487,12 +643,14 @@ onMounted(() => {
             </UFormField>
 
             <UFormField label="Target RT (For)" required>
-              <USelect
+              <USelectMenu
                 v-model="form.rt"
                 :items="dropdownToOrganization"
                 multiple
                 value-key="key"
                 label-key="label"
+                placeholder="Pilih Target RT / Majelis"
+                class="w-full"
               />
             </UFormField>
 
@@ -526,7 +684,7 @@ onMounted(() => {
 
           <div v-if="form.id" class="space-y-4">
             <div class="flex justify-between items-center">
-              <p class="text-xs font-bold text-gray-400 uppercase">Opsi</p>
+              <p class="text-xs font-bold text-gray-400 uppercase">Opsi Pilihan (Minimal 2 Opsi)</p>
               <UButton
                 v-if="!showAddOptionForm"
                 size="xs"
@@ -641,11 +799,10 @@ onMounted(() => {
                         class="hidden"
                         accept="image/*"
                         @change="
-                          (e) =>
-                            handleOptionImageChange(
-                              (e.target as HTMLInputElement).files![0],
-                              opt
-                            )
+                          (e) => {
+                            const file = (e.target as HTMLInputElement).files?.[0]
+                            if (file) handleOptionImageChange(file, opt)
+                          }
                         "
                       >
                       <UIcon
@@ -701,6 +858,63 @@ onMounted(() => {
               >
                 Belum ada opsi ditambahkan.
               </p>
+            </div>
+
+            <!-- Publish / Draft Status Card -->
+            <div
+              v-if="!form.is_published"
+              class="p-4 rounded-xl border border-primary-200 bg-primary-50/60 flex flex-col sm:flex-row justify-between items-center gap-3 mt-4"
+            >
+              <div class="flex items-center gap-3">
+                <div class="p-2 rounded-lg bg-primary-100 text-primary-700">
+                  <UIcon name="i-lucide-send" class="w-5 h-5" />
+                </div>
+                <div>
+                  <p class="text-sm font-bold text-gray-900">Publikasikan Voting</p>
+                  <p class="text-xs text-gray-600">
+                    {{
+                      votingOptions.length >= 2
+                        ? 'Data dan opsi sudah lengkap. Klik tombol di samping untuk mempublikasikan dan mengirim notifikasi ke warga.'
+                        : `Tambahkan minimal ${Math.max(0, 2 - votingOptions.length)} opsi lagi agar dapat dipublikasikan.`
+                    }}
+                  </p>
+                </div>
+              </div>
+              <UButton
+                color="primary"
+                icon="i-lucide-send"
+                :loading="publishLoading"
+                :disabled="votingOptions.length < 2"
+                @click="publishVoting()"
+              >
+                Publikasikan Sekarang
+              </UButton>
+            </div>
+
+            <div
+              v-else
+              class="p-4 rounded-xl border border-emerald-200 bg-emerald-50/60 flex flex-col sm:flex-row justify-between items-center gap-3 mt-4"
+            >
+              <div class="flex items-center gap-3">
+                <div class="p-2 rounded-lg bg-emerald-100 text-emerald-700">
+                  <UIcon name="i-lucide-check-circle-2" class="w-5 h-5" />
+                </div>
+                <div>
+                  <p class="text-sm font-bold text-gray-900">Voting Telah Aktif</p>
+                  <p class="text-xs text-gray-600">
+                    Warga dapat melihat dan memberikan suara. Anda dapat menarik kembali voting ke draft jika ada perubahan.
+                  </p>
+                </div>
+              </div>
+              <UButton
+                color="neutral"
+                variant="outline"
+                icon="i-lucide-undo-2"
+                :loading="publishLoading"
+                @click="unpublishVoting()"
+              >
+                Tarik ke Draft
+              </UButton>
             </div>
           </div>
 
