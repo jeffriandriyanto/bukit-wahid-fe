@@ -1,6 +1,23 @@
 <script setup lang="ts">
+import { use } from 'echarts/core'
+import { CanvasRenderer } from 'echarts/renderers'
+import { BarChart } from 'echarts/charts'
+import {
+  TooltipComponent,
+  LegendComponent,
+  GridComponent
+} from 'echarts/components'
+import VChart from 'vue-echarts'
 import { perPageLimit } from '~/const/utils'
 import { fileUpload } from '~/services/files'
+
+use([
+  CanvasRenderer,
+  BarChart,
+  TooltipComponent,
+  LegendComponent,
+  GridComponent
+])
 
 definePageMeta({ middleware: ['auth'] })
 
@@ -400,40 +417,141 @@ const getStatusColor = (start: string, end: string) => {
   return 'success'
 }
 
+const activeOptionTab = ref<string>('')
+
+const totalVotes = computed(() => {
+  return votingOptions.value.reduce((acc, curr) => acc + (curr.votes_count || 0), 0)
+})
+
 const sortedVotingOptions = computed(() => {
   return [...votingOptions.value].sort(
     (a, b) => (b.votes_count || 0) - (a.votes_count || 0)
   )
 })
 
-const chartData = computed(() => {
-  return votingOptions.value.map((opt) => ({
-    title: opt.title,
-    votes: opt.votes_count || 0
-  }))
+const optionsWithPercent = computed(() => {
+  const total = totalVotes.value
+  return sortedVotingOptions.value.map((opt, index) => {
+    const count = opt.votes_count || 0
+    const percent = total > 0 ? ((count / total) * 100).toFixed(1) : '0'
+    return {
+      ...opt,
+      ranking: index + 1,
+      percentage: Number(percent),
+      percentageLabel: `${percent}%`
+    }
+  })
 })
 
-const chartCategories = computed(() => ({
-  votes: {
-    name: 'Perolehan Suara',
-    color: '#3b82f6' // Default Blue
-  }
-}))
+const barChartOption = computed(() => {
+  const titles = votingOptions.value.map((opt) => opt.title)
+  const votes = votingOptions.value.map((opt) => opt.votes_count || 0)
 
-const xFormatter = (i: number): string => chartData.value[i]?.title || ''
-const yFormatter = (tick: number) => Math.round(tick).toString()
+  return {
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' },
+      formatter: (params: any) => {
+        const item = params[0]
+        const count = item.value || 0
+        const total = totalVotes.value
+        const percent = total > 0 ? ((count / total) * 100).toFixed(1) : '0'
+        return `<b>${item.name}</b><br/>Perolehan: <b>${count} Suara</b> (${percent}%)`
+      }
+    },
+    grid: {
+      left: '3%',
+      right: '4%',
+      bottom: '12%',
+      top: '12%',
+      containLabel: true
+    },
+    xAxis: {
+      type: 'category',
+      data: titles,
+      axisLabel: {
+        interval: 0,
+        rotate: titles.some((t) => (t?.length || 0) > 10) ? 20 : 0,
+        fontSize: 11,
+        color: '#4b5563'
+      },
+      axisLine: { lineStyle: { color: '#e5e7eb' } }
+    },
+    yAxis: {
+      type: 'value',
+      minInterval: 1,
+      axisLabel: { color: '#9ca3af', fontSize: 11 },
+      splitLine: { lineStyle: { color: '#f3f4f6', type: 'dashed' } }
+    },
+    series: [
+      {
+        name: 'Perolehan Suara',
+        type: 'bar',
+        data: votes,
+        barMaxWidth: 38,
+        itemStyle: {
+          borderRadius: [6, 6, 0, 0],
+          color: (params: any) => {
+            const colors = ['#2563eb', '#059669', '#d97706', '#7c3aed', '#db2777', '#0891b2']
+            return colors[params.dataIndex % colors.length]
+          }
+        },
+        label: {
+          show: true,
+          position: 'top',
+          formatter: '{c}',
+          fontWeight: 'bold',
+          color: '#374151'
+        }
+      }
+    ]
+  }
+})
+
+const activeOption = computed(() => {
+  if (!votingOptions.value.length) return null
+  if (!activeOptionTab.value) return votingOptions.value[0]
+  return (
+    votingOptions.value.find((opt) => opt.id === activeOptionTab.value) ||
+    votingOptions.value[0]
+  )
+})
+
+const activeOptionVotes = computed(() => {
+  return activeOption.value?.votes || []
+})
+
+const formatVoteTime = (dateStr: string) => {
+  if (!dateStr) return '-'
+  try {
+    const d = new Date(dateStr)
+    return d.toLocaleString('id-ID', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    })
+  } catch {
+    return dateStr
+  }
+}
 
 const viewVote = async (row: any) => {
   isOpenVote.value = true
   votingOptions.value = []
   selectedVote.value = row
   await getOptions(row.id)
+  if (votingOptions.value.length > 0) {
+    activeOptionTab.value = votingOptions.value[0].id
+  }
 }
 
-const resultTableColumns = [
-  { accessorKey: 'ranking', header: 'Ranking' },
-  { accessorKey: 'title', header: 'Nama Voting' },
-  { accessorKey: 'votes_count', header: 'Perolehan' }
+const voterTableColumns = [
+  { accessorKey: 'no', header: 'No' },
+  { accessorKey: 'name', header: 'Nama Pemilih' },
+  { accessorKey: 'address', header: 'Alamat / RT' },
+  { accessorKey: 'created_at', header: 'Waktu Memilih' }
 ]
 
 watch(
@@ -938,139 +1056,303 @@ onMounted(() => {
       </template>
     </UModal>
 
-    <UModal v-model:open="isOpenVote" :ui="{ content: 'sm:max-w-2xl' }">
+    <UModal v-model:open="isOpenVote" :ui="{ content: 'sm:max-w-4xl' }">
       <template #header>
-        <div class="flex flex-col px-2">
-          <span
-            class="text-xs text-gray-400 uppercase font-extrabold tracking-wider"
-            >Laporan Hasil E-Voting</span
-          >
-          <span class="text-xl font-bold text-gray-900">{{
-            selectedVote?.title
-          }}</span>
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full pr-4">
+          <div class="flex flex-col">
+            <span
+              class="text-xs text-gray-400 uppercase font-extrabold tracking-wider"
+              >Laporan Hasil E-Voting</span
+            >
+            <span class="text-xl font-bold text-gray-900">{{
+              selectedVote?.title
+            }}</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <UBadge
+              :color="selectedVote ? getStatusColor(selectedVote.start_date, selectedVote.end_date) : 'neutral'"
+              variant="subtle"
+              size="sm"
+            >
+              {{
+                selectedVote && new Date() > new Date(selectedVote.end_date + ' ' + (selectedVote.end_time || '23:59'))
+                  ? 'Selesai'
+                  : 'Sedang Berjalan'
+              }}
+            </UBadge>
+          </div>
         </div>
       </template>
 
       <template #body>
-        <div class="space-y-8">
-          <p class="text-xs text-gray-600">
+        <div class="space-y-6">
+          <p v-if="selectedVote?.description" class="text-xs text-gray-600 bg-gray-50 p-3 rounded-xl border border-gray-100">
             {{ selectedVote?.description }}
           </p>
 
-          <section class="bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
-            <h3
-              class="text-sm font-bold text-gray-600 mb-4 flex items-center gap-2"
-            >
-              <UIcon name="i-lucide-bar-chart-3" /> Visualisasi Perolehan
-            </h3>
+          <!-- Top Summary Metrics Cards -->
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div class="p-4 rounded-xl bg-blue-50/60 border border-blue-100 flex items-center gap-3">
+              <div class="p-2.5 rounded-lg bg-blue-500 text-white">
+                <UIcon name="i-lucide-vote" class="w-5 h-5" />
+              </div>
+              <div>
+                <p class="text-[11px] font-semibold text-blue-600 uppercase tracking-wider">Total Suara Masuk</p>
+                <p class="text-xl font-black text-gray-900">{{ totalVotes }} <span class="text-xs font-normal text-gray-500">Suara</span></p>
+              </div>
+            </div>
 
-            <div class="h-64 w-full">
-              <ClientOnly>
-                <BarChart
-                  v-if="votingOptions.length > 0 && !optionLoading"
-                  :data="chartData"
-                  :height="280"
-                  :categories="chartCategories"
-                  :y-axis="['votes']"
-                  :x-formatter="xFormatter"
-                  :y-formatter="yFormatter"
-                  :radius="6"
-                  :x-num-ticks="votingOptions.length"
-                  :y-grid-line="true"
-                  :hide-legend="true"
-                />
+            <div class="p-4 rounded-xl bg-emerald-50/60 border border-emerald-100 flex items-center gap-3">
+              <div class="p-2.5 rounded-lg bg-emerald-500 text-white">
+                <UIcon name="i-lucide-trophy" class="w-5 h-5" />
+              </div>
+              <div class="overflow-hidden">
+                <p class="text-[11px] font-semibold text-emerald-600 uppercase tracking-wider">Suara Terbanyak</p>
+                <p class="text-sm font-bold text-gray-900 truncate">
+                  {{ optionsWithPercent[0]?.title || '-' }}
+                </p>
+                <p v-if="optionsWithPercent[0]" class="text-[11px] text-emerald-700 font-semibold">
+                  {{ optionsWithPercent[0].votes_count || 0 }} Suara ({{ optionsWithPercent[0].percentageLabel }})
+                </p>
+              </div>
+            </div>
 
+            <div class="p-4 rounded-xl bg-purple-50/60 border border-purple-100 flex items-center gap-3">
+              <div class="p-2.5 rounded-lg bg-purple-500 text-white">
+                <UIcon name="i-lucide-list-ordered" class="w-5 h-5" />
+              </div>
+              <div>
+                <p class="text-[11px] font-semibold text-purple-600 uppercase tracking-wider">Total Pilihan</p>
+                <p class="text-xl font-black text-gray-900">{{ votingOptions.length }} <span class="text-xs font-normal text-gray-500">Kandidat / Opsi</span></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Section 1: Visualisasi Perolehan Suara (Chart Batang) -->
+          <section class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-bold text-gray-800 flex items-center gap-2">
+                <UIcon name="i-lucide-bar-chart-3" class="w-4 h-4 text-primary-600" />
+                Visualisasi Perolehan Suara
+              </h3>
+              <span class="text-xs text-gray-500">Diagram Batang & Persentase</span>
+            </div>
+
+            <div v-if="optionLoading" class="h-64 flex flex-col items-center justify-center gap-2">
+              <UIcon name="i-lucide-loader-2" class="animate-spin text-2xl text-primary-500" />
+              <p class="text-xs text-gray-400">Menarik data hasil voting...</p>
+            </div>
+
+            <div v-else-if="votingOptions.length === 0" class="h-48 flex items-center justify-center border-2 border-dashed rounded-xl bg-gray-50">
+              <p class="text-xs text-gray-400">Belum ada data opsi voting</p>
+            </div>
+
+            <div v-else class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+              <!-- Left: ECharts Bar Chart -->
+              <div class="lg:col-span-7 h-64 w-full">
+                <ClientOnly>
+                  <VChart :option="barChartOption" class="h-full w-full" autoresize />
+                </ClientOnly>
+              </div>
+
+              <!-- Right: Ranked Progress Bars List -->
+              <div class="lg:col-span-5 space-y-3">
                 <div
-                  v-else-if="optionLoading"
-                  class="h-full flex flex-col items-center justify-center gap-2"
+                  v-for="(opt, idx) in optionsWithPercent"
+                  :key="opt.id"
+                  class="p-3 rounded-xl border border-gray-100 bg-gray-50/70 hover:bg-gray-50 transition-all space-y-1.5"
                 >
-                  <UIcon
-                    name="i-lucide-loader-2"
-                    class="animate-spin text-2xl text-primary-500"
-                  />
-                  <p class="text-xs text-gray-400">Menarik data voting...</p>
-                </div>
+                  <div class="flex items-center justify-between text-xs">
+                    <div class="flex items-center gap-2 min-w-0">
+                      <span
+                        class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold shrink-0"
+                        :class="
+                          idx === 0
+                            ? 'bg-yellow-400 text-yellow-900 font-black'
+                            : idx === 1
+                              ? 'bg-gray-300 text-gray-800'
+                              : idx === 2
+                                ? 'bg-amber-600 text-white'
+                                : 'bg-gray-200 text-gray-600'
+                        "
+                      >
+                        {{ idx + 1 }}
+                      </span>
+                      <UAvatar v-if="opt.image" :src="opt.image" size="2xs" />
+                      <span class="font-bold text-gray-900 truncate">{{ opt.title }}</span>
+                    </div>
+                    <div class="flex items-center gap-1.5 shrink-0 ml-2">
+                      <span class="font-mono font-bold text-gray-800">{{ opt.votes_count || 0 }} Suara</span>
+                      <UBadge
+                        :color="idx === 0 ? 'primary' : 'neutral'"
+                        variant="soft"
+                        size="xs"
+                        class="font-mono font-bold"
+                      >
+                        {{ opt.percentageLabel }}
+                      </UBadge>
+                    </div>
+                  </div>
 
-                <div
-                  v-else
-                  class="h-full flex items-center justify-center border-2 border-dashed rounded-xl bg-gray-50"
-                >
-                  <p class="text-xs text-gray-400">
-                    Belum ada data suara untuk ditampilkan
-                  </p>
+                  <!-- Progress Bar -->
+                  <div class="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                    <div
+                      class="h-full rounded-full transition-all duration-700"
+                      :class="
+                        idx === 0
+                          ? 'bg-gradient-to-r from-blue-500 to-primary-600'
+                          : idx === 1
+                            ? 'bg-gradient-to-r from-emerald-500 to-teal-600'
+                            : idx === 2
+                              ? 'bg-gradient-to-r from-amber-500 to-orange-600'
+                              : 'bg-gradient-to-r from-purple-500 to-indigo-600'
+                      "
+                      :style="{ width: `${Math.max(opt.percentage, 1)}%` }"
+                    />
+                  </div>
                 </div>
-              </ClientOnly>
+              </div>
             </div>
           </section>
 
-          <section>
-            <h3
-              class="text-sm font-bold text-gray-600 mb-4 flex items-center gap-2 px-2"
-            >
-              <UIcon name="i-lucide-trophy" /> Detail Voting
-            </h3>
-            <UTable
-              :data="sortedVotingOptions"
-              :columns="resultTableColumns"
-              class="border rounded-xl overflow-hidden"
-              :ui="{
-                thead: 'bg-gray-100/80',
-                th: 'text-gray-900 font-bold uppercase text-[10px]',
-                td: 'py-4'
-              }"
-            >
-              <template #ranking-cell="{ row }">
-                <div
-                  class="flex items-center justify-center w-8 h-8 rounded-full font-black text-sm"
-                  :class="
-                    row.index === 0
-                      ? 'bg-yellow-100 text-yellow-700'
-                      : 'bg-gray-100 text-gray-500'
-                  "
-                >
-                  {{ row.index + 1 }}
-                </div>
-              </template>
+          <!-- Section 2: Detail Voting per Opsi (Tab per Opsi) -->
+          <section class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm space-y-4">
+            <div class="flex items-center justify-between">
+              <h3 class="text-sm font-bold text-gray-800 flex items-center gap-2">
+                <UIcon name="i-lucide-users" class="w-4 h-4 text-primary-600" />
+                Detail Pemilih Berdasarkan Opsi
+              </h3>
+              <span class="text-xs text-gray-500">Pilih tab opsi untuk melihat daftar pemilih</span>
+            </div>
 
-              <template #title-cell="{ row }">
+            <!-- Option Tabs Bar -->
+            <div v-if="votingOptions.length > 0" class="flex items-center gap-2 overflow-x-auto pb-2 border-b border-gray-200">
+              <button
+                v-for="opt in votingOptions"
+                :key="opt.id"
+                type="button"
+                @click="activeOptionTab = opt.id"
+                :class="[
+                  'px-3.5 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 cursor-pointer border',
+                  activeOptionTab === opt.id
+                    ? 'bg-primary-600 text-white border-primary-600 shadow-sm'
+                    : 'bg-gray-50 hover:bg-gray-100 text-gray-700 border-gray-200'
+                ]"
+              >
+                <UAvatar v-if="opt.image" :src="opt.image" size="2xs" />
+                <span>{{ opt.title }}</span>
+                <span
+                  :class="[
+                    'px-2 py-0.5 rounded-full text-[10px] font-extrabold',
+                    activeOptionTab === opt.id
+                      ? 'bg-white/20 text-white'
+                      : 'bg-gray-200 text-gray-700'
+                  ]"
+                >
+                  {{ opt.votes_count || 0 }}
+                </span>
+              </button>
+            </div>
+
+            <!-- Active Option Content -->
+            <div v-if="activeOption" class="space-y-3">
+              <div class="p-3 rounded-xl bg-gray-50 border border-gray-100 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div class="flex items-center gap-3">
-                  <UAvatar
-                    :src="row.original.image"
-                    size="sm"
-                    class="ring-2 ring-white shadow-sm"
-                  />
-                  <span class="font-bold text-gray-800">{{
-                    row.original.title
-                  }}</span>
+                  <UAvatar v-if="activeOption.image" :src="activeOption.image" size="sm" class="ring-2 ring-white shadow-xs" />
+                  <div>
+                    <h4 class="text-sm font-bold text-gray-900">{{ activeOption.title }}</h4>
+                    <p v-if="activeOption.description" class="text-xs text-gray-500">{{ activeOption.description }}</p>
+                  </div>
                 </div>
-              </template>
+                <div class="text-xs text-gray-600 bg-white px-3 py-1.5 rounded-lg border border-gray-200 font-medium shrink-0">
+                  Total Pemilih: <b class="text-primary-600 font-bold font-mono">{{ activeOptionVotes.length }} Warga</b>
+                </div>
+              </div>
 
-              <template #votes_count-cell="{ row }">
-                <div
-                  class="text-right pr-6 font-mono font-black text-lg text-primary-600"
-                >
-                  {{ row.original.votes_count }}
-                  <span
-                    class="text-[10px] text-gray-400 font-normal ml-1 whitespace-nowrap"
-                    >Suara</span
-                  >
+              <!-- Voters Table -->
+              <UTable
+                v-if="activeOptionVotes.length > 0"
+                :data="activeOptionVotes"
+                :columns="voterTableColumns"
+                class="border rounded-xl overflow-hidden"
+                :ui="{
+                  thead: 'bg-gray-100/90',
+                  th: 'text-gray-900 font-bold uppercase text-[10px] py-3',
+                  td: 'py-3 text-xs'
+                }"
+              >
+                <template #no-cell="{ row }">
+                  <span class="text-gray-500 font-mono font-medium">{{ row.index + 1 }}</span>
+                </template>
+
+                <template #name-cell="{ row }">
+                  <div class="flex items-center gap-2.5">
+                    <UAvatar
+                      :src="row.original.user?.person?.avatar"
+                      :alt="row.original.user?.person?.name || row.original.user?.username || 'Warga'"
+                      size="xs"
+                      class="ring-1 ring-gray-200"
+                    />
+                    <div class="flex flex-col">
+                      <span class="font-bold text-gray-800">
+                        {{ row.original.user?.person?.name || row.original.user?.username || 'Warga' }}
+                      </span>
+                      <span v-if="row.original.user?.person?.phone" class="text-[10px] text-gray-400">
+                        {{ row.original.user.person.phone }}
+                      </span>
+                    </div>
+                  </div>
+                </template>
+
+                <template #address-cell="{ row }">
+                  <div class="text-xs text-gray-700">
+                    <span v-if="row.original.user?.address?.kavling" class="font-medium">
+                      Kav. {{ row.original.user.address.kavling }}
+                    </span>
+                    <span v-if="row.original.user?.address?.rt" class="text-gray-500 text-[11px] ml-1">
+                      (RT {{ row.original.user.address.rt }})
+                    </span>
+                    <span v-if="!row.original.user?.address?.kavling && !row.original.user?.address?.rt" class="text-gray-400 italic">
+                      -
+                    </span>
+                  </div>
+                </template>
+
+                <template #created_at-cell="{ row }">
+                  <span class="text-gray-600 font-medium">
+                    {{ formatVoteTime(row.original.created_at) }}
+                  </span>
+                </template>
+              </UTable>
+
+              <!-- Empty State -->
+              <div
+                v-else
+                class="py-10 flex flex-col items-center justify-center border-2 border-dashed rounded-xl bg-gray-50/50 text-center"
+              >
+                <div class="p-3 rounded-full bg-gray-100 text-gray-400 mb-2">
+                  <UIcon name="i-lucide-users" class="w-6 h-6" />
                 </div>
-              </template>
-            </UTable>
+                <p class="text-xs font-bold text-gray-700">Belum ada suara untuk opsi ini</p>
+                <p class="text-[11px] text-gray-400 mt-0.5">
+                  Warga yang memilih pilihan ini akan otomatis terdata dan ditampilkan di daftar ini.
+                </p>
+              </div>
+            </div>
           </section>
         </div>
       </template>
 
       <template #footer>
-        <div class="flex justify-between items-center w-full px-2">
-          <div />
+        <div class="flex justify-end w-full px-2">
           <UButton
             color="neutral"
             variant="soft"
             class="font-bold"
             @click="isOpenVote = false"
-            >Tutup Laporan</UButton
           >
+            Tutup Laporan
+          </UButton>
         </div>
       </template>
     </UModal>
