@@ -16,7 +16,7 @@ const { reveal: confirm } = useConfirmService()
 const toast = useToast()
 
 // Ambil data dropdown
-const { dropdownFamilyHead, getDropdownFamilyHead } = useApiDropdown()
+const { dropdownResidentAction, getDropdownResidentAction } = useApiDropdown()
 
 const isOpen = ref(false)
 const loading = ref(false)
@@ -149,7 +149,7 @@ watch(
 )
 
 onMounted(() => {
-  getDropdownFamilyHead()
+  getDropdownResidentAction()
   getData()
 })
 </script>
@@ -262,7 +262,7 @@ onMounted(() => {
             <!-- Asumsi dropdownFamilyHead menghasilkan array format { key: '...', label: '...' } -->
             <USelectMenu
               v-model="form.person"
-              :items="dropdownFamilyHead"
+              :items="dropdownResidentAction"
               value-key="key"
               label-key="label"
               placeholder="Cari dan pilih warga..."
