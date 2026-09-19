@@ -1,7 +1,7 @@
 export default defineNuxtRouteMiddleware(async (to, from) => {
   if (import.meta.server) return
 
-  const { token, refreshToken, refreshSession } = useAuth()
+  const { token, refreshToken, user, refreshSession, logout } = useAuth()
 
   if (!token.value) {
     if (refreshToken.value) {
@@ -12,9 +12,28 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
         ok = await refreshSession()
       }
 
-      if (ok) return
+      if (ok) {
+        if (user.value?.person?.category === 'security') {
+          useToast().add({
+            title: 'Akses Ditolak',
+            description: 'Akun Security hanya dapat digunakan melalui aplikasi mobile.',
+            color: 'error'
+          })
+          return logout()
+        }
+        return
+      }
     }
 
     return navigateTo('/login', { replace: true })
+  }
+
+  if (user.value?.person?.category === 'security') {
+    useToast().add({
+      title: 'Akses Ditolak',
+      description: 'Akun Security hanya dapat digunakan melalui aplikasi mobile.',
+      color: 'error'
+    })
+    return logout()
   }
 })

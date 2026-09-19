@@ -49,7 +49,7 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
   } catch (err: any) {
     toast.add({
       title: 'Login Gagal',
-      description: err?.message || 'Terjadi kesalahan sistem',
+      description: err?.data?.message || err?.statusMessage || err?.message || 'Terjadi kesalahan sistem',
       color: 'error'
     })
   } finally {
