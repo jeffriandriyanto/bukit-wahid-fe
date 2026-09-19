@@ -18,6 +18,7 @@ interface SiteConfig {
   link_appstore: string
   ipl_penalty: number
   ipl_unbuilt_discount: number
+  ipl_unoccupied_discount: number
 }
 
 export const useConfigStore = defineStore('configStore', () => {
@@ -36,7 +37,8 @@ export const useConfigStore = defineStore('configStore', () => {
     link_googleplay: "",
     link_appstore: "",
     ipl_penalty: 0,
-    ipl_unbuilt_discount: 50
+    ipl_unbuilt_discount: 50,
+    ipl_unoccupied_discount: 80
   })
 
   const isLoaded = ref(false)

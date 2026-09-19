@@ -22,7 +22,8 @@ const HomeFormSchema = z.object({
   kavling: z.string().min(1, 'Kavling wajib diisi'),
   land_size: z.number(),
   building_size: z.number(),
-  is_empty_land: z.boolean().optional()
+  is_empty_land: z.boolean().optional(),
+  is_unoccupied: z.boolean().optional()
 })
 
 type HomeFormSchema = z.infer<typeof HomeFormSchema>
@@ -55,7 +56,8 @@ const form = reactive<HomeFormSchema>({
   kavling: '',
   land_size: 0,
   building_size: 0,
-  is_empty_land: false
+  is_empty_land: false,
+  is_unoccupied: false
 })
 
 // ===== 3. ACTIONS =====
@@ -69,7 +71,8 @@ const resetForm = () => {
     kavling: '',
     land_size: 0,
     building_size: 0,
-    is_empty_land: false
+    is_empty_land: false,
+    is_unoccupied: false
   })
 }
 
@@ -110,7 +113,11 @@ const openEditModal = async (row: any) => {
     const rt = row.rt
 
     if (rt) {
-      Object.assign(form, { ...row, is_empty_land: !!row.is_empty_land })
+      Object.assign(form, {
+        ...row,
+        is_empty_land: !!row.is_empty_land,
+        is_unoccupied: !!row.is_unoccupied
+      })
       await getDropdownFamilyHead()
       await getDropdownResidenceType(rt)
       const res = await useApi(`/residence/${row.id}`)
@@ -204,7 +211,7 @@ const columnsFamilyTable = [
   { accessorKey: 'kavling', header: 'Kavling' },
   { accessorKey: 'land_size', header: 'Luas Tanah' },
   { accessorKey: 'building_size', header: 'Luas Rumah' },
-  { accessorKey: 'is_empty_land', header: 'Status Kavling' },
+  { accessorKey: 'is_empty_land', header: 'Status Hunian' },
   { id: 'action', header: 'Aksi' }
 ]
 </script>
@@ -280,11 +287,28 @@ const columnsFamilyTable = [
 
         <template #is_empty_land-cell="{ row }">
           <UBadge
-            :color="row.original.is_empty_land ? 'warning' : 'neutral'"
+            v-if="row.original.is_unoccupied"
+            color="error"
             variant="subtle"
             size="xs"
           >
-            {{ row.original.is_empty_land ? 'Tanah Kosong (Diskon 50%)' : 'Terbangun' }}
+            Tidak Dihuni (Diskon 80%)
+          </UBadge>
+          <UBadge
+            v-else-if="row.original.is_empty_land"
+            color="warning"
+            variant="subtle"
+            size="xs"
+          >
+            Tanah Kosong (Diskon 50%)
+          </UBadge>
+          <UBadge
+            v-else
+            color="neutral"
+            variant="subtle"
+            size="xs"
+          >
+            Dihuni
           </UBadge>
         </template>
 
@@ -431,6 +455,21 @@ const columnsFamilyTable = [
             </UFormField>
 
             <UFormField
+              name="is_unoccupied"
+              label="Status Hunian"
+              class="col-span-6"
+            >
+              <div class="flex items-center gap-3 p-3 bg-red-50/60 border border-red-200 rounded-xl">
+                <UCheckbox
+                  v-model="form.is_unoccupied"
+                  label="Rumah Tidak Dihuni / Kosong"
+                  description="Mendapatkan potongan tagihan IPL 80% saat penagihan bulanan."
+                  @update:model-value="(val) => { if (val) form.is_empty_land = false }"
+                />
+              </div>
+            </UFormField>
+
+            <UFormField
               name="is_empty_land"
               label="Status Kavling"
               class="col-span-6"
@@ -439,7 +478,8 @@ const columnsFamilyTable = [
                 <UCheckbox
                   v-model="form.is_empty_land"
                   label="Tanah Belum Dibangun / Kavling Kosong"
-                  description="Kavling ini otomatis mendapatkan potongan/diskon tagihan IPL saat penagihan bulanan."
+                  description="Mendapatkan potongan tagihan IPL 50% saat penagihan bulanan."
+                  @update:model-value="(val) => { if (val) form.is_unoccupied = false }"
                 />
               </div>
             </UFormField>

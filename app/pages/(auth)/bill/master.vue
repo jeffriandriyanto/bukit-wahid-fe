@@ -12,6 +12,7 @@ const EnvironmentSchema = z.object({
   ipl_billing_day: z.number().min(1).max(31, 'Tanggal 1-31'),
   ipl_penalty: z.number().min(0, 'Minimal 0').optional(),
   ipl_unbuilt_discount: z.number().min(0, 'Minimal 0').max(100, 'Maksimal 100%').optional(),
+  ipl_unoccupied_discount: z.number().min(0, 'Minimal 0').max(100, 'Maksimal 100%').optional(),
   pam_cost: z.number().min(0, 'Minimal 0')
 })
 
@@ -24,6 +25,7 @@ const form = reactive<EnvironmentSchema>({
   ipl_billing_day: 1,
   ipl_penalty: 0,
   ipl_unbuilt_discount: 50,
+  ipl_unoccupied_discount: 80,
   pam_cost: 0
 })
 
@@ -127,7 +129,7 @@ onMounted(() => getData())
           </UFormField>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
           <UFormField name="ipl_penalty" label="Denda IPL (%)">
             <UInput
               v-model.number="form.ipl_penalty"
@@ -137,11 +139,11 @@ onMounted(() => getData())
               block
             />
             <template #help>
-              Denda ditagihkan setiap keterlambatan 3 bulan, dan berlaku pada bulan ke-4.
+              Denda ditagihkan setiap keterlambatan 3 bulan (berlaku bulan ke-4).
             </template>
           </UFormField>
 
-          <UFormField name="ipl_unbuilt_discount" label="Diskon IPL Kavling Belum Dibangun (%)">
+          <UFormField name="ipl_unbuilt_discount" label="Diskon Kavling Belum Dibangun (%)">
             <UInput
               v-model.number="form.ipl_unbuilt_discount"
               type="number"
@@ -150,7 +152,20 @@ onMounted(() => getData())
               block
             />
             <template #help>
-              Potongan tagihan IPL otomatis untuk kavling berstatus tanah belum dibangun.
+              Potongan tagihan IPL otomatis untuk tanah kosong / belum dibangun.
+            </template>
+          </UFormField>
+
+          <UFormField name="ipl_unoccupied_discount" label="Diskon Rumah Tidak Dihuni (%)">
+            <UInput
+              v-model.number="form.ipl_unoccupied_discount"
+              type="number"
+              icon="i-lucide-percent"
+              placeholder="80"
+              block
+            />
+            <template #help>
+              Potongan tagihan IPL otomatis untuk rumah/hunian yang tidak dihuni.
             </template>
           </UFormField>
         </div>
