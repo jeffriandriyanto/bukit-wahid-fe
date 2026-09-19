@@ -20,7 +20,7 @@ export default defineNuxtConfig({
   },
   runtimeConfig: {
     public: {
-      version: "2.0.13",
+      version: "2.0.14",
       siteUrl: 'https://rw11bukitwahid.com',
       baseUrl: process?.env?.NUXT_PUBLIC_BASE_URL || 'https://api.rw11bukitwahid.com/api/'
     },
