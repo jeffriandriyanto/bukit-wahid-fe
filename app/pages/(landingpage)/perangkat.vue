@@ -23,15 +23,19 @@
               ></div>
 
               <div
-                class="aspect-3/4 overflow-hidden rounded-[3rem] bg-neutral-900 border-4 border-white shadow-2xl relative z-10"
+                class="aspect-[3/4] overflow-hidden rounded-[3rem] bg-neutral-100 border-4 border-white shadow-2xl relative z-10 group-hover:border-primary-50 transition-colors duration-700"
               >
                 <NuxtImg
-                  :src="leader?.incumbent?.avatar || ''"
-                  :alt="leader?.incumbent?.name"
+                  v-if="leader?.incumbent?.avatar"
+                  :src="leader.incumbent.avatar"
+                  :alt="leader?.incumbent?.name || 'Ketua'"
                   class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-1000 scale-105 group-hover:scale-100"
                   loading="eager"
                   format="avif,webp"
                 />
+                <div v-else class="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-neutral-100 to-neutral-200 text-neutral-300 group-hover:text-primary-300 transition-all duration-700">
+                  <UIcon name="i-heroicons-user" class="w-32 h-32 opacity-75 group-hover:scale-110 transition-transform duration-700" />
+                </div>
               </div>
             </div>
             <div class="space-y-2 relative z-10">
@@ -42,8 +46,9 @@
               </p>
               <h3
                 class="text-3xl font-black text-neutral-900 tracking-tighter uppercase italic"
+                :class="!leader?.incumbent?.name ? 'opacity-50' : ''"
               >
-                {{ leader?.incumbent?.name }}
+                {{ leader?.incumbent?.name || 'Belum Ditunjuk' }}
               </h3>
               <div class="w-12 h-1 bg-primary-500 mx-auto rounded-full"></div>
             </div>
@@ -61,15 +66,19 @@
           >
             <div class="relative px-4">
               <div
-                class="aspect-3/4 overflow-hidden rounded-[2.5rem] bg-neutral-100 border border-neutral-200 transition-all duration-500 group-hover:border-primary-500/30 group-hover:shadow-premium-hover group-hover:-translate-y-2"
+                class="aspect-[3/4] overflow-hidden rounded-[2.5rem] bg-neutral-100 border border-neutral-200 transition-all duration-500 group-hover:border-primary-200 group-hover:shadow-premium-hover group-hover:-translate-y-2"
               >
                 <NuxtImg
-                  :src="member?.incumbent?.avatar"
-                  :alt="member?.incumbent?.name"
+                  v-if="member?.incumbent?.avatar"
+                  :src="member.incumbent.avatar"
+                  :alt="member?.incumbent?.name || 'Pengurus'"
                   class="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
                   format="avif,webp"
                   loading="lazy"
                 />
+                <div v-else class="w-full h-full flex items-center justify-center bg-gradient-to-br from-neutral-50 to-neutral-100 text-neutral-300 group-hover:text-primary-300 transition-all duration-500">
+                  <UIcon name="i-heroicons-user" class="w-20 h-20 opacity-50 group-hover:scale-110 transition-transform duration-500" />
+                </div>
               </div>
             </div>
 
@@ -81,8 +90,9 @@
               </p>
               <h3
                 class="text-neutral-900 font-extrabold text-lg tracking-tight group-hover:text-primary-600 transition-colors"
+                :class="!member?.incumbent?.name ? 'opacity-50 text-base italic' : ''"
               >
-                {{ member?.incumbent?.name }}
+                {{ member?.incumbent?.name || 'Belum Ditunjuk' }}
               </h3>
             </div>
           </div>

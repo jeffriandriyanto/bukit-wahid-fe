@@ -101,7 +101,7 @@ const handleBlastWA = async () => {
 const getDataBill = async () => {
   loading.value = true
   try {
-    const res = await useApi('/finance/my-bill-detail', {
+    const res = await useApi('/finance/bill-detail', {
       method: 'GET'
     })
 

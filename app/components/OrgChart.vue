@@ -63,31 +63,33 @@ const getInitial = (name: string | null | undefined): string => {
       <template #default="{ nodeData }">
         <div
           v-if="nodeData"
-          class="flex items-center gap-4 min-w-max rounded-[10px] border-t-4 bg-white px-3 mx-4 py-2"
+          class="flex flex-col items-center gap-3 min-w-[11rem] max-w-[13rem] rounded-xl border border-neutral-100 shadow-sm hover:shadow-md transition-shadow bg-white p-4 border-t-4 cursor-pointer"
           :class="borderColorClassMap[accentColor ?? 'primary']"
           @click="handleNodeClick(nodeData)"
         >
-          <UAvatar v-if="nodeData?.avatar" size="sm" :src="nodeData.avatar" />
+          <UAvatar v-if="nodeData?.avatar" size="md" :src="nodeData.avatar" class="ring-2 ring-neutral-100 ring-offset-2" />
           <UAvatar
             v-else
-            size="sm"
+            size="md"
             :text="getInitial(nodeData?.name)"
-            :class="!getInitial(nodeData?.name) ? 'bg-gray-100' : ''"
+            :class="[!getInitial(nodeData?.name) ? 'bg-gray-100' : '', 'ring-2 ring-neutral-100 ring-offset-2']"
           >
             <template v-if="!getInitial(nodeData?.name)" #default>
               <UIcon name="i-heroicons-user" class="text-gray-400" />
             </template>
           </UAvatar>
 
-          <div class="flex flex-col gap-y-0.5 items-start">
-            <span class="text-xs text-neutral-500 cursor-pointer">
-              {{ nodeData?.title }}
-            </span>
-            <span
-              class="text-sm font-semibold cursor-pointer hover:border-b-2"
+          <div class="flex flex-col gap-y-1 items-center text-center">
+            <button
+              type="button"
+              class="mt-1 px-3 py-1.5 w-full text-center text-[12px] font-bold text-neutral-700 bg-neutral-50 hover:bg-primary-50 hover:text-primary-600 border border-neutral-200 hover:border-primary-200 rounded-md transition-all shadow-sm truncate"
               @click.stop="handleNameClick(nodeData)"
+              :title="nodeData?.name || 'Belum diisi'"
             >
-              {{ nodeData?.name }}
+              {{ nodeData?.name || 'Belum diisi' }}
+            </button>
+            <span class="text-[11px] uppercase tracking-wide text-neutral-500 font-semibold mt-1">
+              {{ nodeData?.title }}
             </span>
           </div>
         </div>
@@ -105,7 +107,9 @@ const getInitial = (name: string | null | undefined): string => {
 .chartNode {
   border: none !important;
   background: transparent !important;
-  margin-inline: 32px !important;
+  /* Margin-inline diperkecil agar tidak terlalu melebar ke kanan/kiri ketika cabang banyak */
+  margin-inline: 8px !important;
+  max-width: max-content !important;
 }
 
 .chartNode:hover {
@@ -136,22 +140,5 @@ const getInitial = (name: string | null | undefined): string => {
 }
 .chartDownLine {
   background: v-bind(currentAccentColor) !important;
-}
-
-/* Style tambahan kamu yang lama tetap di sini */
-.chartOrgchartContainer,
-.chartOrgchart {
-  border: none !important;
-}
-
-.chartNode {
-  border: none !important;
-  background: transparent !important;
-  margin-inline: 32px !important;
-  max-width: max-content !important;
-}
-
-.chartNode:hover {
-  box-shadow: none !important;
 }
 </style>
