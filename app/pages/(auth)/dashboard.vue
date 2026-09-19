@@ -22,10 +22,13 @@ definePageMeta({ middleware: ['auth'] })
 
 // --- STATE ---
 const loading = ref(true)
+const error = ref(false)
 const rawData = ref<any>(null) // Penampung data mentah dari API
 
 // --- API ACTIONS ---
 const fetchDashboardData = async () => {
+  loading.value = true
+  error.value = false
   try {
     const res = await useApi('/dashboard')
     if (res.status === 1) {
@@ -33,10 +36,20 @@ const fetchDashboardData = async () => {
     }
   } catch (err) {
     console.error('Gagal mengambil data dashboard:', err)
+    error.value = true
   } finally {
     loading.value = false
   }
 }
+
+const isEmpty = computed(() => {
+  if (!rawData.value) return true
+  return (
+    (rawData.value.total_resident || 0) === 0 &&
+    (rawData.value.total_residence || 0) === 0 &&
+    (rawData.value.total_user || 0) === 0
+  )
+})
 
 // --- MAPPING DATA UNTUK UI ---
 const stats = computed(() => ({
@@ -178,6 +191,29 @@ onMounted(() => fetchDashboardData())
         name="i-lucide-loader-2"
         class="w-8 h-8 animate-spin text-primary-600"
       />
+    </div>
+
+    <div
+      v-else-if="error"
+      class="flex flex-col items-center justify-center h-64 gap-4"
+    >
+      <UIcon name="i-lucide-alert-triangle" class="w-10 h-10 text-red-400" />
+      <p class="text-gray-500 text-sm">Gagal memuat data dashboard.</p>
+      <UButton
+        label="Coba Lagi"
+        color="primary"
+        variant="outline"
+        size="sm"
+        @click="fetchDashboardData()"
+      />
+    </div>
+
+    <div
+      v-else-if="isEmpty"
+      class="flex flex-col items-center justify-center h-64 gap-4"
+    >
+      <UIcon name="i-lucide-database" class="w-10 h-10 text-gray-300" />
+      <p class="text-gray-500 text-sm">Belum ada data untuk ditampilkan.</p>
     </div>
 
     <template v-else>

@@ -14,12 +14,14 @@ const { rwData, fetchRw } = useRwStructure()
 const {
   dropdownRT,
   dropdownPosition,
-  dropdownFamilyHead,
+
   dropdownPositionRW,
+  dropdownResidentAction,
   getDropdownRT,
   getDropdownPosition,
-  getDropdownFamilyHead,
-  getDropdownPositionRW
+
+  getDropdownPositionRW,
+  getDropdownResidentAction
 } = useApiDropdown()
 
 const toast = useToast()
@@ -268,7 +270,7 @@ onMounted(() => {
   getDropdownRT()
   fetchRw()
   fetchRtOrg()
-  getDropdownFamilyHead()
+  getDropdownResidentAction()
 })
 
 definePageMeta({
@@ -405,7 +407,7 @@ definePageMeta({
           <UFormField name="person" required class="w-full">
             <USelectMenu
               v-model="formAssign.person"
-              :items="dropdownFamilyHead"
+              :items="dropdownResidentAction"
               :search-input="{ placeholder: 'Cari nama pejabat...' }"
               searchable
               class="w-full"

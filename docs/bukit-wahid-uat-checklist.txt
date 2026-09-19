@@ -1,0 +1,157 @@
+Modul 1: Autentikasi & Registrasi
+AUTH-01	Login valid	Isi username/password benar, klik Login	Masuk Dashboard, toast sukses	Pending
+AUTH-02	Login invalid	Isi username/password salah	Toast "Login Gagal"	Pending
+AUTH-03	Field kosong	Kosongkan username atau password, klik Login	Validasi field wajib muncul	Pending
+AUTH-04	Toggle password	Klik ikon mata di field password	Teks password terlihat/tersembunyi	Pending
+AUTH-05	Sesi auto-login	Login, tutup browser, buka lagi	Langsung masuk Dashboard	Pending
+AUTH-06	Akses tanpa login	Buka `/dashboard` tanpa login	Dialihkan ke `/login`	Pending
+AUTH-07	Logout	Klik Logout	Sesi terhapus, ke halaman login	Pending
+REG-01	Setuju privasi	Buka registrasi, klik "Setuju"	Masuk ke formulir langkah 2	Pending
+REG-02	Tolak privasi	Buka registrasi, klik "Tidak"	Kembali ke Home	Pending
+REG-03	Pilih RT dan alamat	Pilih RT, lihat dropdown alamat	Alamat muncul sesuai RT	Pending
+REG-04	Registrasi kepala keluarga saja	Isi semua field wajib, langsung kirim	Data tersimpan, konfirmasi sukses	Pending
+REG-05	Registrasi + pasangan	Tambah pasangan, isi data, kirim	Data pasangan ikut tersimpan	Pending
+REG-06	Registrasi + anak	Tambah 2 anak, isi data, kirim	Data anak ikut tersimpan	Pending
+REG-07	Registrasi lengkap	Isi semua section (kepala, pasangan, 2 anak, 1 ART)	Semua data tersimpan	Pending
+REG-08	Field wajib kosong	Kosongkan nama kepala keluarga, kirim	Validasi "wajib diisi" muncul	Pending
+REG-09	Hapus pasangan	Tambah pasangan, klik "Hapus"	Section pasangan hilang	Pending
+REG-10	Hapus anak	Tambah anak, klik "X"	Anak hilang dari daftar	Pending
+
+Modul 2: Dashboard
+DASH-01	Data tampil	Login, lihat dashboard	3 kartu statistik tampil dengan angka sesuai	Pending
+DASH-02	Indikator keuangan	Lihat kartu keuangan	Pemasukan, pengeluaran, saldo dalam format Rupiah	Pending
+DASH-03	Grafik usia	Lihat bar chart	Data per kelompok usia sesuai	Pending
+DASH-04	Grafik agama	Lihat donut chart agama	Irisan sesuai data, legenda muncul	Pending
+DASH-05	Grafik gender	Lihat donut chart gender	Laki-laki dan Perempuan sesuai data	Pending
+DASH-06	Tanpa data	Dashboard tanpa warga terdaftar	Metrik 0, grafik tetap tampil tanpa error	Pending
+DASH-07	Akses tanpa login	Buka `/dashboard` tanpa login	Dialihkan ke `/login`	Pending
+DASH-08	Loading state	Buka dashboard dengan koneksi lambat	Spinner muncul sebelum data tampil	Pending
+
+Modul 3: Struktur Organisasi
+ORG-01	Lihat bagan RW	Buka halaman, tab RW	Bagan RW tampil	Pending
+ORG-02	Lihat bagan RT	Tab RT, pilih RT	Bagan RT tampil	Pending
+ORG-03	Belum pilih RT	Tab RT, jangan pilih RT	Pesan "Silahkan pilih RT"	Pending
+ORG-04	Tambah jabatan RW	Tambah Struktur di tab RW, isi nama	Jabatan baru di bagan RW	Pending
+ORG-05	Tambah jabatan RT	Tab RT, pilih RT, Tambah Struktur	Jabatan baru di bagan RT	Pending
+ORG-06	Nama kosong	Simpan tanpa nama jabatan	Validasi "Nama wajib diisi"	Pending
+ORG-07	Edit jabatan	Klik node, ubah nama, Simpan	Nama berubah	Pending
+ORG-08	Hapus jabatan	Klik node, Hapus, konfirmasi	Jabatan hilang	Pending
+ORG-09	Assign pejabat	Klik nama di node, pilih warga, Simpan	Nama muncul di node	Pending
+ORG-10	Assign + tanda tangan	Klik nama, pilih warga + upload gambar, Simpan	Nama + tanda tangan tersimpan	Pending
+ORG-11	Hapus tanda tangan	Hover gambar, klik "Hapus & Ganti"	Gambar hilang, dropzone muncul	Pending
+ORG-12	Tambah RT	Lihat Struktur, isi nama RT, Simpan	RT baru di tabel dan dropdown	Pending
+ORG-13	Hapus RT	Lihat Struktur, klik hapus	RT hilang dari daftar	Pending
+
+Modul 4: Data Master
+CTZ-01	Lihat daftar warga	Buka halaman citizen	Tabel + pagination tampil	Pending
+CTZ-02	Cari warga	Ketik nama di search	Hasil sesuai, setelah 1 detik	Pending
+CTZ-03	Cari tidak ada	Ketik kata kunci tak dikenal	Tabel kosong	Pending
+CTZ-04	Filter RT	Filter → pilih RT → Terapkan	Hanya warga RT itu yang tampil	Pending
+CTZ-05	Filter kombinasi	RT + Usia + Agama → Terapkan	Hasil sesuai semua filter	Pending
+CTZ-06	Reset filter	Reset Filter → Terapkan	Semua filter kembali default	Pending
+CTZ-07	Tambah warga	Tambah → isi form lengkap → Simpan	Warga baru di tabel	Pending
+CTZ-08	Nama kosong	Tambah, kosongkan nama, Simpan	Validasi "wajib diisi"	Pending
+CTZ-09	Edit warga	Edit → ubah data → Simpan	Data berubah	Pending
+CTZ-10	Hapus warga	Hapus → konfirmasi	Warga hilang	Pending
+CTZ-11	Upload foto	Edit → unggah gambar → Simpan	Avatar berubah	Pending
+CTZ-12	Reset password	Ikon kunci → isi password → Update	Toast sukses	Pending
+CTZ-13	Password < 6	Reset → isi 4 karakter → Update	Validasi "min 6 karakter"	Pending
+CTZ-14	Download template	Opsi Data → Download Template	File Excel terunduh	Pending
+CTZ-15	Upload Excel	Opsi Data → Upload Data → pilih file	Toast sukses, data bertambah	Pending
+CTZ-16	Ubah data per halaman	Pilih 50 dari dropdown	50 data per halaman	Pending
+FAM-01	Tambah KK lengkap	Tambah → isi semua langkah → submit	KK baru tersimpan	Pending
+FAM-02	Validasi stepper	Kosongkan field di langkah 2 → klik Lanjut	Error, tidak bisa lanjut	Pending
+FAM-03	Tanpa pasangan	Isi langkah 1-2, lewati pasangan	Tersimpan tanpa pasangan	Pending
+FAM-04	Tambah/hapus anak	Tambah 3 anak, hapus 1	Form menyesuaikan	Pending
+FAM-05	Toggle status	Klik toggle pada baris KK	Status berubah aktif/non-aktif	Pending
+HOME-01	Filter rumah	Pilih RT + kavling	Data terfilter	Pending
+HOME-02	Tambah rumah	Tambah → isi form → Simpan	Rumah baru di tabel	Pending
+EMP-01	Tambah petugas	Tambah → isi form → Simpan	Petugas baru muncul	Pending
+EMP-02	Filter kategori	Pilih kategori	Hanya petugas kategori itu	Pending
+MAJ-01	Tambah majelis	Tambah → pilih warga → Simpan	Anggota baru di tabel	Pending
+MAJ-02	Hapus majelis	Hapus → konfirmasi	Anggota hilang	Pending
+
+Modul 5: Keuangan
+FIN-01	Lihat konfigurasi	Buka `/bill/master`	Form IPL, Iuran, Air tampil	Pending
+FIN-02	Ubah biaya IPL	Ubah IPL → Simpan	Toast sukses, nilai tersimpan	Pending
+FIN-03	Nominal negatif	Masukkan -1000 → Simpan	Validasi "Minimal 0"	Pending
+FIN-04	Tanggal > 31	Masukkan 32 di tanggal	Validasi "Tanggal 1-31"	Pending
+FIN-05	Reset perubahan	Ubah beberapa nilai → Reset	Kembali ke nilai tersimpan	Pending
+FIN-06	Tambah COA	Tambah → isi tag + nama → Simpan	Akun baru di tabel	Pending
+FIN-07	Edit COA	Edit → ubah nama → Simpan	Nama berubah	Pending
+FIN-08	Hapus COA non-default	Hapus → konfirmasi	Akun hilang	Pending
+FIN-09	Default tidak bisa hapus	Cek akun default	Tidak ada tombol hapus	Pending
+FIN-10	Cash In	Cash In → isi semua + bukti → Simpan	Transaksi baru (hijau)	Pending
+FIN-11	Cash Out	Cash Out → isi semua + bukti → Simpan	Transaksi (merah), status Open	Pending
+FIN-12	Deskripsi < 5	Isi "abc" → Simpan	Validasi "minimal 5"	Pending
+FIN-13	Filter status	Pilih "Approve"	Hanya approve yang tampil	Pending
+FIN-14	Lihat detail	Klik ikon mata	Modal detail lengkap	Pending
+FIN-15	Revisi transaksi	Klik Revisi → ubah data → Simpan	Data berubah	Pending
+FIN-16	Export Petty Cash	Klik Export	Excel terunduh	Pending
+FIN-17	Ringkasan jurnal	Buka `/bill/journal`	3 kartu ringkasan tampil	Pending
+FIN-18	Filter jurnal	Pilih bulan + tahun berbeda	Data sesuai periode	Pending
+FIN-19	Detail jurnal	Klik ikon mata	Modal + dokumen referensi	Pending
+FIN-20	Export jurnal	Klik Export	Excel dengan filter aktif	Pending
+FIN-21	Download template PDAM	Klik Template	Excel template terunduh	Pending
+FIN-22	Upload PDAM	Upload Data → pilih Excel	Data meteran terproses	Pending
+FIN-23	Publish PDAM	Publish → konfirmasi	Tagihan dipublish, ke Laporan	Pending
+FIN-24	Batal publish	Publish → Batal	Tidak terjadi apa-apa	Pending
+FIN-25	Filter RT PDAM	Pilih RT	Data sesuai RT	Pending
+
+Modul 6: Informasi & Agenda
+INF-01	Tambah berita	Tambah → isi form → Simpan	Berita di tabel	Pending
+INF-02	Tambah berita + gambar	Tambah → upload gambar → Simpan	Berita + gambar tersimpan	Pending
+INF-03	Draft berita	Tambah → status Draft → Simpan	Tersimpan, tidak tampil publik	Pending
+INF-04	Judul kosong	Tambah tanpa judul → Simpan	Validasi "wajib diisi"	Pending
+INF-05	Edit berita	Edit → ubah judul → Simpan	Judul berubah	Pending
+INF-06	Hapus berita	Hapus → konfirmasi	Berita hilang	Pending
+INF-07	Tambah agenda	Tambah → isi form lengkap → Simpan	Agenda di tabel	Pending
+INF-08	Agenda + lampiran	Tambah → upload file → Simpan	Agenda + lampiran tersimpan	Pending
+INF-09	Lokasi URL	Isi lokasi dengan URL meeting	Terdeteksi sebagai link	Pending
+INF-10	Tanggal kosong	Agenda tanpa tanggal → Simpan	Validasi muncul	Pending
+INF-11	Ubah status agenda	Edit → ubah ke Selesai → Simpan	Badge berubah hijau	Pending
+INF-12	Hapus agenda	Hapus → konfirmasi	Agenda hilang	Pending
+INF-13	Tambah pengumuman	Tambah → isi form → Simpan	Pengumuman di tabel	Pending
+INF-14	Edit pengumuman	Edit → ubah isi → Simpan	Isi berubah	Pending
+INF-15	Hapus pengumuman	Hapus → konfirmasi	Hilang	Pending
+
+Modul 7: Layanan Warga
+SVC-01	Lihat pengaduan	Buka halaman pengaduan	Daftar tampil	Pending
+SVC-02	Filter pengaduan	Pilih kategori	Terfilter sesuai	Pending
+SVC-03	Ubah ke Diproses	Klik → ubah status → Simpan	Badge kuning	Pending
+SVC-04	Ubah ke Selesai	Klik → ubah status → Simpan	Badge hijau	Pending
+SVC-05	Ubah ke Ditolak	Klik → ubah status → Simpan	Badge merah	Pending
+SVC-06	Buat voting	Buat → judul + 3 opsi + tanggal → Simpan	Voting di daftar	Pending
+SVC-07	Min 2 opsi	Buat dengan 1 opsi	Validasi muncul	Pending
+SVC-08	Edit voting belum mulai	Edit → ubah judul → Simpan	Judul berubah	Pending
+SVC-09	Edit voting aktif ditolak	Edit voting yang sedang berlangsung	Tidak bisa/tombol tidak ada	Pending
+SVC-10	Lihat hasil voting	Klik Lihat Hasil	Hasil per opsi tampil	Pending
+SVC-11	Hapus voting	Hapus → konfirmasi	Voting hilang	Pending
+SVC-12	Lihat surat	Buka `/letter`	Daftar surat tampil	Pending
+SVC-13	Ubah status surat	Klik → ubah ke Diproses	Status berubah	Pending
+SVC-14	Upload balasan	Klik → Selesai + upload file → Simpan	File balasan tersimpan	Pending
+SVC-15	Detail surat	Klik surat	Info + lampiran tampil	Pending
+
+Modul 8: Galeri, Promo & Pengaturan
+GAL-01	Tambah album	Tambah → nama + 3 foto → Simpan	Album + 3 foto	Pending
+GAL-02	Tanpa foto	Tambah tanpa upload → Simpan	Validasi (min 1 foto)	Pending
+GAL-03	Detail galeri	Klik Lihat	Semua foto tampil	Pending
+GAL-04	Tambah foto ke album	Detail → upload foto baru	Foto bertambah	Pending
+GAL-05	Edit album	Edit → ubah nama → Simpan	Nama berubah	Pending
+GAL-06	Hapus album	Hapus → konfirmasi	Album + foto hilang	Pending
+PRO-01	Tambah promo	Tambah → isi + banner + durasi → Simpan	Promo di daftar	Pending
+PRO-02	Judul kosong	Tambah tanpa judul	Validasi muncul	Pending
+PRO-03	Edit promo	Edit → ubah durasi → Simpan	Durasi berubah	Pending
+PRO-04	Hapus promo	Hapus → konfirmasi	Promo hilang	Pending
+PRO-05	Status kadaluarsa	Promo lewat tanggal selesai	Badge "Kadaluarsa"	Pending
+SET-01	Lihat pengaturan	Buka `/settings`	Semua field terisi data	Pending
+SET-02	Ubah alamat	Ubah alamat → Simpan	Tersimpan, muncul di landing page	Pending
+SET-03	Ubah WhatsApp	Ubah WA → Simpan	Nomor terupdate	Pending
+SET-04	Ubah sosmed	Ubah link FB/IG → Simpan	Link tersimpan	Pending
+SET-05	Upload hero banner	Upload gambar baru → Simpan	Banner berubah di landing page	Pending
+SET-06	Ubah sambutan	Ubah teks greeting → Simpan	Sambutan berubah di landing page	Pending
+SET-07	Tambah fasilitas	Klik Tambah → isi → Simpan	Fasilitas baru di halaman Profil	Pending
+SET-08	Hapus fasilitas	Klik X pada item → Simpan	Fasilitas hilang	Pending
+SET-09	Tambah kegiatan	Klik Tambah → isi → Simpan	Kegiatan baru di halaman Profil	Pending
+SET-10	Ubah app store	Isi link → Simpan	Tombol download muncul di landing page	Pending
+SET-11	Kosongkan app store	Kosongkan link → Simpan	Tombol download hilang	Pending

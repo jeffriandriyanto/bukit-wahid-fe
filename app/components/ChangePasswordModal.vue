@@ -20,8 +20,8 @@ const formState = reactive({
 
 const schema = z
   .object({
-    newPassword: z.string().min(5, 'Password baru minimal 5 karakter'),
-    confirmPassword: z.string().min(5, 'Konfirmasi password wajib diisi')
+    newPassword: z.string().min(6, 'Password baru minimal 6 karakter'),
+    confirmPassword: z.string().min(6, 'Konfirmasi password wajib diisi')
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
     message: 'Konfirmasi password tidak sama',

@@ -120,11 +120,6 @@ const openEditModal = async (row: any) => {
       })
       await getDropdownFamilyHead()
       await getDropdownResidenceType(rt)
-      const res = await useApi(`/residence/${row.id}`)
-
-      if (res.status === 1) {
-        console.log(res.data)
-      }
     }
   } catch (err) {
     console.error('Error fetching detail:', err)

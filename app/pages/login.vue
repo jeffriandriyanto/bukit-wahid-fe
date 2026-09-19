@@ -21,7 +21,7 @@ const formState = reactive({
 
 const schema = z.object({
   username: z.string().min(1, 'Username / Email wajib diisi'),
-  password: z.string().min(5, 'Password minimal 5 karakter')
+  password: z.string().min(6, 'Password minimal 6 karakter')
 })
 
 type Schema = z.output<typeof schema>

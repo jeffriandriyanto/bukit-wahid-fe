@@ -48,7 +48,7 @@ const shareAlbum = async () => {
       toast.add({ title: 'Tautan album disalin!', color: 'success' })
     }
   } catch (err) {
-    console.log(err)
+    console.error(err)
   }
 }
 
