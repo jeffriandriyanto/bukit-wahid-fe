@@ -2,7 +2,7 @@
 import { z } from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { perPageLimit } from '~/const/utils'
-import { genderItems, religionOptions, nationalityOptions, educationOptions } from '~/const/dropdown'
+import { genderItems, religionOptions, nationalityOptions, maritalStatusOptions, educationOptions } from '~/const/dropdown'
 
 const {
   dropdownRT,
@@ -44,9 +44,9 @@ const residentSchema = z.object({
   blood_type: optionalText,
   email: optionalText,
   job: optionalText,
-  nationality: requiredText('Kewarganegaraan wajib diisi'),
-  marital_status: requiredText('Status pernikahan wajib diisi'),
-  last_education: requiredText('Pendidikan terakhir wajib diisi')
+  nationality: optionalText,
+  marital_status: optionalText,
+  last_education: optionalText
 })
 
 const headSchema = z.object({
@@ -61,9 +61,9 @@ const headSchema = z.object({
   blood_type: optionalText,
   email: optionalText,
   job: optionalText,
-  nationality: requiredText('Kewarganegaraan wajib diisi'),
-  marital_status: requiredText('Status pernikahan wajib diisi'),
-  last_education: requiredText('Pendidikan terakhir wajib diisi')
+  nationality: optionalText,
+  marital_status: optionalText,
+  last_education: optionalText
 })
 
 const stepAddressSchema = z.object({
@@ -886,7 +886,7 @@ onMounted(() => {
               <UInput v-model="form.head.job" />
             </UFormField>
 
-            <UFormField name="head.nationality" label="Kewarganegaraan" required>
+            <UFormField name="head.nationality" label="Kewarganegaraan">
               <USelectMenu
                 v-model="form.head.nationality"
                 :items="nationalityOptions"
@@ -897,14 +897,18 @@ onMounted(() => {
               />
             </UFormField>
 
-            <UFormField name="head.marital_status" label="Status Pernikahan" required>
-              <UInput
+            <UFormField name="head.marital_status" label="Status Pernikahan">
+              <USelectMenu
                 v-model="form.head.marital_status"
-                placeholder="Contoh: Nikah, Belum Nikah, Cerai"
+                :items="maritalStatusOptions"
+                value-key="key"
+                label-key="label"
+                size="xl"
+                class="w-full"
               />
             </UFormField>
 
-            <UFormField name="head.last_education" label="Pendidikan Terakhir" required>
+            <UFormField name="head.last_education" label="Pendidikan Terakhir">
               <USelectMenu
                 v-model="form.head.last_education"
                 :items="educationOptions"
@@ -990,7 +994,7 @@ onMounted(() => {
                 <UInput v-model="form.spouse.job" />
               </UFormField>
 
-              <UFormField name="spouse.nationality" label="Kewarganegaraan" required>
+              <UFormField name="spouse.nationality" label="Kewarganegaraan">
                 <USelectMenu
                   v-model="form.spouse.nationality"
                   :items="nationalityOptions"
@@ -1001,14 +1005,18 @@ onMounted(() => {
                 />
               </UFormField>
 
-              <UFormField name="spouse.marital_status" label="Status Pernikahan" required>
-                <UInput
+              <UFormField name="spouse.marital_status" label="Status Pernikahan">
+                <USelectMenu
                   v-model="form.spouse.marital_status"
-                  placeholder="Contoh: Nikah, Belum Nikah, Cerai"
+                  :items="maritalStatusOptions"
+                  value-key="key"
+                  label-key="label"
+                  size="xl"
+                  class="w-full"
                 />
               </UFormField>
 
-              <UFormField name="spouse.last_education" label="Pendidikan Terakhir" required>
+              <UFormField name="spouse.last_education" label="Pendidikan Terakhir">
                 <USelectMenu
                   v-model="form.spouse.last_education"
                   :items="educationOptions"
@@ -1120,7 +1128,7 @@ onMounted(() => {
                     <UInput v-model="child.job" />
                   </UFormField>
 
-                  <UFormField :name="`childs.${index}.nationality`" label="Kewarganegaraan" required>
+                  <UFormField :name="`childs.${index}.nationality`" label="Kewarganegaraan">
                     <USelectMenu
                       v-model="child.nationality"
                       :items="nationalityOptions"
@@ -1131,7 +1139,7 @@ onMounted(() => {
                     />
                   </UFormField>
 
-                  <UFormField :name="`childs.${index}.last_education`" label="Pendidikan Terakhir" required>
+                  <UFormField :name="`childs.${index}.last_education`" label="Pendidikan Terakhir">
                     <USelectMenu
                       v-model="child.last_education"
                       :items="educationOptions"
@@ -1237,7 +1245,7 @@ onMounted(() => {
                     <UInput v-model="item.job" />
                   </UFormField>
 
-                  <UFormField :name="`others.${index}.nationality`" label="Kewarganegaraan" required>
+                  <UFormField :name="`others.${index}.nationality`" label="Kewarganegaraan">
                     <USelectMenu
                       v-model="item.nationality"
                       :items="nationalityOptions"
@@ -1248,7 +1256,7 @@ onMounted(() => {
                     />
                   </UFormField>
 
-                  <UFormField :name="`others.${index}.last_education`" label="Pendidikan Terakhir" required>
+                  <UFormField :name="`others.${index}.last_education`" label="Pendidikan Terakhir">
                     <USelectMenu
                       v-model="item.last_education"
                       :items="educationOptions"

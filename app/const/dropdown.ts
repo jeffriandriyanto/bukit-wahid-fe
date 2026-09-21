@@ -10,7 +10,6 @@ export const genderItems = [
 ]
 
 export const religionOptions = [
-  { key: null, label: 'Semua Agama' },
   { key: 'Islam', label: 'Islam' },
   { key: 'Kristen', label: 'Kristen' },
   { key: 'Katolik', label: 'Katolik' },
@@ -22,6 +21,13 @@ export const religionOptions = [
 export const nationalityOptions = [
   { key: 'WNI', label: 'WNI' },
   { key: 'WNA', label: 'WNA' }
+]
+
+export const maritalStatusOptions = [
+  { key: 'Belum Kawin', label: 'Belum Kawin' },
+  { key: 'Kawin', label: 'Kawin' },
+  { key: 'Janda', label: 'Janda' },
+  { key: 'Duda', label: 'Duda' }
 ]
 
 export const educationOptions = [

@@ -6,7 +6,7 @@ const {
   ageGroupOptions,
   perPageLimit,
   genderItems,
-  religionOptions,
+  religionFilterOptions,
   dropdownRT,
   isOpen,
   mode,
@@ -184,7 +184,7 @@ const {
           <UFormField label="Berdasarkan Agama">
             <USelectMenu
               v-model="tempReligion"
-              :items="religionOptions"
+              :items="religionFilterOptions"
               value-key="key"
               label-key="label"
               placeholder="Semua Agama"

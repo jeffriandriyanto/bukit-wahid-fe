@@ -5,6 +5,11 @@ import { fileUpload, fileUploadResidence } from '~/services/files'
 import { watchWithFilter, debounceFilter } from '@vueuse/core'
 import { perPageLimit } from '~/const/utils'
 
+const religionFilterOptions = [
+  { key: null, label: 'Semua Agama' },
+  ...religionOptions
+]
+
 export const CitizenFormSchema = z.object({
   name: z.string().min(1, 'Nama wajib diisi'),
   phone: z.string().optional().nullable(),
@@ -447,7 +452,7 @@ export const useCitizen = () => {
     ageGroupOptions,
     perPageLimit,
     genderItems,
-    religionOptions,
+    religionFilterOptions,
     // Dropdown
     dropdownRT,
     // Modal State
