@@ -33,8 +33,8 @@ const columnsFinancialStatements = [
   { accessorKey: 'unit', header: 'Unit / Kavling' },
   { accessorKey: 'name', header: 'Nama Penghuni' },
   { accessorKey: 'total_ipl', header: 'Tagihan IPL' },
-  { accessorKey: 'total_pam', header: 'Tagihan Air' },
-  { accessorKey: 'total_dues', header: 'Iuran Lain' },
+  { accessorKey: 'total_pam', header: 'Tagihan Artetis' },
+  { accessorKey: 'total_dues', header: 'Iuran RW' },
   { accessorKey: 'total', header: 'Total Tagihan' },
   { accessorKey: 'action', header: 'Aksi' }
 ]

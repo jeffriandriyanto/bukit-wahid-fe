@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { perPageLimit } from '~/const/utils'
+import { perPageLimit, mapCategoryLabel } from '~/const/utils'
 
 definePageMeta({
   middleware: ['auth']
@@ -109,12 +109,6 @@ const statusFilterOptions = [
         <template #amount-cell="{ row }">
           <span class="font-semibold text-gray-900">{{
             formatCurrency(row.original.amount)
-          }}</span>
-        </template>
-
-        <template #va-cell="{ row }">
-          <span class="font-mono text-xs text-gray-600">{{
-            row.original.va?.va_number || '-'
           }}</span>
         </template>
 
@@ -260,7 +254,7 @@ const statusFilterOptions = [
               :key="item.id"
               class="flex justify-between text-sm bg-gray-50 rounded-lg px-3 py-2"
             >
-              <span class="text-gray-600 capitalize">{{ item.category }}</span>
+              <span class="text-gray-600 capitalize">{{ mapCategoryLabel(item.category) }}</span>
               <span class="font-semibold">{{
                 formatCurrency(item.amount)
               }}</span>

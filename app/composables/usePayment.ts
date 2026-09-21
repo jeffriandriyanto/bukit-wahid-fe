@@ -3,7 +3,6 @@ import { watchWithFilter, debounceFilter } from '@vueuse/core'
 const columnsPayment = [
   { accessorKey: 'person', header: 'Nama Warga' },
   { accessorKey: 'amount', header: 'Nominal' },
-  { accessorKey: 'va', header: 'VA' },
   { accessorKey: 'status', header: 'Status' },
   { accessorKey: 'created_at', header: 'Tanggal' },
   { accessorKey: 'proof', header: 'Bukti' },

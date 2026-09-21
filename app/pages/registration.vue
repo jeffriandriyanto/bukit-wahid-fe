@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { z } from 'zod'
 import type { FormSubmitEvent } from '#ui/types'
-import { genderItems, religionOptions } from '~/const/dropdown'
+import { genderItems, religionOptions, nationalityOptions, educationOptions } from '~/const/dropdown'
 
 const {
   dropdownRT,
@@ -43,8 +43,9 @@ const residentSchema = z.object({
   blood_type: optionalText,
   email: optionalText,
   job: optionalText,
-  nationality: optionalText,
-  last_education: optionalText
+  nationality: requiredText('Kewarganegaraan wajib diisi'),
+  marital_status: requiredText('Status pernikahan wajib diisi'),
+  last_education: requiredText('Pendidikan terakhir wajib diisi')
 })
 
 const headSchema = z.object({
@@ -59,8 +60,9 @@ const headSchema = z.object({
   blood_type: optionalText,
   email: optionalText,
   job: optionalText,
-  nationality: optionalText,
-  last_education: optionalText
+  nationality: requiredText('Kewarganegaraan wajib diisi'),
+  marital_status: requiredText('Status pernikahan wajib diisi'),
+  last_education: requiredText('Pendidikan terakhir wajib diisi')
 })
 
 const schema = z.object({
@@ -92,6 +94,7 @@ const createResident = () => ({
   email: null,
   job: null,
   nationality: null,
+  marital_status: null,
   last_education: null
 })
 
@@ -512,6 +515,38 @@ onMounted(() => {
                       class="w-full"
                     />
                   </UFormField>
+
+                  <UFormField label="Kewarganegaraan" name="head.nationality" required>
+                    <USelectMenu
+                      v-model="state.head.nationality"
+                      :items="nationalityOptions"
+                      value-key="key"
+                      label-key="label"
+                      size="xl"
+                      class="w-full"
+                    />
+                  </UFormField>
+
+                  <UFormField label="Status Pernikahan" name="head.marital_status" required>
+                    <UInput
+                      v-model="state.head.marital_status"
+                      size="xl"
+                      placeholder="Contoh: Nikah, Belum Nikah, Cerai"
+                      :ui="{ base: 'rounded-2xl' }"
+                      class="bg-slate-50 rounded-2xl"
+                    />
+                  </UFormField>
+
+                  <UFormField label="Pendidikan Terakhir" name="head.last_education" required>
+                    <USelectMenu
+                      v-model="state.head.last_education"
+                      :items="educationOptions"
+                      value-key="key"
+                      label-key="label"
+                      size="xl"
+                      class="w-full"
+                    />
+                  </UFormField>
                 </div>
               </div>
             </div>
@@ -619,6 +654,39 @@ onMounted(() => {
                       />
                     </UFormField>
                   </div>
+
+                  <div class="grid grid-cols-2 gap-4">
+                    <UFormField label="Kewarganegaraan" name="spouse.nationality" required>
+                      <USelectMenu
+                        v-model="state.spouse.nationality"
+                        :items="nationalityOptions"
+                        value-key="key"
+                        label-key="label"
+                        size="xl"
+                        class="w-full"
+                      />
+                    </UFormField>
+
+                    <UFormField label="Status Pernikahan" name="spouse.marital_status" required>
+                      <UInput
+                        v-model="state.spouse.marital_status"
+                        size="xl"
+                        placeholder="Contoh: Nikah, Belum Nikah, Cerai"
+                        :ui="{ base: 'rounded-2xl' }"
+                      />
+                    </UFormField>
+
+                    <UFormField label="Pendidikan Terakhir" name="spouse.last_education" required>
+                      <USelectMenu
+                        v-model="state.spouse.last_education"
+                        :items="educationOptions"
+                        value-key="key"
+                        label-key="label"
+                        size="xl"
+                        class="w-full"
+                      />
+                    </UFormField>
+                  </div>
                 </div>
 
                 <div
@@ -712,6 +780,32 @@ onMounted(() => {
                           class="w-full"
                         />
                       </UFormField>
+
+                      <div class="grid grid-cols-2 gap-3">
+                        <UFormField :name="`childs.${index}.nationality`" required>
+                          <USelectMenu
+                            v-model="child.nationality"
+                            :items="nationalityOptions"
+                            placeholder="Kewarganegaraan"
+                            value-key="key"
+                            label-key="label"
+                            size="lg"
+                            :ui="{ base: 'rounded-xl' }"
+                          />
+                        </UFormField>
+
+                        <UFormField :name="`childs.${index}.last_education`" required>
+                          <USelectMenu
+                            v-model="child.last_education"
+                            :items="educationOptions"
+                            placeholder="Pendidikan"
+                            value-key="key"
+                            label-key="label"
+                            size="lg"
+                            :ui="{ base: 'rounded-xl' }"
+                          />
+                        </UFormField>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -817,6 +911,30 @@ onMounted(() => {
                       <UInput
                         v-model="item.dob"
                         type="date"
+                        size="lg"
+                        :ui="{ base: 'rounded-xl' }"
+                      />
+                    </UFormField>
+
+                    <UFormField :name="`other.${index}.nationality`" required>
+                      <USelectMenu
+                        v-model="item.nationality"
+                        :items="nationalityOptions"
+                        placeholder="Kewarganegaraan"
+                        value-key="key"
+                        label-key="label"
+                        size="lg"
+                        :ui="{ base: 'rounded-xl' }"
+                      />
+                    </UFormField>
+
+                    <UFormField :name="`other.${index}.last_education`" required>
+                      <USelectMenu
+                        v-model="item.last_education"
+                        :items="educationOptions"
+                        placeholder="Pendidikan"
+                        value-key="key"
+                        label-key="label"
                         size="lg"
                         :ui="{ base: 'rounded-xl' }"
                       />

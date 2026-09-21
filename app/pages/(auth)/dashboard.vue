@@ -25,6 +25,12 @@ const loading = ref(true)
 const error = ref(false)
 const rawData = ref<any>(null) // Penampung data mentah dari API
 
+// --- AGE GROUP DETAIL MODAL ---
+const isOpenAgeDetail = ref(false)
+const selectedAgeGroup = ref('')
+const loadingAgeDetail = ref(false)
+const ageDetailData = ref<any[]>([])
+
 // --- API ACTIONS ---
 const fetchDashboardData = async () => {
   loading.value = true
@@ -39,6 +45,26 @@ const fetchDashboardData = async () => {
     error.value = true
   } finally {
     loading.value = false
+  }
+}
+
+const fetchAgeGroupDetail = async (ageGroup: string) => {
+  loadingAgeDetail.value = true
+  selectedAgeGroup.value = ageGroup
+  isOpenAgeDetail.value = true
+  ageDetailData.value = []
+
+  try {
+    const res = await useApi('/dashboard/age-group-detail', {
+      params: { age_group: ageGroup }
+    })
+    if (res.status === 1) {
+      ageDetailData.value = res.data
+    }
+  } catch (err) {
+    console.error('Gagal mengambil detail usia:', err)
+  } finally {
+    loadingAgeDetail.value = false
   }
 }
 
@@ -114,6 +140,14 @@ const ageChartOption = computed(() => {
   }
 })
 
+// Handle chart click
+const onAgeChartClick = (params: any) => {
+  const ageGroupKeys = Object.keys(rawData.value?.resident_by_age_group || {})
+  if (params.dataIndex !== undefined && ageGroupKeys[params.dataIndex]) {
+    fetchAgeGroupDetail(ageGroupKeys[params.dataIndex])
+  }
+}
+
 // 2. Grafik Agama (Dinamis dari resident_by_religion)
 const religionChartOption = computed(() => {
   const religionData = rawData.value?.resident_by_religion || {}
@@ -178,6 +212,10 @@ const genderChartOption = computed(() => {
       }
     ]
   }
+})
+
+const totalAgeDetail = computed(() => {
+  return ageDetailData.value.reduce((sum, item) => sum + item.total, 0)
 })
 
 onMounted(() => fetchDashboardData())
@@ -286,7 +324,7 @@ onMounted(() => fetchDashboardData())
               icon: 'i-lucide-trending-down'
             },
             {
-              label: 'Total Saldo',
+              label: 'Total Pendapatan',
               val: financialData.balance,
               bg: 'bg-gradient-to-br from-neutral-800 to-neutral-950',
               icon: 'i-lucide-wallet',
@@ -343,9 +381,84 @@ onMounted(() => fetchDashboardData())
           </div>
         </template>
         <div class="h-80 w-full px-2">
-          <v-chart :option="ageChartOption" autoresize />
+          <v-chart
+            :option="ageChartOption"
+            autoresize
+            @click="onAgeChartClick"
+          />
         </div>
       </UCard>
+
+      <!-- AGE GROUP DETAIL MODAL -->
+      <UModal v-model:open="isOpenAgeDetail" :ui="{ content: 'max-w-lg' }">
+        <template #header>
+          <div class="flex items-center gap-2">
+            <UIcon name="i-lucide-users" class="text-primary-600" />
+            <span class="font-bold text-gray-900">
+              Detail Usia: {{ selectedAgeGroup }}
+            </span>
+          </div>
+        </template>
+
+        <template #body>
+          <div v-if="loadingAgeDetail" class="py-10 text-center">
+            <UIcon
+              name="i-lucide-loader-circle"
+              class="w-6 h-6 text-gray-300 animate-spin mx-auto"
+            />
+            <p class="text-sm text-gray-500 mt-2">Memuat data...</p>
+          </div>
+
+          <div v-else-if="ageDetailData.length === 0" class="py-10 text-center">
+            <UIcon
+              name="i-lucide-database"
+              class="w-10 h-10 text-gray-300 mx-auto mb-2"
+            />
+            <p class="text-gray-500 text-sm">Tidak ada data untuk kelompok usia ini.</p>
+          </div>
+
+          <div v-else class="space-y-3">
+            <div class="bg-gray-50 rounded-xl p-4 flex justify-between items-center">
+              <span class="text-sm font-medium text-gray-600">Total Warga</span>
+              <span class="text-2xl font-black text-primary-600">{{ totalAgeDetail }}</span>
+            </div>
+
+            <div class="border rounded-xl overflow-hidden">
+              <table class="w-full text-sm">
+                <thead class="bg-gray-50">
+                  <tr>
+                    <th class="text-left px-4 py-3 font-semibold text-gray-600">RT</th>
+                    <th class="text-right px-4 py-3 font-semibold text-gray-600">Jumlah</th>
+                    <th class="text-right px-4 py-3 font-semibold text-gray-600">Persentase</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr
+                    v-for="(item, index) in ageDetailData"
+                    :key="index"
+                    class="border-t hover:bg-gray-50 transition-colors"
+                  >
+                    <td class="px-4 py-3 font-medium text-gray-900">{{ item.rt }}</td>
+                    <td class="px-4 py-3 text-right font-semibold text-gray-900">{{ item.total }}</td>
+                    <td class="px-4 py-3 text-right text-gray-600">
+                      {{ totalAgeDetail > 0 ? ((item.total / totalAgeDetail) * 100).toFixed(1) : 0 }}%
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </template>
+
+        <template #footer>
+          <UButton
+            label="Tutup"
+            color="neutral"
+            variant="ghost"
+            @click="isOpenAgeDetail = false"
+          />
+        </template>
+      </UModal>
 
       <!-- SECONDARY CHARTS -->
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">

@@ -313,7 +313,7 @@ const {
               />
             </UTooltip>
 
-            <!-- <UTooltip text="Edit Data">
+            <UTooltip text="Edit Data">
               <UButton
                 icon="i-lucide-pencil"
                 variant="ghost"
@@ -321,7 +321,7 @@ const {
                 size="sm"
                 @click="openEditModal(row.original)"
               />
-            </UTooltip> -->
+            </UTooltip>
             <UTooltip text="Hapus Data">
               <UButton
                 icon="i-lucide-trash-2"

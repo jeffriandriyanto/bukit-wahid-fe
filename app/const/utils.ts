@@ -12,3 +12,14 @@ export const categories = [
   { label: 'Pembangunan', value: 'pembangunan' },
   { label: 'Rapat Warga', value: 'rapat' }
 ]
+
+const categoryLabelMap: Record<string, string> = {
+  DUES: 'Iuran RW',
+  PAM: 'Artetis',
+  IPL: 'IPL'
+}
+
+export const mapCategoryLabel = (category: string): string => {
+  if (!category) return '-'
+  return categoryLabelMap[category.toUpperCase()] || category
+}

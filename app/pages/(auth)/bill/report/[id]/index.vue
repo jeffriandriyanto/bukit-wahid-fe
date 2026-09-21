@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { z } from 'zod'
-import { perPageLimit } from '~/const/utils'
+import { perPageLimit, mapCategoryLabel } from '~/const/utils'
 import { fileUpload } from '~/services/files'
 
 const toast = useToast()
@@ -297,7 +297,7 @@ onMounted(() => {
               class="flex justify-between text-sm"
             >
               <span class="text-gray-600"
-                >{{ bill.category }} ({{ formatDate(bill.bill_date) }})</span
+                >{{ mapCategoryLabel(bill.category) }} ({{ formatDate(bill.bill_date) }})</span
               >
               <span class="font-semibold">{{
                 formatCurrency(bill.amount)
@@ -398,7 +398,7 @@ onMounted(() => {
         <template #category-cell="{ row }">
           <div class="flex flex-col">
             <span class="font-bold text-gray-900">{{
-              row.original.category?.toUpperCase()
+              mapCategoryLabel(row.original.category)
             }}</span>
             <span class="text-[10px] text-gray-400"
               >ID: {{ row.original.id.slice(0, 8) }}</span

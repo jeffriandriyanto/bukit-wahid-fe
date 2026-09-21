@@ -18,3 +18,18 @@ export const religionOptions = [
   { key: 'Budha', label: 'Budha' },
   { key: 'Khonghucu', label: 'Khonghucu' }
 ]
+
+export const nationalityOptions = [
+  { key: 'WNI', label: 'WNI' },
+  { key: 'WNA', label: 'WNA' }
+]
+
+export const educationOptions = [
+  { key: 'SD', label: 'SD' },
+  { key: 'SMP', label: 'SMP' },
+  { key: 'SMA', label: 'SMA' },
+  { key: 'D3', label: 'D3' },
+  { key: 'S1', label: 'S1' },
+  { key: 'S2', label: 'S2' },
+  { key: 'S3', label: 'S3' }
+]
