@@ -3,6 +3,9 @@ import { perPageLimit } from '~/const/utils'
 
 definePageMeta({ middleware: ['auth'] })
 
+const { reveal: confirm } = useConfirmService()
+const toast = useToast()
+
 // --- STATE ---
 const dataSubmission = ref<any[]>([])
 const loading = ref(false)
@@ -89,6 +92,31 @@ const handleFilterChange = () => {
 const openDetail = (detail: any) => {
   selectedDetail.value = detail
   isOpen.value = true
+}
+
+const confirmDelete = async (row: any) => {
+  const ok = await confirm({
+    title: 'Hapus Data Pengaduan?',
+    description: `Apakah Anda yakin ingin menghapus pengaduan dari "${row.author?.name}"? Data yang dihapus tidak dapat dikembalikan.`,
+    confirmLabel: 'Hapus',
+    cancelLabel: 'Batal',
+    color: 'error'
+  })
+
+  if (!ok) return
+
+  try {
+    loading.value = true
+    const res = await useApi(`/complaint/${row.id}`, { method: 'DELETE' })
+    if (res.status === 1) {
+      toast.add({ title: 'Data berhasil dihapus', color: 'success' })
+      getData()
+    }
+  } catch (err: any) {
+    toast.add({ title: err?.message || 'Gagal menghapus data', color: 'error' })
+  } finally {
+    loading.value = false
+  }
 }
 
 // --- HELPERS ---
@@ -222,12 +250,21 @@ onMounted(() => {
         </template>
 
         <template #action-cell="{ row }">
-          <UButton
-            icon="i-heroicons-eye"
-            variant="ghost"
-            color="neutral"
-            @click="openDetail(row.original)"
-          />
+          <div class="flex gap-2">
+            <UButton
+              icon="i-heroicons-eye"
+              variant="ghost"
+              color="neutral"
+              @click="openDetail(row.original)"
+            />
+            <UButton
+              icon="i-lucide-trash-2"
+              variant="ghost"
+              color="error"
+              size="sm"
+              @click="confirmDelete(row.original)"
+            />
+          </div>
         </template>
       </UTable>
     </div>
