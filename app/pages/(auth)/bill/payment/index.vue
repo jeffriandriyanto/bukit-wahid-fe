@@ -225,9 +225,9 @@ const statusFilterOptions = [
               </p>
             </div>
             <div>
-              <span class="text-xs font-bold text-gray-400 uppercase">VA</span>
-              <p class="font-mono text-gray-700">
-                {{ detail.va?.va_number || '-' }}
+              <span class="text-xs font-bold text-gray-400 uppercase">Metode</span>
+              <p class="font-semibold text-gray-700 capitalize">
+                {{ detail.type === 'transfer' ? 'Transfer Bank' : (detail.type === 'cash' ? 'Tunai / Cash' : (detail.type || '-')) }}
               </p>
             </div>
             <div>
