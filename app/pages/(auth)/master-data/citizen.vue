@@ -39,6 +39,7 @@ const {
   applyFilters,
   resetFilters,
   excelActions,
+  downloadDataHandler,
   handleExcelChange
 } = useCitizen()
 </script>
@@ -107,6 +108,19 @@ const {
 
         <!-- Actions Area -->
         <div class="flex items-center gap-2 shrink-0">
+          <UButton
+            color="primary"
+            variant="soft"
+            size="md"
+            class="rounded-full font-semibold"
+            @click="downloadDataHandler"
+          >
+            <template #leading>
+              <UIcon name="i-lucide-download" class="w-4 h-4 text-primary-600" />
+            </template>
+            <span class="hidden sm:inline">Download Data</span>
+          </UButton>
+
           <UDropdownMenu
             :items="excelActions"
             :content="{ align: 'end', sideOffset: 8 }"

@@ -132,6 +132,11 @@ export const useCitizen = () => {
   const excelActions = computed(() => [
     [
       {
+        label: 'Download Data Warga',
+        icon: 'i-lucide-download',
+        onSelect: () => downloadDataHandler()
+      },
+      {
         label: 'Download Template',
         icon: 'i-lucide-download-cloud',
         onSelect: () => downloadTemplateHandler()
@@ -381,6 +386,19 @@ export const useCitizen = () => {
   }
 
   // --- Excel Actions ---
+  const downloadDataHandler = () => {
+    const config = useRuntimeConfig()
+    const params = new URLSearchParams()
+    if (search.value) params.append('search', search.value)
+    if (selectedRT.value) params.append('rt', selectedRT.value)
+    if (selectedAgeGroup.value) params.append('age_group', selectedAgeGroup.value)
+    if (selectedReligion.value) params.append('religion', selectedReligion.value)
+
+    const queryString = params.toString() ? `?${params.toString()}` : ''
+    const url = `${config.public.baseUrl}resident/excel/export${queryString}`
+    window.open(url, '_blank')
+  }
+
   const downloadTemplateHandler = () => {
     const config = useRuntimeConfig()
     const url = `${config.public.baseUrl}resident/excel/template`
@@ -501,6 +519,8 @@ export const useCitizen = () => {
     resetFilters,
     // Excel Actions
     excelActions,
+    downloadDataHandler,
+    downloadTemplateHandler,
     handleExcelChange
   }
 }
