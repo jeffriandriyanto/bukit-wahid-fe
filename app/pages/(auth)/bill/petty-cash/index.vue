@@ -166,7 +166,7 @@ const saveData = async (event: FormSubmitEvent<PettyFormSchema>) => {
     }
 
     let url = ''
-    let payload: any = {
+    const payload: any = {
       tag: event.data.tag,
       description: event.data.description,
       proof: finalImageUrl
@@ -182,7 +182,7 @@ const saveData = async (event: FormSubmitEvent<PettyFormSchema>) => {
       url = `/finance/petty-cash/out/revisi/${editingId.value}`
       payload.date = event.data.date
       // Logika nominal revisi disesuaikan dengan tipe transaksi awal
-      const isCredit = parseFloat(form.amount) > 0 // sederhananya dikirim sesuai input
+      // const isCredit = parseFloat(form.amount) > 0 // sederhananya dikirim sesuai input
       payload.credit = mode.value === 'revisi' ? event.data.amount : '0.00'
       payload.debit = '0.00'
     }
@@ -392,7 +392,7 @@ const handleExport = () => {
       />
     </div>
 
-    <UModal v-model:open="isOpenForm" :ui="{ width: 'sm:max-w-lg' }">
+    <UModal v-model:open="isOpenForm" :ui="{ body: 'sm:max-w-lg' }">
       <template #header>
         <div class="flex items-center gap-2 font-bold text-gray-800">
           <UIcon
@@ -462,7 +462,7 @@ const handleExport = () => {
                 v-if="form.proof"
                 class="relative group aspect-video rounded-xl border-2 border-gray-100 overflow-hidden bg-gray-50"
               >
-                <img :src="form.proof" class="w-full h-full object-contain" />
+                <img :src="form.proof" class="w-full h-full object-contain">
                 <div
                   class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
                 >
@@ -580,7 +580,7 @@ const handleExport = () => {
             <div
               class="max-w-md mx-auto md:mx-0 overflow-hidden rounded-2xl border shadow-sm"
             >
-              <img :src="selectedDetail.proof" class="w-full h-auto" />
+              <img :src="selectedDetail.proof" class="w-full h-auto">
             </div>
           </div>
         </div>

@@ -29,6 +29,8 @@
   },
   "devDependencies": {
     "@iconify-json/heroicons": "^1.2.3",
+    "@iconify-json/mdi": "^1.2.3",
+    "@iconify-json/uil": "^1.2.3",
     "@nuxt/eslint": "^1.12.1",
     "eslint": "^9.39.2",
     "typescript": "^5.9.3",

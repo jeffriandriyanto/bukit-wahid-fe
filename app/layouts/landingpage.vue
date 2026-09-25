@@ -56,7 +56,7 @@
               <div
                 class="flex items-center gap-2 text-primary-500 font-bold px-2 uppercase text-xs tracking-widest"
               >
-                <UIcon :name="item.icon" v-if="item.icon" />
+                <UIcon v-if="item.icon" :name="item.icon" />
                 {{ item.label }}
               </div>
 
@@ -147,7 +147,7 @@
               Alamat
             </h4>
             <address class="text-neutral-400 text-sm not-italic leading-6">
-              {{ CONFIG.location }}<br />
+              {{ CONFIG.location }}<br>
               <span class="text-neutral-500 mt-2 block font-medium">{{
                 CONFIG.secretariat
               }}</span>

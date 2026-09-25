@@ -140,7 +140,7 @@ definePageMeta({
             <h1
               class="text-5xl md:text-6xl font-extrabold text-white leading-[1.05] tracking-tighter text-balance"
             >
-              RW 11 BUKIT<br />
+              RW 11 BUKIT<br>
               <span class="text-primary-500">WAHID</span>
               Regency
             </h1>
@@ -492,7 +492,7 @@ definePageMeta({
             background-image: radial-gradient(#fff 1px, transparent 1px);
             background-size: 30px 30px;
           "
-        ></div>
+        />
       </div>
 
       <UContainer class="relative z-10">
@@ -511,7 +511,7 @@ definePageMeta({
                 <h2
                   class="text-4xl md:text-5xl font-black text-white tracking-tighter leading-tight"
                 >
-                  Layanan Warga dalam <br />
+                  Layanan Warga dalam <br>
                   <span class="text-primary-200">Satu Genggaman</span>
                 </h2>
                 <p class="text-primary-50 text-lg leading-relaxed max-w-xl">
@@ -576,7 +576,7 @@ definePageMeta({
               </div>
               <div
                 class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-primary-400 rounded-full blur-[100px] opacity-40 z-0"
-              ></div>
+              />
             </div>
           </div>
         </div>
