@@ -87,7 +87,9 @@ const stats = computed(() => ({
 const financialData = computed(() => ({
   in: rawData.value?.balance?.this_month_income || 0,
   out: rawData.value?.balance?.this_month_outcome || 0,
-  balance: rawData.value?.balance?.total_balance || 0
+  balance: rawData.value?.balance?.total_balance || 0,
+  cash_in_hand: rawData.value?.balance?.cash_in_hand || 0,
+  bank_mandiri: rawData.value?.balance?.bank_mandiri || 0,
 }))
 
 // --- CHART CONFIGURATIONS ---
@@ -308,53 +310,104 @@ onMounted(() => fetchDashboardData())
       </div>
 
       <!-- FINANCIAL CARDS -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div
-          v-for="(fin, idx) in [
-            {
-              label: 'Pemasukan Bulan Ini',
-              val: financialData.in,
-              bg: 'bg-gradient-to-br from-secondary-500 to-secondary-700',
-              icon: 'i-lucide-trending-up'
-            },
-            {
-              label: 'Pengeluaran Bulan Ini',
-              val: financialData.out,
-              bg: 'bg-gradient-to-br from-primary-500 to-primary-700',
-              icon: 'i-lucide-trending-down'
-            },
-            {
-              label: 'Total Pendapatan',
-              val: financialData.balance,
-              bg: 'bg-gradient-to-br from-neutral-800 to-neutral-950',
-              icon: 'i-lucide-wallet',
-              isBalance: true
-            }
-          ]"
-          :key="idx"
-          class="relative overflow-hidden p-8 rounded-[2.5rem] text-white shadow-lg transition-all duration-500 hover:scale-[1.02] hover:shadow-xl"
-          :class="fin.bg"
-        >
-          <div class="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
-          <div class="absolute -bottom-6 -left-6 w-24 h-24 rounded-full bg-white/5 blur-xl" />
-          <div class="relative z-10">
-            <div class="flex items-center gap-2 mb-4">
-              <div class="p-2 rounded-xl bg-white/15 backdrop-blur-sm">
-                <UIcon :name="fin.icon" class="w-5 h-5" />
+      <div class="space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div
+            v-for="(fin, idx) in [
+              {
+                label: '💵 Kas Fisik (Tunai)',
+                val: financialData.cash_in_hand,
+                bg: 'bg-gradient-to-br from-emerald-600 to-teal-800',
+                icon: 'i-lucide-banknote',
+                badge: 'Brankas RW'
+              },
+              {
+                label: '🏦 Bank Mandiri',
+                val: financialData.bank_mandiri,
+                bg: 'bg-gradient-to-br from-blue-600 to-indigo-800',
+                icon: 'i-lucide-landmark',
+                badge: 'Rekening RW'
+              },
+              {
+                label: '💰 Total Kas & Bank',
+                val: financialData.balance,
+                bg: 'bg-gradient-to-br from-neutral-900 via-neutral-800 to-neutral-950',
+                icon: 'i-lucide-wallet',
+                isBalance: true,
+                badge: 'Likuiditas'
+              }
+            ]"
+            :key="idx"
+            class="relative overflow-hidden p-7 rounded-[2.5rem] text-white shadow-lg transition-all duration-500 hover:scale-[1.02] hover:shadow-xl"
+            :class="fin.bg"
+          >
+            <div class="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
+            <div class="absolute -bottom-6 -left-6 w-24 h-24 rounded-full bg-white/5 blur-xl" />
+            <div class="relative z-10">
+              <div class="flex items-center justify-between gap-2 mb-4">
+                <div class="flex items-center gap-2">
+                  <div class="p-2 rounded-xl bg-white/15 backdrop-blur-sm">
+                    <UIcon :name="fin.icon" class="w-5 h-5" />
+                  </div>
+                  <p class="text-[11px] font-bold opacity-85 uppercase tracking-[0.15em]">
+                    {{ fin.label }}
+                  </p>
+                </div>
+                <span class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-white/20 backdrop-blur-md">
+                  {{ fin.badge }}
+                </span>
               </div>
-              <p class="text-[10px] font-bold opacity-70 uppercase tracking-[0.2em]">
-                {{ fin.label }}
+              <p
+                class="text-3xl font-black tabular-nums"
+                :class="fin.isBalance ? 'text-secondary-400' : ''"
+              >
+                {{ formatCurrencyCompact(fin.val) }}
+              </p>
+              <p class="text-[11px] opacity-70 mt-1.5 tabular-nums">
+                {{ formatCurrency(fin.val) }}
               </p>
             </div>
-            <p
-              class="text-3xl font-black tabular-nums"
-              :class="fin.isBalance ? 'text-secondary-400' : ''"
-            >
-              {{ formatCurrencyCompact(fin.val) }}
-            </p>
-            <p class="text-[11px] opacity-50 mt-1.5 tabular-nums">
-              {{ formatCurrency(fin.val) }}
-            </p>
+          </div>
+        </div>
+
+        <!-- MONTHLY CASHFLOW MINI CARDS -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div class="flex items-center justify-between p-4 px-6 rounded-2xl bg-secondary-50/70 border border-secondary-100 ring-1 ring-secondary-200/50">
+            <div class="flex items-center gap-3">
+              <div class="p-2.5 rounded-xl bg-secondary-500 text-white shadow-sm">
+                <UIcon name="i-lucide-trending-up" class="w-4 h-4" />
+              </div>
+              <div>
+                <p class="text-[10px] font-bold uppercase tracking-wider text-secondary-800">
+                  Pemasukan Bulan Ini
+                </p>
+                <p class="text-lg font-black text-secondary-900 tabular-nums">
+                  {{ formatCurrency(financialData.in) }}
+                </p>
+              </div>
+            </div>
+            <span class="text-xs font-semibold text-secondary-700 bg-secondary-100 px-2.5 py-1 rounded-lg">
+              {{ formatCurrencyCompact(financialData.in) }}
+            </span>
+          </div>
+
+          <div class="flex items-center justify-between p-4 px-6 rounded-2xl bg-red-50/70 border border-red-100 ring-1 ring-red-200/50">
+            <div class="flex items-center gap-3">
+              <div class="p-2.5 rounded-xl bg-red-500 text-white shadow-sm">
+                <UIcon name="i-lucide-trending-down" class="w-4 h-4" />
+              </div>
+              <div>
+                <p class="text-[10px] font-bold uppercase tracking-wider text-red-800">
+                  Pengeluaran Bulan Ini
+                </p>
+                <p class="text-lg font-black text-red-900 tabular-nums">
+                  {{ formatCurrency(financialData.out) }}
+                </p>
+              </div>
+            </div>
+            <span class="text-xs font-semibold text-red-700 bg-red-100 px-2.5 py-1 rounded-lg">
+              {{ formatCurrencyCompact(financialData.out) }}
+            </span>
           </div>
         </div>
       </div>

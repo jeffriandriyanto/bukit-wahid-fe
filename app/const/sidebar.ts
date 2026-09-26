@@ -67,6 +67,11 @@ export const sidebarItems: SidebarItem[] = [
         to: '/bill/petty-cash'
       },
       {
+        label: 'Mutasi Kas & Bank',
+        icon: 'i-lucide-arrow-left-right',
+        to: '/bill/transfer'
+      },
+      {
         label: 'Jurnal',
         icon: 'i-lucide-notebook-tabs',
         to: '/bill/journal'

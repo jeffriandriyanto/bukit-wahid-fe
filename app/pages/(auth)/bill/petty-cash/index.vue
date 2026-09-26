@@ -25,6 +25,10 @@ const searchQuery = ref('')
 const selectedStatus = ref(null)
 const statusOptions = ref<any[]>([{ key: null, label: 'Semua Status' }])
 const coaOptions = ref<any[]>([]) // Diambil dari /dropdown/coa
+const sourceAccountOptions = [
+  { key: 1000, label: '💵 Kas Tunai (Fisik / Brankas)' },
+  { key: 1100, label: '🏦 Rekening Bank Mandiri' }
+]
 
 const pagination = ref({
   current_page: 1,
@@ -36,6 +40,7 @@ const pagination = ref({
 // --- VALIDATION SCHEMA ---
 const PettyFormSchema = z.object({
   tag: z.number().min(1, 'Tag/COA wajib dipilih'),
+  source_tag: z.number().default(1000),
   amount: z.string().min(1, 'Nominal wajib diisi'),
   description: z.string().min(5, 'Deskripsi minimal 5 karakter'),
   date: z.string().optional(), // Muncul hanya saat revisi
@@ -46,6 +51,7 @@ type PettyFormSchema = z.infer<typeof PettyFormSchema>
 
 const form = reactive({
   tag: undefined as number | undefined,
+  source_tag: 1000 as number | undefined,
   amount: '',
   description: '',
   date: '',
@@ -56,6 +62,7 @@ const form = reactive({
 const pettyTable = [
   { accessorKey: 'date', header: 'Tanggal' },
   { accessorKey: 'coa', header: 'Kategori / Tag' },
+  { accessorKey: 'sourceCoa', header: 'Kas / Rekening' },
   { accessorKey: 'description', header: 'Deskripsi' },
   { accessorKey: 'amount', header: 'Nominal' },
   { accessorKey: 'status', header: 'Status' },
@@ -132,6 +139,7 @@ const openRevisiModal = (row: any) => {
   mode.value = 'revisi'
   editingId.value = row.id
   form.tag = row.tag
+  form.source_tag = row.source_tag || 1000
   form.amount = parseFloat(row.credit) > 0 ? row.credit : row.debit
   form.description = row.description
   form.date = row.date // format yyyy-mm-dd
@@ -142,6 +150,7 @@ const openRevisiModal = (row: any) => {
 
 const resetFormFields = () => {
   form.tag = undefined
+  form.source_tag = 1000
   form.amount = ''
   form.description = ''
   form.date = ''
@@ -168,6 +177,7 @@ const saveData = async (event: FormSubmitEvent<PettyFormSchema>) => {
     let url = ''
     const payload: any = {
       tag: event.data.tag,
+      source_tag: event.data.source_tag || form.source_tag || 1000,
       description: event.data.description,
       proof: finalImageUrl
     }
@@ -330,6 +340,18 @@ const handleExport = () => {
           </div>
         </template>
 
+        <template #sourceCoa-cell="{ row }">
+          <UBadge
+            :color="row.original.source_tag == 1100 ? 'info' : 'success'"
+            variant="subtle"
+            size="sm"
+            class="gap-1"
+          >
+            <UIcon :name="row.original.source_tag == 1100 ? 'i-lucide-landmark' : 'i-lucide-banknote'" class="w-3.5 h-3.5" />
+            {{ row.original.source_tag == 1100 ? 'Bank Mandiri' : 'Kas Tunai' }}
+          </UBadge>
+        </template>
+
         <template #amount-cell="{ row }">
           <div
             v-if="parseFloat(row.original.credit) > 0"
@@ -392,7 +414,7 @@ const handleExport = () => {
       />
     </div>
 
-    <UModal v-model:open="isOpenForm" :ui="{ body: 'sm:max-w-lg' }">
+    <UModal v-model:open="isOpenForm" :ui="{ content: 'sm:max-w-lg' }">
       <template #header>
         <div class="flex items-center gap-2 font-bold text-gray-800">
           <UIcon
@@ -416,7 +438,7 @@ const handleExport = () => {
           class="space-y-5"
           @submit="saveData"
         >
-          <UFormField name="tag" label="Tag / COA" required>
+          <UFormField name="tag" label="Kategori Beban / Pos Transaksi" required>
             <USelectMenu
               v-model="form.tag"
               :items="coaOptions"
@@ -424,6 +446,21 @@ const handleExport = () => {
               value-key="key"
               placeholder="Pilih Akun/Tag"
               searchable
+              size="lg"
+            />
+          </UFormField>
+
+          <UFormField
+            name="source_tag"
+            :label="mode === 'in' ? 'Rekening / Kas Tujuan' : 'Sumber Dana (Kas Tunai / Rekening)'"
+            required
+          >
+            <USelectMenu
+              v-model="form.source_tag"
+              :items="sourceAccountOptions"
+              label-key="label"
+              value-key="key"
+              placeholder="Pilih Kas / Rekening"
               size="lg"
             />
           </UFormField>

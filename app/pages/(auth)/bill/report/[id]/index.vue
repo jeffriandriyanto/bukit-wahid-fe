@@ -4,6 +4,10 @@ import { z } from 'zod'
 import { perPageLimit, mapCategoryLabel } from '~/const/utils'
 import { fileUpload } from '~/services/files'
 
+definePageMeta({
+  middleware: ['auth']
+})
+
 const toast = useToast()
 const route = useRoute()
 const userId = route.params.id
@@ -32,14 +36,23 @@ const pagination = ref({
 
 // Schema Zod
 const BillFormSchema = z.object({
-  nominal: z.number().min(1, 'Nominal wajib diisi'),
+  payment_type: z.enum(['cash', 'transfer']).default('cash'),
+  nominal: z.number().min(0, 'Nominal wajib diisi'),
   description: z.string().optional(),
   proof: z.string().min(1, 'Bukti bayar wajib diunggah')
 })
 
 type BillFormSchema = z.infer<typeof BillFormSchema>
 
-const form = reactive({
+interface BillFormState {
+  payment_type: 'cash' | 'transfer'
+  nominal: number
+  proof: string
+  description: string
+}
+
+const form = reactive<BillFormState>({
+  payment_type: 'cash',
   nominal: 0,
   proof: '',
   description: ''
@@ -125,7 +138,8 @@ const saveBill = async (event: FormSubmitEvent<BillFormSchema>) => {
     const payload = {
       amount: totalSelectedAmount.value,
       proof: finalImageUrl,
-      description: form.description || ''
+      description: form.description || '',
+      type: form.payment_type
     }
 
     const cashRes = await useApi(`/finance/payment/cash/${paymentId}`, {
@@ -148,6 +162,7 @@ const saveBill = async (event: FormSubmitEvent<BillFormSchema>) => {
 
 // --- UTILS & COMPUTED ---
 const resetForm = () => {
+  form.payment_type = 'cash'
   form.nominal = 0
   form.description = ''
   clearImage()
@@ -184,8 +199,14 @@ const returnAmount = computed(() => {
 })
 
 // --- HANDLERS ---
+const selectPaymentType = (type: 'cash' | 'transfer') => {
+  form.payment_type = type
+  form.nominal = totalSelectedAmount.value
+}
+
 const handlePay = (row: any) => {
   targetBills.value = [row]
+  form.payment_type = 'cash'
   form.nominal = Number(row.amount)
   isOpen.value = true
 }
@@ -311,7 +332,43 @@ onMounted(() => {
             </div>
           </div>
 
-          <div class="grid grid-cols-2 gap-4">
+          <!-- Pilihan Metode Pembayaran -->
+          <UFormField label="Metode Pembayaran" required>
+            <div class="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                :class="[
+                  'flex items-center justify-center gap-2 p-3 rounded-xl border-2 text-sm font-bold transition-all cursor-pointer',
+                  form.payment_type === 'cash'
+                    ? 'border-emerald-600 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-600/20'
+                    : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                ]"
+                @click="selectPaymentType('cash')"
+              >
+                <UIcon name="i-lucide-banknote" class="w-5 h-5 text-emerald-600" />
+                <span>💵 Kas Tunai (Fisik)</span>
+              </button>
+              <button
+                type="button"
+                :class="[
+                  'flex items-center justify-center gap-2 p-3 rounded-xl border-2 text-sm font-bold transition-all cursor-pointer',
+                  form.payment_type === 'transfer'
+                    ? 'border-blue-600 bg-blue-50 text-blue-800 ring-2 ring-blue-600/20'
+                    : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                ]"
+                @click="selectPaymentType('transfer')"
+              >
+                <UIcon name="i-lucide-landmark" class="w-5 h-5 text-blue-600" />
+                <span>🏦 Transfer Mandiri</span>
+              </button>
+            </div>
+            <p class="text-xs text-gray-500 mt-1.5">
+              <span v-if="form.payment_type === 'cash'">Uang fisik diterima langsung oleh pengurus / kasir (Masuk Kas Fisik - Akun 1000).</span>
+              <span v-else>Warga mentransfer langsung ke Rekening Mandiri RW (Masuk Bank Mandiri - Akun 1100).</span>
+            </p>
+          </UFormField>
+
+          <div v-if="form.payment_type === 'cash'" class="grid grid-cols-2 gap-4">
             <UFormField name="nominal" label="Uang Diterima">
               <UInput
                 v-model.number="form.nominal"
@@ -461,21 +518,21 @@ onMounted(() => {
         <template #payment_type-cell="{ row }">
           <UBadge
             v-if="row.original.payment_type"
-            color="neutral"
-            variant="outline"
-            class="capitalize"
+            :color="row.original.payment_type === 'cash' ? 'success' : 'primary'"
+            variant="soft"
+            class="capitalize font-semibold"
           >
             <UIcon
               :name="
                 row.original.payment_type === 'cash'
                   ? 'i-lucide-banknote'
-                  : 'i-lucide-credit-card'
+                  : 'i-lucide-landmark'
               "
-              class="mr-1"
+              class="mr-1 w-3.5 h-3.5"
             />
-            {{ row.original.payment_type }}
+            {{ row.original.payment_type === 'cash' ? 'Kas Tunai' : 'Bank Mandiri' }}
           </UBadge>
-          <span v-else>-</span>
+          <span v-else class="text-gray-300 italic">-</span>
         </template>
 
         <template #action-cell="{ row }">

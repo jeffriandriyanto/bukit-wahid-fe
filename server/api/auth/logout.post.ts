@@ -1,6 +1,6 @@
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig()
-  const token = getCookie(event, 'refresh_token')
+  const token = getCookieSafe(event, 'refresh_token')
 
   try {
     await $fetch('/logout', {
@@ -12,7 +12,7 @@ export default defineEventHandler(async (event) => {
     // ignore backend errors — clear cookie anyway
   }
 
-  deleteCookie(event, 'refresh_token', { path: '/' })
+  deleteCookieSafe(event, 'refresh_token', { path: '/' })
 
   return { status: 1, message: 'Logged out' }
 })

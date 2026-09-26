@@ -294,6 +294,7 @@ definePageMeta({
               @click="openEditModal(row.original)"
             />
             <UButton
+              v-if="!row.original.is_default"
               icon="i-lucide-trash-2"
               variant="ghost"
               color="error"

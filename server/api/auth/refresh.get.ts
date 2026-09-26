@@ -1,5 +1,12 @@
 export default defineEventHandler(async (event) => {
-  const refreshToken = getCookie(event, 'refresh_token')
+  let refreshToken = getCookieSafe(event, 'refresh_token')
+
+  if (!refreshToken) {
+    const authHeader = getRequestHeaderSafe(event, 'authorization') || ''
+    if (authHeader.startsWith('Bearer ')) {
+      refreshToken = authHeader.substring(7)
+    }
+  }
 
   if (!refreshToken) {
     throw createError({ statusCode: 401, message: 'No refresh token' })
@@ -7,9 +14,9 @@ export default defineEventHandler(async (event) => {
 
   const config = useRuntimeConfig()
 
-  let response
+  let response: any
   try {
-    response = await $fetch('/refresh-token', {
+    response = await $fetch<any>('/refresh-token', {
       baseURL: config.public.baseUrl,
       method: 'PUT',
       headers: {
@@ -28,8 +35,11 @@ export default defineEventHandler(async (event) => {
   }
 
   if (response?.data?.auth?.refresh?.token) {
-    const isHttps = event.node.req.headers['x-forwarded-proto'] === 'https' || (process.env.NODE_ENV === 'production' && !event.node.req.headers.host?.includes('localhost') && !event.node.req.headers.host?.includes('127.0.0.1'))
-    setCookie(event, 'refresh_token', response.data.auth.refresh.token, {
+    const hostHeader = getRequestHeaderSafe(event, 'host') || ''
+    const protoHeader = getRequestHeaderSafe(event, 'x-forwarded-proto') || ''
+    const isHttps = protoHeader === 'https' || (process.env.NODE_ENV === 'production' && !hostHeader.includes('localhost') && !hostHeader.includes('127.0.0.1'))
+
+    setCookieSafe(event, 'refresh_token', response.data.auth.refresh.token, {
       httpOnly: true,
       secure: isHttps,
       sameSite: 'lax',

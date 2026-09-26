@@ -6,9 +6,12 @@ definePageMeta({ middleware: ['auth'] })
 // --- STATE ---
 const dataJournal = ref<any[]>([])
 const summaryData = ref({
-  in: '0.00',
-  out: '0.00',
-  balance: 0
+  in: 0,
+  out: 0,
+  balance: 0,
+  cash_balance: 0,
+  bank_balance: 0,
+  total_balance: 0,
 })
 const loading = ref(false)
 const isOpenDetail = ref(false)
@@ -19,12 +22,22 @@ const searchQuery = ref('')
 const now = new Date()
 const selectedMonth = ref(now.getMonth() + 1)
 const selectedYear = ref(now.getFullYear())
+const selectedTag = ref<any>(null)
 const pagination = ref({
   current_page: 1,
   last_page: 1,
   per_page: 10,
   total: 0
 })
+
+const tagFilterOptions = [
+  { label: 'Semua Akun / Jurnal', value: null },
+  { label: '💵 Buku Kas Fisik (#1000)', value: 1000 },
+  { label: '🏦 Buku Bank Mandiri (#1100)', value: 1100 },
+  { label: '💧 Pendapatan Air (#4100)', value: 4100 },
+  { label: '🏡 Pendapatan Estate (#4000)', value: 4000 },
+  { label: '👥 Iuran Kas RW (#3500)', value: 3500 },
+]
 
 const monthOptions = [
   { label: 'Januari', value: 1 },
@@ -65,7 +78,12 @@ const journalTable = [
 // Fetch Summary Stats (In, Out, Balance)
 const getSummary = async () => {
   try {
-    const res = await useApi('/finance/journal/data')
+    const res = await useApi('/finance/journal/data', {
+      params: {
+        month: selectedMonth.value,
+        year: selectedYear.value
+      }
+    })
     if (res.status === 1) {
       summaryData.value = res.data
     }
@@ -84,7 +102,8 @@ const getData = async () => {
         limit: pagination.value.per_page,
         search: searchQuery.value,
         month: selectedMonth.value,
-        year: selectedYear.value
+        year: selectedYear.value,
+        tag: selectedTag.value ?? ''
       }
     })
 
@@ -116,6 +135,7 @@ const getDetail = async (id: string) => {
 const getRefLabel = (type: string) => {
   if (type.includes('Bill')) return 'Tagihan Warga'
   if (type.includes('PettyCash')) return 'Kas Kecil (Petty Cash)'
+  if (type.includes('CashTransfer')) return 'Mutasi Kas / Bank'
   return 'Lainnya'
 }
 
@@ -127,8 +147,9 @@ watch(
   }
 )
 
-watch([selectedMonth, selectedYear], () => {
+watch([selectedMonth, selectedYear, selectedTag], () => {
   pagination.value.current_page = 1
+  getSummary()
   getData()
 })
 
@@ -142,6 +163,7 @@ const handleExport = () => {
   const params = new URLSearchParams()
   params.set('month', selectedMonth.value.toString())
   params.set('year', selectedYear.value.toString())
+  if (selectedTag.value) params.set('tag', selectedTag.value.toString())
   if (searchQuery.value) params.set('search', searchQuery.value)
   const url = `${config.public.baseUrl}finance/journal/export?${params.toString()}`
   window.open(url, '_blank')
@@ -165,20 +187,27 @@ const handleExport = () => {
 
       <div class="flex items-center gap-3">
         <USelect
+          v-model="selectedTag"
+          :items="tagFilterOptions"
+          label-key="label"
+          value-key="value"
+          class="w-52"
+        />
+        <USelect
           v-model="selectedMonth"
           :items="monthOptions"
           label-key="label"
           value-key="value"
-          class="w-40"
+          class="w-36"
         />
         <USelect
           v-model="selectedYear"
           :items="yearOptions"
           label-key="label"
           value-key="value"
-          class="w-32"
+          class="w-28"
         />
-        <div class="w-64">
+        <div class="w-56">
           <UInput
             v-model="searchQuery"
             icon="i-heroicons-magnifying-glass"
@@ -197,24 +226,25 @@ const handleExport = () => {
       </div>
     </SharedHeaderBg>
 
+    <!-- CARDS SUMMARY -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
       <div
         class="group relative overflow-hidden bg-white p-6 rounded-2xl border border-gray-100/80 shadow-sm hover:shadow-md transition-all duration-500"
       >
-        <div class="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-green-500/[0.07] group-hover:scale-125 transition-transform duration-500" />
+        <div class="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-emerald-500/[0.07] group-hover:scale-125 transition-transform duration-500" />
         <div class="flex items-center gap-4 relative z-10">
-          <div class="p-3 bg-green-50 rounded-xl text-green-600 group-hover:scale-110 transition-transform duration-500">
-            <UIcon name="i-lucide-trending-up" class="w-8 h-8" />
+          <div class="p-3 bg-emerald-50 rounded-xl text-emerald-600 group-hover:scale-110 transition-transform duration-500">
+            <UIcon name="i-lucide-banknote" class="w-8 h-8" />
           </div>
           <div>
             <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">
-              Total Masuk (In)
+              💵 Kas Fisik (Brankas)
             </p>
-            <p class="text-xl font-black text-green-600">
-              {{ formatCurrencyCompact(summaryData.in) }}
+            <p class="text-xl font-black text-emerald-600">
+              {{ formatCurrencyCompact(summaryData.cash_balance || 0) }}
             </p>
             <p class="text-[11px] text-gray-400 tabular-nums">
-              {{ formatCurrency(summaryData.in) }}
+              {{ formatCurrency(summaryData.cash_balance || 0) }}
             </p>
           </div>
         </div>
@@ -223,43 +253,43 @@ const handleExport = () => {
       <div
         class="group relative overflow-hidden bg-white p-6 rounded-2xl border border-gray-100/80 shadow-sm hover:shadow-md transition-all duration-500"
       >
-        <div class="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-red-500/[0.07] group-hover:scale-125 transition-transform duration-500" />
+        <div class="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-blue-500/[0.07] group-hover:scale-125 transition-transform duration-500" />
         <div class="flex items-center gap-4 relative z-10">
-          <div class="p-3 bg-red-50 rounded-xl text-red-600 group-hover:scale-110 transition-transform duration-500">
-            <UIcon name="i-lucide-trending-down" class="w-8 h-8" />
+          <div class="p-3 bg-blue-50 rounded-xl text-blue-600 group-hover:scale-110 transition-transform duration-500">
+            <UIcon name="i-lucide-landmark" class="w-8 h-8" />
           </div>
           <div>
             <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">
-              Total Keluar (Out)
+              🏦 Bank Mandiri (Rekening)
             </p>
-            <p class="text-xl font-black text-red-600">
-              {{ formatCurrencyCompact(summaryData.out) }}
+            <p class="text-xl font-black text-blue-600">
+              {{ formatCurrencyCompact(summaryData.bank_balance || 0) }}
             </p>
             <p class="text-[11px] text-gray-400 tabular-nums">
-              {{ formatCurrency(summaryData.out) }}
+              {{ formatCurrency(summaryData.bank_balance || 0) }}
             </p>
           </div>
         </div>
       </div>
 
       <div
-        class="relative overflow-hidden bg-gradient-to-br from-primary-500 to-primary-700 p-6 rounded-2xl shadow-lg shadow-primary-100 text-white transition-all duration-500 hover:shadow-xl hover:scale-[1.01]"
+        class="relative overflow-hidden bg-gradient-to-br from-neutral-900 to-neutral-950 p-6 rounded-2xl shadow-lg text-white transition-all duration-500 hover:shadow-xl hover:scale-[1.01]"
       >
         <div class="absolute -top-8 -right-8 w-32 h-32 rounded-full bg-white/10 blur-2xl" />
         <div class="absolute -bottom-6 -left-6 w-24 h-24 rounded-full bg-white/5 blur-xl" />
         <div class="flex items-center gap-4 relative z-10">
-          <div class="p-3 bg-white/20 rounded-xl backdrop-blur-sm">
-            <UIcon name="i-lucide-wallet" class="w-8 h-8" />
+          <div class="p-3 bg-white/15 rounded-xl backdrop-blur-sm">
+            <UIcon name="i-lucide-wallet" class="w-8 h-8 text-secondary-400" />
           </div>
           <div>
             <p class="text-xs font-bold text-white/70 uppercase tracking-widest">
-              Saldo Saat Ini
+              💰 Total Likuiditas RW
             </p>
-            <p class="text-xl font-black">
-              {{ formatCurrencyCompact(summaryData.balance) }}
+            <p class="text-xl font-black text-secondary-400">
+              {{ formatCurrencyCompact(summaryData.total_balance || 0) }}
             </p>
             <p class="text-[11px] text-white/50 tabular-nums">
-              {{ formatCurrency(summaryData.balance) }}
+              {{ formatCurrency(summaryData.total_balance || 0) }}
             </p>
           </div>
         </div>

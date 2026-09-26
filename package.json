@@ -36,5 +36,10 @@
     "typescript": "^5.9.3",
     "vue-tsc": "^3.2.1"
   },
+  "pnpm": {
+    "overrides": {
+      "h3": "1.15.11"
+    }
+  },
   "packageManager": "pnpm@10.26.1"
 }
