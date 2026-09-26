@@ -3,36 +3,6 @@
 const loading = ref(false)
 const recapData = ref<any[]>([])
 
-// Filter State (Default ke tahun dan bulan berjalan)
-const now = new Date()
-const selectedYear = ref(now.getFullYear())
-const selectedMonth = ref(now.getMonth() + 1)
-
-// --- OPTIONS ---
-const yearOptions = computed(() => {
-  const currentYear = new Date().getFullYear()
-  const years = []
-  for (let i = currentYear; i >= 2023; i--) {
-    years.push({ label: i.toString(), value: i })
-  }
-  return years
-})
-
-const monthOptions = [
-  { label: 'Januari', value: 1 },
-  { label: 'Februari', value: 2 },
-  { label: 'Maret', value: 3 },
-  { label: 'April', value: 4 },
-  { label: 'Mei', value: 5 },
-  { label: 'Juni', value: 6 },
-  { label: 'Juli', value: 7 },
-  { label: 'Agustus', value: 8 },
-  { label: 'September', value: 9 },
-  { label: 'Oktober', value: 10 },
-  { label: 'November', value: 11 },
-  { label: 'Desember', value: 12 }
-]
-
 // --- TABLE COLUMNS ---
 const recapTable = [
   { accessorKey: 'tag', header: 'Tag/COA' },
@@ -42,18 +12,21 @@ const recapTable = [
   { accessorKey: 'balance', header: 'Saldo Akhir' }
 ]
 
+// --- SUMMARY STATS ---
+const totalDebit = computed(() =>
+  recapData.value.reduce((sum, item) => sum + (Number(item.debit) || 0), 0)
+)
+const totalCredit = computed(() =>
+  recapData.value.reduce((sum, item) => sum + (Number(item.credit) || 0), 0)
+)
+
 // --- ACTIONS ---
 const getData = async () => {
   loading.value = true
   try {
-    const res = await useApi('/finance/recap', {
-      params: {
-        year: selectedYear.value,
-        month: selectedMonth.value
-      }
-    })
+    const res = await useApi('/finance/recap')
     if (res.status === 1) {
-      recapData.value = res.data
+      recapData.value = res.data || []
     }
   } catch (err) {
     console.error('Failed to fetch recap data:', err)
@@ -62,22 +35,13 @@ const getData = async () => {
   }
 }
 
-// --- HELPERS ---
-// Watcher untuk auto-refresh data saat filter berubah
-watch([selectedYear, selectedMonth], () => {
-  getData()
-})
-
 onMounted(() => {
   getData()
 })
 
 const handleExport = () => {
   const config = useRuntimeConfig()
-  const params = new URLSearchParams()
-  params.set('month', selectedMonth.value.toString())
-  params.set('year', selectedYear.value.toString())
-  const url = `${config.public.baseUrl}finance/recap/export?${params.toString()}`
+  const url = `${config.public.baseUrl}finance/recap/export`
   window.open(url, '_blank')
 }
 </script>
@@ -91,34 +55,60 @@ const handleExport = () => {
         </div>
         <div>
           <h2 class="text-lg font-bold text-gray-900">Rekapitulasi Keuangan</h2>
+          <p class="text-xs text-gray-500">Rekapitulasi total seluruh akun neraca dan laba rugi (Kumulatif)</p>
         </div>
       </div>
 
       <div class="flex items-center gap-3">
-        <USelect
-          v-model="selectedMonth"
-          :items="monthOptions"
-          label-key="label"
-          value-key="value"
-          class="w-40"
-        />
-        <USelect
-          v-model="selectedYear"
-          :items="yearOptions"
-          label-key="label"
-          value-key="value"
-          class="w-32"
-        />
         <UButton
           color="neutral"
           variant="outline"
           icon="mdi:file-excel"
           @click="handleExport"
         >
-          Export
+          Export Excel
         </UButton>
       </div>
     </SharedHeaderBg>
+
+    <!-- Stat Summary Cards -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+        <div>
+          <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Debit Keseluruhan</span>
+          <p class="text-lg font-bold text-emerald-600 mt-1">
+            {{ formatCurrency(totalDebit) }}
+          </p>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+          <UIcon name="i-lucide-arrow-down-left" class="w-5 h-5" />
+        </div>
+      </div>
+
+      <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+        <div>
+          <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Total Kredit Keseluruhan</span>
+          <p class="text-lg font-bold text-rose-600 mt-1">
+            {{ formatCurrency(totalCredit) }}
+          </p>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center text-rose-600">
+          <UIcon name="i-lucide-arrow-up-right" class="w-5 h-5" />
+        </div>
+      </div>
+
+      <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm flex items-center justify-between">
+        <div>
+          <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Jumlah Akun Aktif</span>
+          <p class="text-lg font-bold text-gray-900 mt-1">
+            {{ recapData.length }} Akun COA
+          </p>
+        </div>
+        <div class="w-10 h-10 rounded-xl bg-primary-50 flex items-center justify-center text-primary-600">
+          <UIcon name="i-lucide-layers" class="w-5 h-5" />
+        </div>
+      </div>
+    </div>
 
     <div
       class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm"
@@ -138,14 +128,14 @@ const handleExport = () => {
 
         <!-- Slot Debit -->
         <template #debit-cell="{ row }">
-          <span class="text-green-600 font-medium">
+          <span class="text-emerald-600 font-medium">
             {{ formatCurrency(row.original.debit) }}
           </span>
         </template>
 
         <!-- Slot Credit -->
         <template #credit-cell="{ row }">
-          <span class="text-red-600 font-medium">
+          <span class="text-rose-600 font-medium">
             {{ formatCurrency(row.original.credit) }}
           </span>
         </template>
@@ -165,7 +155,7 @@ const handleExport = () => {
           class="w-10 h-10 text-gray-300 mx-auto mb-2"
         />
         <p class="text-gray-500 text-sm">
-          Tidak ada data rekapitulasi pada periode ini.
+          Tidak ada data rekapitulasi.
         </p>
       </div>
     </div>
