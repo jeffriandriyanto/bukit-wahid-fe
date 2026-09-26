@@ -36,7 +36,7 @@ const tagFilterOptions = [
   { label: '🏦 Buku Bank Mandiri (#1100)', value: 1100 },
   { label: '💧 Pendapatan Air (#4100)', value: 4100 },
   { label: '🏡 Pendapatan Estate (#4000)', value: 4000 },
-  { label: '👥 Iuran Kas RW (#3500)', value: 3500 },
+  { label: '👥 Pendapatan Iuran RW (#4300)', value: 4300 },
 ]
 
 const monthOptions = [
