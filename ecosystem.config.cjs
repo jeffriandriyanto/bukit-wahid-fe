@@ -2,7 +2,9 @@ module.exports = {
   apps: [
     {
       name: 'bukit-wahid-fe',
-      script: '.output/server/index.mjs',
+      port: '3000',
+      exec_mode: 'fork',
+      script: './.output/server/index.mjs',
       node_args: '--max-old-space-size=512',
       env: {
         NODE_ENV: 'production',
