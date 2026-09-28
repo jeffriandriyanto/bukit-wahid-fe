@@ -82,6 +82,16 @@ export const sidebarItems: SidebarItem[] = [
         to: '/bill/recapitulation'
       },
       {
+        label: 'Laba Rugi (LR)',
+        icon: 'i-lucide-trending-up',
+        to: '/bill/reports/income-statement'
+      },
+      {
+        label: 'Neraca Lajur (NRL)',
+        icon: 'i-lucide-scale',
+        to: '/bill/reports/trial-balance'
+      },
+      {
         label: 'Pembayaran',
         icon: 'i-lucide-receipt-text',
         to: '/bill/payment'
