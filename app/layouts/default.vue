@@ -7,27 +7,43 @@ const isChangePasswordOpen = ref(false)
 const config = useRuntimeConfig()
 
 const displayName = computed(() => {
+  if (route.meta?.title) {
+    return route.meta.title as string
+  }
+
   const currentPath = route.path
 
-  const findLabel = (items: any[]): string | undefined => {
+  const findExact = (items: any[]): string | undefined => {
     for (const item of items) {
-      if (
-        item.to &&
-        (currentPath === item.to ||
-          (item.to !== '/' && currentPath.startsWith(item.to)))
-      ) {
+      if (item.to && currentPath === item.to) {
         return item.label
       }
-
       if (item.children) {
-        const foundInChild = findLabel(item.children)
-        if (foundInChild) return foundInChild
+        const found = findExact(item.children)
+        if (found) return found
       }
     }
     return undefined
   }
 
-  return findLabel(sidebarItems) || 'Home'
+  const findPrefix = (items: any[]): string | undefined => {
+    for (const item of items) {
+      if (
+        item.to &&
+        item.to !== '/' &&
+        currentPath.startsWith(item.to + '/')
+      ) {
+        return item.label
+      }
+      if (item.children) {
+        const found = findPrefix(item.children)
+        if (found) return found
+      }
+    }
+    return undefined
+  }
+
+  return findExact(sidebarItems) || findPrefix(sidebarItems) || 'Home'
 })
 
 const userActive = computed(() => user.value)

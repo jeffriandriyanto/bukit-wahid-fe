@@ -30,14 +30,26 @@ const pagination = ref({
   total: 0
 })
 
-const tagFilterOptions = [
-  { label: 'Semua Akun / Jurnal', value: null },
-  { label: '💵 Buku Kas Fisik (#1000)', value: 1000 },
-  { label: '🏦 Buku Bank Mandiri (#1100)', value: 1100 },
-  { label: '💧 Pendapatan Air (#4100)', value: 4100 },
-  { label: '🏡 Pendapatan Estate (#4000)', value: 4000 },
-  { label: '👥 Pendapatan Iuran RW (#4300)', value: 4300 },
-]
+const tagFilterOptions = ref<any[]>([
+  { label: 'Semua Akun / Jurnal', value: null }
+])
+
+const getCoaDropdown = async () => {
+  try {
+    const res = await useApi('/dropdown/coa')
+    if (res.status === 1 && Array.isArray(res.data)) {
+      tagFilterOptions.value = [
+        { label: 'Semua Akun / Jurnal', value: null },
+        ...res.data.map((item: any) => ({
+          label: item.label.startsWith('#') ? item.label : `#${item.key} - ${item.label}`,
+          value: Number(item.key)
+        }))
+      ]
+    }
+  } catch (err) {
+    console.error('Failed to fetch COA options:', err)
+  }
+}
 
 const monthOptions = [
   { label: 'Januari', value: 1 },
@@ -154,6 +166,7 @@ watch([selectedMonth, selectedYear, selectedTag], () => {
 })
 
 onMounted(() => {
+  getCoaDropdown()
   getSummary()
   getData()
 })
@@ -191,7 +204,7 @@ const handleExport = () => {
           :items="tagFilterOptions"
           label-key="label"
           value-key="value"
-          class="w-52"
+          class="w-60"
         />
         <USelect
           v-model="selectedMonth"

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-definePageMeta({ middleware: ['auth'] })
+definePageMeta({ middleware: ['auth'], title: 'Laporan Keuangan' })
 
 const config = useRuntimeConfig()
 const toast = useToast()
