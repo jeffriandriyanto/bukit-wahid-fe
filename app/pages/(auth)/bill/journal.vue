@@ -199,12 +199,14 @@ const handleExport = () => {
       </div>
 
       <div class="flex items-center gap-3">
-        <USelect
+        <USelectMenu
           v-model="selectedTag"
           :items="tagFilterOptions"
           label-key="label"
           value-key="value"
-          class="w-60"
+          placeholder="Semua Akun / Jurnal"
+          searchable
+          class="w-64"
         />
         <USelect
           v-model="selectedMonth"

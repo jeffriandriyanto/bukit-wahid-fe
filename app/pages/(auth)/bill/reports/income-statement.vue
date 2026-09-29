@@ -5,9 +5,25 @@ const config = useRuntimeConfig()
 const toast = useToast()
 
 const now = new Date()
+const periodType = ref<'monthly' | 'quarterly' | 'yearly'>('monthly')
 const selectedMonth = ref(now.getMonth() + 1)
 const selectedYear = ref(now.getFullYear())
+const selectedQuarter = ref<'Q1' | 'Q2' | 'Q3' | 'Q4'>('Q1')
+const isCumulative = ref(true)
 const loading = ref(false)
+
+const periodTypeOptions = [
+  { label: 'Bulanan', value: 'monthly', icon: 'i-lucide-calendar-days' },
+  { label: 'Triwulan / BEI', value: 'quarterly', icon: 'i-lucide-chart-column' },
+  { label: 'Tahunan', value: 'yearly', icon: 'i-lucide-calendar-range' }
+]
+
+const quarterOptions = [
+  { label: 'Triwulan I (Q1: Jan - Mar)', value: 'Q1' },
+  { label: 'Triwulan II (Q2: Apr - Jun)', value: 'Q2' },
+  { label: 'Triwulan III (Q3: Jul - Sep)', value: 'Q3' },
+  { label: 'Triwulan IV (Q4: Okt - Des)', value: 'Q4' }
+]
 
 const monthOptions = [
   { label: 'Januari', value: 1 },
@@ -35,8 +51,11 @@ const yearOptions = computed(() => {
 
 interface LRData {
   period: {
+    type?: string
     month: number
     year: number
+    quarter?: string
+    is_cumulative?: boolean
     label: string
     start_date: string
     end_date: string
@@ -76,6 +95,7 @@ interface LRData {
 
 const reportData = ref<LRData>({
   period: {
+    type: 'monthly',
     month: selectedMonth.value,
     year: selectedYear.value,
     label: '',
@@ -106,12 +126,20 @@ const formatCurrency = (val: number | undefined) => {
 const fetchData = async () => {
   loading.value = true
   try {
+    const params: Record<string, any> = {
+      period_type: periodType.value,
+      year: selectedYear.value
+    }
+    if (periodType.value === 'monthly') {
+      params.month = selectedMonth.value
+    } else if (periodType.value === 'quarterly') {
+      params.quarter = selectedQuarter.value
+      params.is_cumulative = isCumulative.value ? '1' : '0'
+    }
+
     const res = await useApi('/finance/reports/income-statement', {
       method: 'GET',
-      params: {
-        month: selectedMonth.value,
-        year: selectedYear.value
-      }
+      params
     })
 
     if (res.status === 1 && res.data) {
@@ -130,14 +158,20 @@ const fetchData = async () => {
 
 const handleExport = () => {
   const params = new URLSearchParams({
-    month: String(selectedMonth.value),
+    period_type: periodType.value,
     year: String(selectedYear.value)
   })
+  if (periodType.value === 'monthly') {
+    params.set('month', String(selectedMonth.value))
+  } else if (periodType.value === 'quarterly') {
+    params.set('quarter', selectedQuarter.value)
+    params.set('is_cumulative', isCumulative.value ? '1' : '0')
+  }
   const url = `${config.public.baseUrl}finance/reports/income-statement/export?${params.toString()}`
   window.open(url, '_blank')
 }
 
-watch([selectedMonth, selectedYear], () => {
+watch([periodType, selectedMonth, selectedYear, selectedQuarter, isCumulative], () => {
   fetchData()
 })
 
@@ -183,23 +217,88 @@ onMounted(() => {
     </SharedHeaderBg>
 
     <!-- Toolbar Filters -->
-    <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm flex flex-wrap gap-4 items-center justify-between">
-      <div class="flex items-center gap-3">
-        <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Periode:</span>
-        <USelect
-          v-model="selectedMonth"
-          :items="monthOptions"
-          value-attribute="value"
-          option-attribute="label"
-          class="w-36"
-        />
-        <USelect
-          v-model="selectedYear"
-          :items="yearOptions"
-          value-attribute="value"
-          option-attribute="label"
-          class="w-28"
-        />
+    <div class="bg-white border border-gray-100 rounded-2xl p-4 shadow-sm space-y-3">
+      <div class="flex flex-wrap items-center justify-between gap-4">
+        <!-- Tipe Periode Selector (Pills) -->
+        <div class="flex items-center bg-gray-100 p-1 rounded-xl gap-1">
+          <button
+            v-for="item in periodTypeOptions"
+            :key="item.value"
+            type="button"
+            class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200"
+            :class="
+              periodType === item.value
+                ? 'bg-white text-emerald-700 shadow-sm'
+                : 'text-gray-500 hover:text-gray-800'
+            "
+            @click="periodType = item.value as any"
+          >
+            <UIcon :name="item.icon" class="w-4 h-4" />
+            <span>{{ item.label }}</span>
+          </button>
+        </div>
+
+        <!-- Rentang Tanggal Badge -->
+        <div class="text-xs text-gray-500 flex items-center gap-1 bg-gray-50 border border-gray-100 px-3 py-1.5 rounded-lg">
+          <UIcon name="i-lucide-calendar" class="w-3.5 h-3.5 text-gray-400" />
+          <span>Rentang:</span>
+          <span class="font-semibold text-gray-700">{{ reportData.period.start_date || '-' }}</span>
+          <span class="text-gray-400">s/d</span>
+          <span class="font-semibold text-gray-700">{{ reportData.period.end_date || '-' }}</span>
+        </div>
+      </div>
+
+      <!-- Detail Filter Controls Berdasarkan Tipe -->
+      <div class="flex flex-wrap items-center gap-3 pt-2 border-t border-gray-50">
+        <!-- Opsi Bulanan -->
+        <template v-if="periodType === 'monthly'">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Bulan:</span>
+            <USelect
+              v-model="selectedMonth"
+              :items="monthOptions"
+              value-attribute="value"
+              option-attribute="label"
+              class="w-36"
+            />
+          </div>
+        </template>
+
+        <!-- Opsi Triwulan -->
+        <template v-else-if="periodType === 'quarterly'">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Kuartal:</span>
+            <USelect
+              v-model="selectedQuarter"
+              :items="quarterOptions"
+              value-attribute="value"
+              option-attribute="label"
+              class="w-56"
+            />
+          </div>
+
+          <label class="flex items-center gap-2 text-xs font-medium text-gray-700 cursor-pointer bg-emerald-50 border border-emerald-100 px-3 py-1.5 rounded-lg">
+            <input
+              v-model="isCumulative"
+              type="checkbox"
+              class="rounded border-emerald-300 text-emerald-600 focus:ring-emerald-500 h-4 w-4"
+            />
+            <span class="text-emerald-900">Kumulatif YTD (Januari s/d Akhir Kuartal — ala BEI)</span>
+          </label>
+        </template>
+
+        <!-- Opsi Tahun (Muncul di semua tipe) -->
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Tahun:</span>
+          <USelect
+            v-model="selectedYear"
+            :items="yearOptions"
+            value-attribute="value"
+            option-attribute="label"
+            class="w-28"
+          />
+        </div>
+
         <UButton
           icon="i-lucide-refresh-cw"
           color="neutral"
@@ -210,10 +309,6 @@ onMounted(() => {
         >
           Refresh
         </UButton>
-      </div>
-
-      <div class="text-xs text-gray-400">
-        Rentang: <span class="font-medium text-gray-600">{{ reportData.period.start_date }}</span> s/d <span class="font-medium text-gray-600">{{ reportData.period.end_date }}</span>
       </div>
     </div>
 
