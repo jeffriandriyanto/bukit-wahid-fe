@@ -319,7 +319,7 @@ onMounted(() => fetchDashboardData())
                 val: financialData.cash_in_hand,
                 bg: 'bg-gradient-to-br from-emerald-600 to-teal-800',
                 icon: 'i-lucide-banknote',
-                badge: 'Brankas RW'
+                badge: 'Brankas EM'
               },
               {
                 label: '🏦 Bank Mandiri',
