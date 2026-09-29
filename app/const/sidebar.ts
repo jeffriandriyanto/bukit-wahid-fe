@@ -92,6 +92,11 @@ export const sidebarItems: SidebarItem[] = [
         to: '/bill/reports/trial-balance'
       },
       {
+        label: 'Resume Keuangan',
+        icon: 'i-lucide-file-text',
+        to: '/bill/reports/resume'
+      },
+      {
         label: 'Pembayaran',
         icon: 'i-lucide-receipt-text',
         to: '/bill/payment'
