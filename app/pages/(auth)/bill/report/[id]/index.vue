@@ -457,24 +457,18 @@ onMounted(() => {
             <span class="font-bold text-gray-900">{{
               mapCategoryLabel(row.original.category)
             }}</span>
-            <span class="text-[10px] text-gray-400"
-              >ID: {{ row.original.id.slice(0, 8) }}</span
-            >
+            <span v-if="row.original.description" class="text-xs text-gray-500">
+              {{ row.original.description }}
+            </span>
+            <span v-else class="text-[10px] text-gray-400">
+              ID: {{ row.original.id.slice(0, 8) }}
+            </span>
           </div>
         </template>
 
         <template #bill_date-cell="{ row }">
           <div class="flex flex-col">
             <span>{{ formatDate(row.original.bill_date) }}</span>
-            <UTooltip
-              v-if="row.original.description"
-              :text="row.original.description"
-              :delay-duration="300"
-            >
-              <span class="text-xs text-gray-400 truncate max-w-[200px]">
-                {{ row.original.description }}
-              </span>
-            </UTooltip>
           </div>
         </template>
 
