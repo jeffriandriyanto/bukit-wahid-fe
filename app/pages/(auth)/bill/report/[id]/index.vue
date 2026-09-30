@@ -3,6 +3,7 @@ import type { FormSubmitEvent } from '@nuxt/ui'
 import { z } from 'zod'
 import { perPageLimit, mapCategoryLabel } from '~/const/utils'
 import { fileUpload } from '~/services/files'
+import ReceiptModal from '~/components/receipt/ReceiptModal.vue'
 
 definePageMeta({
   middleware: ['auth']
@@ -21,11 +22,18 @@ const filterType = ref('Semua')
 const filterMonth = ref()
 
 const isOpen = ref(false)
+const isReceiptOpen = ref(false)
+const selectedReceiptBill = ref<any>(null)
 const rowSelection = ref({})
 const targetBills = ref<any[]>([])
 
 const tableRef = useTemplateRef('table')
 const proofFile = ref(null)
+
+const openReceipt = (bill: any) => {
+  selectedReceiptBill.value = bill
+  isReceiptOpen.value = true
+}
 
 const pagination = ref({
   current_page: 1,
@@ -539,9 +547,12 @@ onMounted(() => {
           />
           <UButton
             v-else
-            icon="i-lucide-check"
-            color="neutral"
-            disabled
+            label="Kwitansi"
+            color="primary"
+            variant="subtle"
+            size="sm"
+            icon="i-lucide-receipt-text"
+            @click="openReceipt(row.original)"
           />
         </template>
       </UTable>
@@ -566,6 +577,15 @@ onMounted(() => {
         @update:page="fetchDetail"
       />
     </div>
+
+    <!-- Modal Kwitansi -->
+    <ReceiptModal
+      v-model="isReceiptOpen"
+      :bill="selectedReceiptBill"
+      :resident-name="(userName as string) || selectedReceiptBill?.person?.name"
+      :resident-kavling="selectedReceiptBill ? [selectedReceiptBill.residence_type || selectedReceiptBill.residence?.type, selectedReceiptBill.residence_kavling || selectedReceiptBill.residence?.kavling].filter(Boolean).join(' / ') : ''"
+      :resident-address="selectedReceiptBill ? [selectedReceiptBill.residence_type || selectedReceiptBill.residence?.type, selectedReceiptBill.residence_kavling || selectedReceiptBill.residence?.kavling].filter(Boolean).join(' / ') : ''"
+    />
   </div>
 </template>
 
