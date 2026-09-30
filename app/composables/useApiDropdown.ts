@@ -58,9 +58,9 @@ const dropdownToOrganization = ref<Option[]>([]);
   const getDropdownAddress = (idRT: string | number) =>
     fetchDropdown(`/dropdown/address/${idRT}`, dropdownAddress, 'Alamat')
 
-  const getDropdownResidenceType = (idRT: string | number) =>
+  const getDropdownResidenceType = (idRT?: string | number | null) =>
     fetchDropdown(
-      `/dropdown/residance-type/${idRT}`,
+      idRT ? `/dropdown/residance-type/${idRT}` : `/dropdown/residance-type`,
       dropdownResidenceType,
       'Tipe Hunian'
     )

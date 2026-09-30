@@ -181,7 +181,13 @@ const saveData = async (event: FormSubmitEvent<HomeFormSchema>) => {
   }
 }
 
-watch(selectedRT, () => {
+watch(selectedRT, (newVal) => {
+  pagination.value.current_page = 1
+  getDropdownResidenceType(newVal)
+  getData()
+})
+
+watch(selectedKavling, () => {
   pagination.value.current_page = 1
   getData()
 })
@@ -196,6 +202,7 @@ watch(
 
 onMounted(() => {
   getDropdownRT()
+  getDropdownResidenceType()
   getData()
 })
 
@@ -228,7 +235,7 @@ const columnsFamilyTable = [
           v-model="selectedRT"
           placeholder="Pilih RT"
           :search-input="{
-            placeholder: 'Cari RT RT'
+            placeholder: 'Cari RT'
           }"
           :items="dropdownRT"
           value-key="key"
@@ -236,13 +243,11 @@ const columnsFamilyTable = [
           clear
           searchable
           class="w-40"
-          @change="getDropdownResidenceType(selectedRT)"
         />
 
         <USelectMenu
           v-model="selectedKavling"
           placeholder="Pilih tipe kavling"
-          :disabled="!selectedRT"
           :search-input="{
             placeholder: 'Cari tipe kavling'
           }"
@@ -252,9 +257,8 @@ const columnsFamilyTable = [
           label-key="label"
           searchable
           class="w-40"
-          @change="getData"
-        /></div
-    ></SharedHeaderBg>
+        /></div>
+    </SharedHeaderBg>
 
     <div
       class="bg-white border border-gray-100 rounded-2xl overflow-hidden shadow-sm"
