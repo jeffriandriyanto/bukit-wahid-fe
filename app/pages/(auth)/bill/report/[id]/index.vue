@@ -114,7 +114,9 @@ const openAddOtherModal = () => {
   isOtherEditMode.value = false
   editingOtherBillId.value = null
   otherForm.description = ''
-  otherForm.coa_tag = coaList.value[0]?.value || 4200
+  // Default ke Akun 4200 (Pendapatan Lain-lain) jika tersedia di daftar COA
+  const coa4200 = coaList.value.find((c) => Number(c.value) === 4200)
+  otherForm.coa_tag = coa4200 ? coa4200.value : 4200
   otherForm.bill_date = new Date().toISOString().slice(0, 10)
   otherForm.due_date = ''
   otherForm.price = 0
