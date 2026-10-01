@@ -16,7 +16,8 @@ export const categories = [
 const categoryLabelMap: Record<string, string> = {
   DUES: 'Iuran RW',
   PAM: 'Artetis',
-  IPL: 'IPL'
+  IPL: 'IPL',
+  OTHER: 'Lainnya'
 }
 
 export const mapCategoryLabel = (category: string): string => {
