@@ -1012,6 +1012,9 @@ onMounted(() => {
           : ''
       "
     />
+
+    <!-- Dialog Konfirmasi Hapus -->
+    <ConfirmDialog />
   </div>
 </template>
 
