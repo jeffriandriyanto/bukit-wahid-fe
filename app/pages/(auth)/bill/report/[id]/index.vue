@@ -9,10 +9,19 @@ definePageMeta({
   middleware: ['auth']
 })
 
+const { user } = useAuth()
+const { reveal: confirm } = useConfirmService()
 const toast = useToast()
 const route = useRoute()
 const userId = route.params.id
 const userName = route.query.name || 'Detail Penghuni'
+
+// --- ROLE PERMISSION ---
+const canManageOtherBill = computed(() => {
+  const roles = user.value?.roles || []
+  const category = user.value?.person?.category
+  return roles.includes('sa') || roles.includes('em') || category === 'em'
+})
 
 // --- STATE ---
 const UCheckbox = resolveComponent('UCheckbox')
@@ -42,7 +51,190 @@ const pagination = ref({
   total: 0
 })
 
-// Schema Zod
+// --- COA STATE ---
+const coaList = ref<{ label: string; value: number }[]>([
+  { label: '4200 - Pendapatan Lain-lain', value: 4200 },
+  { label: '4400 - Pendapatan Sewa Fasilitas', value: 4400 },
+  { label: '4500 - Pendapatan Denda / Jasa', value: 4500 }
+])
+
+const fetchCoaOptions = async () => {
+  try {
+    const res = await useApi('/finance/coa', {
+      params: { all: 1 },
+      method: 'GET'
+    })
+    if (res.status === 1 && Array.isArray(res.data) && res.data.length > 0) {
+      const lrCoas = res.data.filter(
+        (c: any) =>
+          c.pos === 'LR' ||
+          c.category === 'Pendapatan' ||
+          (Number(c.tag) >= 4000 && Number(c.tag) < 5000)
+      )
+      const targetData = lrCoas.length > 0 ? lrCoas : res.data
+      coaList.value = targetData.map((c: any) => ({
+        label: `${c.tag} - ${c.name}`,
+        value: Number(c.tag)
+      }))
+    }
+  } catch (err) {
+    console.error('Fetch COA error:', err)
+  }
+}
+
+// --- MODAL OTHER BILL STATE ---
+const OtherBillFormSchema = z.object({
+  description: z.string().min(1, 'Keterangan tagihan wajib diisi'),
+  coa_tag: z.number().min(1, 'Akun COA wajib dipilih'),
+  bill_date: z.string().min(1, 'Tanggal tagihan wajib diisi'),
+  due_date: z.string().optional(),
+  price: z.number().min(0, 'Tarif / nominal satuan wajib diisi'),
+  qty: z.number().min(0.01, 'Jumlah (Qty) minimal 0.01'),
+  unit: z.string().optional()
+})
+
+type OtherBillFormSchema = z.infer<typeof OtherBillFormSchema>
+
+const isOtherModalOpen = ref(false)
+const isOtherEditMode = ref(false)
+const editingOtherBillId = ref<string | null>(null)
+const otherFormLoading = ref(false)
+
+const otherForm = reactive({
+  description: '',
+  coa_tag: 4200,
+  bill_date: new Date().toISOString().slice(0, 10),
+  due_date: '',
+  price: 0,
+  qty: 1,
+  unit: 'item'
+})
+
+const openAddOtherModal = () => {
+  isOtherEditMode.value = false
+  editingOtherBillId.value = null
+  otherForm.description = ''
+  otherForm.coa_tag = coaList.value[0]?.value || 4200
+  otherForm.bill_date = new Date().toISOString().slice(0, 10)
+  otherForm.due_date = ''
+  otherForm.price = 0
+  otherForm.qty = 1
+  otherForm.unit = 'item'
+  isOtherModalOpen.value = true
+}
+
+const openEditOtherModal = (bill: any) => {
+  isOtherEditMode.value = true
+  editingOtherBillId.value = bill.id
+  otherForm.description = bill.description || ''
+  otherForm.coa_tag = Number(bill.coa_tag) || 4200
+  otherForm.bill_date = bill.bill_date
+    ? String(bill.bill_date).slice(0, 10)
+    : new Date().toISOString().slice(0, 10)
+  otherForm.due_date = bill.due_date ? String(bill.due_date).slice(0, 10) : ''
+  otherForm.price = Number(bill.price) || Number(bill.amount) || 0
+  otherForm.qty = Number(bill.qty) || 1
+  otherForm.unit = bill.unit || 'item'
+  isOtherModalOpen.value = true
+}
+
+const saveOtherBill = async () => {
+  otherFormLoading.value = true
+  try {
+    const payload = {
+      person_id: userId,
+      description: otherForm.description,
+      coa_tag: otherForm.coa_tag,
+      bill_date: otherForm.bill_date,
+      due_date: otherForm.due_date || null,
+      price: otherForm.price,
+      qty: otherForm.qty,
+      unit: otherForm.unit || 'item'
+    }
+
+    let res: any
+    if (isOtherEditMode.value && editingOtherBillId.value) {
+      res = await useApi(`/finance/bill/other/${editingOtherBillId.value}`, {
+        method: 'PUT',
+        body: payload
+      })
+    } else {
+      res = await useApi('/finance/bill/other', {
+        method: 'POST',
+        body: payload
+      })
+    }
+
+    if (res.status === 1) {
+      toast.add({
+        title: 'Berhasil',
+        description: isOtherEditMode.value
+          ? 'Tagihan lainnya berhasil diperbarui'
+          : 'Tagihan lainnya berhasil ditambahkan',
+        color: 'success'
+      })
+      isOtherModalOpen.value = false
+      fetchDetail()
+    } else {
+      toast.add({
+        title: 'Gagal',
+        description: res.message || 'Gagal menyimpan tagihan',
+        color: 'error'
+      })
+    }
+  } catch (err: any) {
+    toast.add({
+      title: 'Error',
+      description: err?.message || 'Terjadi kesalahan sistem',
+      color: 'error'
+    })
+  } finally {
+    otherFormLoading.value = false
+  }
+}
+
+const handleDeleteOther = async (bill: any) => {
+  const confirmed = await confirm({
+    title: 'Hapus Tagihan Lainnya',
+    description: `Apakah Anda yakin ingin menghapus tagihan "${bill.description || 'Tagihan Lainnya'}" sebesar ${formatCurrency(bill.amount)}? Tindakan ini tidak dapat dibatalkan.`,
+    confirmLabel: 'Ya, Hapus',
+    cancelLabel: 'Batal',
+    color: 'error'
+  })
+
+  if (!confirmed) return
+
+  loading.value = true
+  try {
+    const res = await useApi(`/finance/bill/other/${bill.id}`, {
+      method: 'DELETE'
+    })
+    if (res.status === 1) {
+      toast.add({
+        title: 'Berhasil',
+        description: 'Tagihan lainnya berhasil dihapus',
+        color: 'success'
+      })
+      fetchDetail()
+    } else {
+      toast.add({
+        title: 'Gagal',
+        description: res.message || 'Gagal menghapus tagihan',
+        color: 'error'
+      })
+    }
+  } catch (err: any) {
+    toast.add({
+      title: 'Error',
+      description: err?.message || 'Terjadi kesalahan sistem',
+      color: 'error'
+    })
+  } finally {
+    loading.value = false
+  }
+}
+
+// --- PAYMENT FORM STATE ---
 const BillFormSchema = z.object({
   payment_type: z.enum(['cash', 'transfer']).default('cash'),
   nominal: z.number().min(0, 'Nominal wajib diisi'),
@@ -100,19 +292,34 @@ const columns = [
 ]
 
 // --- API ACTIONS ---
+const getCategoryParam = () => {
+  if (filterType.value === 'IPL') return 'ipl'
+  if (filterType.value === 'Air') return 'pam'
+  if (filterType.value === 'Iuran RW') return 'dues'
+  if (filterType.value === 'Lainnya') return 'other'
+  return undefined
+}
+
 const fetchDetail = async () => {
   loading.value = true
   try {
+    const params: any = {
+      page: pagination.value.current_page,
+      limit: pagination.value.per_page
+    }
+    const cat = getCategoryParam()
+    if (cat) params.category = cat
+    if (filterMonth.value) params.month = filterMonth.value
+
     const res = await useApi(`/finance/bill/${userId}`, {
-      params: {
-        page: pagination.value.current_page,
-        limit: pagination.value.per_page
-      },
+      params,
       method: 'GET'
     })
     if (res.status === 1) {
       detailData.value = res.data
-      if (res.pagination) { pagination.value = { ...res.pagination } }
+      if (res.pagination) {
+        pagination.value = { ...res.pagination }
+      }
     }
   } catch (err) {
     console.error('Fetch error:', err)
@@ -121,7 +328,7 @@ const fetchDetail = async () => {
   }
 }
 
-const saveBill = async (event: FormSubmitEvent<BillFormSchema>) => {
+const saveBill = async (_event?: FormSubmitEvent<BillFormSchema>) => {
   try {
     loading.value = true
 
@@ -239,13 +446,22 @@ watch(proofFile, (newFiles) => {
   }
 })
 
-watch(() => pagination.value.per_page, () => {
+watch(
+  () => pagination.value.per_page,
+  () => {
+    pagination.value.current_page = 1
+    fetchDetail()
+  }
+)
+
+watch([filterType, filterMonth], () => {
   pagination.value.current_page = 1
   fetchDetail()
 })
 
 onMounted(() => {
   fetchDetail()
+  fetchCoaOptions()
 })
 </script>
 
@@ -282,7 +498,7 @@ onMounted(() => {
           >
           <USelect
             v-model="filterType"
-            :items="['Semua', 'IPL', 'Air', 'Iuran RW']"
+            :items="['Semua', 'IPL', 'Air', 'Iuran RW', 'Lainnya']"
             class="w-48"
           />
         </div>
@@ -294,15 +510,26 @@ onMounted(() => {
         </div>
       </div>
 
-      <UButton
-        v-if="selectedRowsData.length > 0"
-        color="neutral"
-        icon="i-lucide-check-circle"
-        :label="`Bayar ${selectedRowsData.length} Tagihan Terpilih`"
-        @click="handlePaySelected"
-      />
+      <div class="flex items-center gap-2">
+        <UButton
+          v-if="canManageOtherBill"
+          color="primary"
+          variant="outline"
+          icon="i-lucide-plus"
+          label="Tambah Tagihan Lainnya"
+          @click="openAddOtherModal"
+        />
+        <UButton
+          v-if="selectedRowsData.length > 0"
+          color="neutral"
+          icon="i-lucide-check-circle"
+          :label="`Bayar ${selectedRowsData.length} Tagihan Terpilih`"
+          @click="handlePaySelected"
+        />
+      </div>
     </div>
 
+    <!-- Modal Konfirmasi Pembayaran Kasir -->
     <UModal v-model:open="isOpen">
       <template #header>
         <span class="font-bold">Konfirmasi Pembayaran</span>
@@ -326,7 +553,9 @@ onMounted(() => {
               class="flex justify-between text-sm"
             >
               <span class="text-gray-600"
-                >{{ mapCategoryLabel(bill.category) }} ({{ formatDate(bill.bill_date) }})</span
+                >{{ mapCategoryLabel(bill.category) }} ({{
+                  formatDate(bill.bill_date)
+                }})</span
               >
               <span class="font-semibold">{{
                 formatCurrency(bill.amount)
@@ -353,7 +582,10 @@ onMounted(() => {
                 ]"
                 @click="selectPaymentType('cash')"
               >
-                <UIcon name="i-lucide-banknote" class="w-5 h-5 text-emerald-600" />
+                <UIcon
+                  name="i-lucide-banknote"
+                  class="w-5 h-5 text-emerald-600"
+                />
                 <span>💵 Kas Tunai (Fisik)</span>
               </button>
               <button
@@ -371,12 +603,21 @@ onMounted(() => {
               </button>
             </div>
             <p class="text-xs text-gray-500 mt-1.5">
-              <span v-if="form.payment_type === 'cash'">Uang fisik diterima langsung oleh pengurus / kasir (Masuk Kas Fisik - Akun 1000).</span>
-              <span v-else>Warga mentransfer langsung ke Rekening Mandiri RW (Masuk Bank Mandiri - Akun 1100).</span>
+              <span v-if="form.payment_type === 'cash'"
+                >Uang fisik diterima langsung oleh pengurus / kasir (Masuk Kas
+                Fisik - Akun 1000).</span
+              >
+              <span v-else
+                >Warga mentransfer langsung ke Rekening Mandiri RW (Masuk Bank
+                Mandiri - Akun 1100).</span
+              >
             </p>
           </UFormField>
 
-          <div v-if="form.payment_type === 'cash'" class="grid grid-cols-2 gap-4">
+          <div
+            v-if="form.payment_type === 'cash'"
+            class="grid grid-cols-2 gap-4"
+          >
             <UFormField name="nominal" label="Uang Diterima">
               <UInput
                 v-model.number="form.nominal"
@@ -410,7 +651,7 @@ onMounted(() => {
                 <img
                   :src="form.proof"
                   class="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                />
+                >
                 <div
                   class="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100"
                 >
@@ -450,6 +691,145 @@ onMounted(() => {
       </template>
     </UModal>
 
+    <!-- Modal Tambah / Edit Tagihan Lainnya -->
+    <UModal v-model:open="isOtherModalOpen">
+      <template #header>
+        <div class="flex items-center gap-2">
+          <UIcon
+            :name="isOtherEditMode ? 'i-lucide-edit-3' : 'i-lucide-plus-circle'"
+            class="w-5 h-5 text-primary-600"
+          />
+          <span class="font-bold text-base text-gray-900">{{
+            isOtherEditMode
+              ? 'Edit Tagihan Lainnya'
+              : 'Tambah Tagihan Lainnya'
+          }}</span>
+        </div>
+      </template>
+      <template #body>
+        <UForm
+          :schema="OtherBillFormSchema"
+          :state="otherForm"
+          class="space-y-4"
+          @submit="saveOtherBill"
+        >
+          <UFormField
+            name="description"
+            label="Keterangan / Nama Tagihan"
+            required
+          >
+            <UInput
+              v-model="otherForm.description"
+              placeholder="Contoh: Penebangan Pohon, Perbaikan Pipa, Sewa Lapangan, dsb."
+              class="w-full"
+            />
+          </UFormField>
+
+          <UFormField
+            name="coa_tag"
+            label="Akun Pendapatan (COA)"
+            help="Pos pendapatan yang akan dicatat di jurnal kas saat tagihan ini dilunasi"
+            required
+          >
+            <USelect
+              v-model.number="otherForm.coa_tag"
+              :items="coaList"
+              value-attribute="value"
+              option-attribute="label"
+              placeholder="Pilih Akun Pendapatan"
+              class="w-full"
+            />
+          </UFormField>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <UFormField
+              name="bill_date"
+              label="Tanggal / Periode Tagihan"
+              required
+            >
+              <UInput
+                v-model="otherForm.bill_date"
+                type="date"
+                class="w-full"
+              />
+            </UFormField>
+
+            <UFormField name="due_date" label="Jatuh Tempo (Opsional)">
+              <UInput
+                v-model="otherForm.due_date"
+                type="date"
+                class="w-full"
+              />
+            </UFormField>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <UFormField
+              name="price"
+              label="Nominal / Tarif Satuan"
+              required
+              class="md:col-span-2"
+            >
+              <UInput
+                v-model.number="otherForm.price"
+                type="number"
+                placeholder="Rp 0"
+                icon="i-lucide-banknote"
+                class="w-full"
+              />
+            </UFormField>
+
+            <UFormField name="qty" label="Qty" required>
+              <UInput
+                v-model.number="otherForm.qty"
+                type="number"
+                min="0.01"
+                step="any"
+                class="w-full"
+              />
+            </UFormField>
+          </div>
+
+          <UFormField name="unit" label="Satuan">
+            <UInput
+              v-model="otherForm.unit"
+              placeholder="item / kali / bulan / m3 / kegiatan"
+              class="w-full"
+            />
+          </UFormField>
+
+          <div
+            class="bg-primary-50 p-3.5 rounded-xl border border-primary-100 flex justify-between items-center"
+          >
+            <span class="text-sm font-semibold text-primary-900"
+              >Total Tagihan</span
+            >
+            <span class="text-lg font-black text-primary-700">{{
+              formatCurrency(
+                (Number(otherForm.price) || 0) * (Number(otherForm.qty) || 1)
+              )
+            }}</span>
+          </div>
+
+          <div class="flex justify-end gap-2 pt-2">
+            <UButton
+              variant="ghost"
+              color="neutral"
+              @click="isOtherModalOpen = false"
+              >Batal</UButton
+            >
+            <UButton
+              type="submit"
+              color="primary"
+              :loading="otherFormLoading"
+            >
+              {{ isOtherEditMode ? 'Simpan Perubahan' : 'Tambah Tagihan' }}
+            </UButton>
+          </div>
+        </UForm>
+      </template>
+    </UModal>
+
     <div
       class="bg-white rounded-2xl border border-gray-200 overflow-x-auto shadow-sm"
     >
@@ -465,7 +845,10 @@ onMounted(() => {
             <span class="font-bold text-gray-900">{{
               mapCategoryLabel(row.original.category)
             }}</span>
-            <span v-if="row.original.description" class="text-xs text-gray-500">
+            <span
+              v-if="row.original.description"
+              class="text-xs text-gray-500"
+            >
               {{ row.original.description }}
             </span>
             <span v-else class="text-[10px] text-gray-400">
@@ -520,7 +903,9 @@ onMounted(() => {
         <template #payment_type-cell="{ row }">
           <UBadge
             v-if="row.original.payment_type"
-            :color="row.original.payment_type === 'cash' ? 'success' : 'primary'"
+            :color="
+              row.original.payment_type === 'cash' ? 'success' : 'primary'
+            "
             variant="soft"
             class="capitalize font-semibold"
           >
@@ -532,28 +917,59 @@ onMounted(() => {
               "
               class="mr-1 w-3.5 h-3.5"
             />
-            {{ row.original.payment_type === 'cash' ? 'Kas Tunai' : 'Bank Mandiri' }}
+            {{
+              row.original.payment_type === 'cash' ? 'Kas Tunai' : 'Bank Mandiri'
+            }}
           </UBadge>
           <span v-else class="text-gray-300 italic">-</span>
         </template>
 
         <template #action-cell="{ row }">
-          <UButton
-            v-if="row.original.status === 'unpaid'"
-            label="Bayar"
-            color="success"
-            icon="i-lucide-receipt"
-            @click="handlePay(row.original)"
-          />
-          <UButton
-            v-else
-            label="Kwitansi"
-            color="primary"
-            variant="subtle"
-            size="sm"
-            icon="i-lucide-receipt-text"
-            @click="openReceipt(row.original)"
-          />
+          <div class="flex items-center gap-1.5">
+            <template v-if="row.original.status === 'unpaid'">
+              <!-- Tombol Edit & Hapus khusus tagihan other dan role sa/em -->
+              <template
+                v-if="
+                  row.original.category === 'other' && canManageOtherBill
+                "
+              >
+                <UTooltip text="Edit Tagihan">
+                  <UButton
+                    size="sm"
+                    color="neutral"
+                    variant="subtle"
+                    icon="i-lucide-pencil"
+                    @click="openEditOtherModal(row.original)"
+                  />
+                </UTooltip>
+                <UTooltip text="Hapus Tagihan">
+                  <UButton
+                    size="sm"
+                    color="error"
+                    variant="subtle"
+                    icon="i-lucide-trash-2"
+                    @click="handleDeleteOther(row.original)"
+                  />
+                </UTooltip>
+              </template>
+              <UButton
+                label="Bayar"
+                color="success"
+                size="sm"
+                icon="i-lucide-receipt"
+                @click="handlePay(row.original)"
+              />
+            </template>
+            <UButton
+              v-else
+              label="Kwitansi"
+              color="primary"
+              variant="subtle"
+              size="sm"
+              icon="i-lucide-receipt-text"
+              @click="openReceipt(row.original)"
+            />
+          </div>
         </template>
       </UTable>
     </div>
@@ -583,8 +999,30 @@ onMounted(() => {
       v-model="isReceiptOpen"
       :bill="selectedReceiptBill"
       :resident-name="(userName as string) || selectedReceiptBill?.person?.name"
-      :resident-kavling="selectedReceiptBill ? [selectedReceiptBill.residence_type || selectedReceiptBill.residence?.type, selectedReceiptBill.residence_kavling || selectedReceiptBill.residence?.kavling].filter(Boolean).join(' / ') : ''"
-      :resident-address="selectedReceiptBill ? [selectedReceiptBill.residence_type || selectedReceiptBill.residence?.type, selectedReceiptBill.residence_kavling || selectedReceiptBill.residence?.kavling].filter(Boolean).join(' / ') : ''"
+      :resident-kavling="
+        selectedReceiptBill
+          ? [
+              selectedReceiptBill.residence_type ||
+                selectedReceiptBill.residence?.type,
+              selectedReceiptBill.residence_kavling ||
+                selectedReceiptBill.residence?.kavling
+            ]
+              .filter(Boolean)
+              .join(' / ')
+          : ''
+      "
+      :resident-address="
+        selectedReceiptBill
+          ? [
+              selectedReceiptBill.residence_type ||
+                selectedReceiptBill.residence?.type,
+              selectedReceiptBill.residence_kavling ||
+                selectedReceiptBill.residence?.kavling
+            ]
+              .filter(Boolean)
+              .join(' / ')
+          : ''
+      "
     />
   </div>
 </template>
