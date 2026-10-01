@@ -87,7 +87,6 @@ const OtherBillFormSchema = z.object({
   description: z.string().min(1, 'Keterangan tagihan wajib diisi'),
   coa_tag: z.number().min(1, 'Akun COA wajib dipilih'),
   bill_date: z.string().min(1, 'Tanggal tagihan wajib diisi'),
-  due_date: z.string().optional(),
   price: z.number().min(0, 'Tarif / nominal satuan wajib diisi'),
   qty: z.number().min(0.01, 'Jumlah (Qty) minimal 0.01'),
   unit: z.string().optional()
@@ -104,7 +103,6 @@ const otherForm = reactive({
   description: '',
   coa_tag: 4200,
   bill_date: new Date().toISOString().slice(0, 10),
-  due_date: '',
   price: 0,
   qty: 1,
   unit: 'item'
@@ -118,7 +116,6 @@ const openAddOtherModal = () => {
   const coa4200 = coaList.value.find((c) => Number(c.value) === 4200)
   otherForm.coa_tag = coa4200 ? coa4200.value : 4200
   otherForm.bill_date = new Date().toISOString().slice(0, 10)
-  otherForm.due_date = ''
   otherForm.price = 0
   otherForm.qty = 1
   otherForm.unit = 'item'
@@ -133,7 +130,6 @@ const openEditOtherModal = (bill: any) => {
   otherForm.bill_date = bill.bill_date
     ? String(bill.bill_date).slice(0, 10)
     : new Date().toISOString().slice(0, 10)
-  otherForm.due_date = bill.due_date ? String(bill.due_date).slice(0, 10) : ''
   otherForm.price = Number(bill.price) || Number(bill.amount) || 0
   otherForm.qty = Number(bill.qty) || 1
   otherForm.unit = bill.unit || 'item'
@@ -148,7 +144,7 @@ const saveOtherBill = async () => {
       description: otherForm.description,
       coa_tag: otherForm.coa_tag,
       bill_date: otherForm.bill_date,
-      due_date: otherForm.due_date || null,
+      due_date: null,
       price: otherForm.price,
       qty: otherForm.qty,
       unit: otherForm.unit || 'item'
@@ -743,27 +739,17 @@ onMounted(() => {
             />
           </UFormField>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <UFormField
-              name="bill_date"
-              label="Tanggal / Periode Tagihan"
-              required
-            >
-              <UInput
-                v-model="otherForm.bill_date"
-                type="date"
-                class="w-full"
-              />
-            </UFormField>
-
-            <UFormField name="due_date" label="Jatuh Tempo (Opsional)">
-              <UInput
-                v-model="otherForm.due_date"
-                type="date"
-                class="w-full"
-              />
-            </UFormField>
-          </div>
+          <UFormField
+            name="bill_date"
+            label="Tanggal / Periode Tagihan"
+            required
+          >
+            <UInput
+              v-model="otherForm.bill_date"
+              type="date"
+              class="w-full"
+            />
+          </UFormField>
 
           <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
             <UFormField
