@@ -14,7 +14,7 @@ const loading = ref(false)
 
 const periodTypeOptions = [
   { label: 'Bulanan', value: 'monthly', icon: 'i-lucide-calendar-days' },
-  { label: 'Triwulan / BEI', value: 'quarterly', icon: 'i-lucide-chart-column' },
+  { label: 'Triwulan', value: 'quarterly', icon: 'i-lucide-chart-column' },
   { label: 'Tahunan', value: 'yearly', icon: 'i-lucide-calendar-range' }
 ]
 
