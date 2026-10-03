@@ -1,60 +1,75 @@
 export const useAuth = () => {
-  const token = useState<string | null>('auth_token', () => null)
-  const refreshToken = useState<string | null>('refresh_token', () => null)
-  const user = useState<any | null>('auth_user', () => null)
+  const tokenCookie = useCookie<string | null>('bwr_access_token', {
+    maxAge: 60 * 60 * 24 * 7,
+    path: '/',
+    sameSite: 'lax'
+  })
+  const refreshCookie = useCookie<string | null>('bwr_refresh_token', {
+    maxAge: 60 * 60 * 24 * 30,
+    path: '/',
+    sameSite: 'lax'
+  })
+  const userCookie = useCookie<any | null>('bwr_user', {
+    maxAge: 60 * 60 * 24 * 7,
+    path: '/',
+    sameSite: 'lax'
+  })
 
-  const initAuth = async () => {
-    if (!import.meta.client) return
+  const token = useState<string | null>('auth_token', () => tokenCookie.value || null)
+  const refreshToken = useState<string | null>('refresh_token', () => refreshCookie.value || null)
+  const user = useState<any | null>('auth_user', () => userCookie.value || null)
 
-    try {
-      const response = await $fetch<any>('/api/auth/refresh')
+  const config = useRuntimeConfig()
+  const apiBase = config.public.baseUrl
 
-      if (response?.data?.auth?.access_token) {
-        token.value = response.data.auth.access_token
-        refreshToken.value = response.data.auth.refresh.token
-        user.value = response.data.user
-      }
-    } catch {
-      // not authenticated — that's fine
-    }
+  const setTokens = (acc: string, ref: string) => {
+    token.value = acc
+    refreshToken.value = ref
+    tokenCookie.value = acc
+    refreshCookie.value = ref
+  }
+
+  const setUser = (userData: any) => {
+    user.value = userData
+    userCookie.value = userData
   }
 
   const clearClientAuth = () => {
     token.value = null
     refreshToken.value = null
     user.value = null
-  }
-
-  const setTokens = (acc: string, ref: string) => {
-    token.value = acc
-    refreshToken.value = ref
-  }
-
-  const setUser = (userData: any) => {
-    user.value = userData
-  }
-
-  const logout = async () => {
-    try {
-      await $fetch('/api/auth/logout', { method: 'POST' })
-    } catch {
-      // ignore errors
-    }
-    clearClientAuth()
-    return navigateTo('/login')
+    tokenCookie.value = null
+    refreshCookie.value = null
+    userCookie.value = null
   }
 
   const refreshSession = async () => {
-    const maxRetries = 2
+    const currentRefresh = refreshToken.value || refreshCookie.value
+    if (!currentRefresh) {
+      clearClientAuth()
+      return null
+    }
 
+    const maxRetries = 2
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        const response = await $fetch<any>('/api/auth/refresh')
+        const response = await $fetch<any>('refresh-token', {
+          baseURL: apiBase,
+          method: 'PUT',
+          headers: {
+            Authorization: 'Bearer ' + currentRefresh
+          },
+          timeout: 15000
+        })
 
         if (response?.data?.auth?.access_token) {
-          token.value = response.data.auth.access_token
-          refreshToken.value = response.data.auth.refresh.token
-          user.value = response.data.user
+          setTokens(
+            response.data.auth.access_token,
+            response.data.auth.refresh?.token || currentRefresh
+          )
+          if (response.data.user) {
+            setUser(response.data.user)
+          }
           return response.data.auth.access_token
         }
       } catch (err: any) {
@@ -64,12 +79,41 @@ export const useAuth = () => {
           continue
         }
         clearClientAuth()
-        navigateTo('/login')
+        if (import.meta.client) {
+          navigateTo('/login')
+        }
         return null
       }
     }
 
     return null
+  }
+
+  const initAuth = async () => {
+    if (!import.meta.client) return
+
+    if (refreshToken.value || refreshCookie.value) {
+      await refreshSession()
+    }
+  }
+
+  const logout = async () => {
+    const currentToken = token.value || tokenCookie.value
+    if (currentToken) {
+      try {
+        await $fetch('logout', {
+          baseURL: apiBase,
+          method: 'DELETE',
+          headers: {
+            Authorization: 'Bearer ' + currentToken
+          }
+        })
+      } catch {
+        // ignore errors
+      }
+    }
+    clearClientAuth()
+    return navigateTo('/login')
   }
 
   return {
