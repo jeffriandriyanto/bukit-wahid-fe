@@ -4,6 +4,7 @@ import { z } from 'zod'
 import { perPageLimit, mapCategoryLabel } from '~/const/utils'
 import { fileUpload } from '~/services/files'
 import ReceiptModal from '~/components/receipt/ReceiptModal.vue'
+import AdvancePaymentModal from '~/components/bill/AdvancePaymentModal.vue'
 
 definePageMeta({
   middleware: ['auth']
@@ -32,6 +33,7 @@ const filterMonth = ref()
 
 const isOpen = ref(false)
 const isReceiptOpen = ref(false)
+const isAdvanceModalOpen = ref(false)
 const selectedReceiptBill = ref<any>(null)
 const rowSelection = ref({})
 const targetBills = ref<any[]>([])
@@ -237,7 +239,7 @@ const BillFormSchema = z.object({
   payment_type: z.enum(['cash', 'transfer']).default('cash'),
   nominal: z.number().min(0, 'Nominal wajib diisi'),
   description: z.string().optional(),
-  proof: z.string().min(1, 'Bukti bayar wajib diunggah')
+  proof: z.string().optional()
 })
 
 type BillFormSchema = z.infer<typeof BillFormSchema>
@@ -341,7 +343,7 @@ const saveBill = async (_event?: FormSubmitEvent<BillFormSchema>) => {
 
     const paymentId = checkoutRes.data.id
 
-    let finalImageUrl = form.proof
+    let finalImageUrl = form.proof || null
     if (proofFile.value) {
       const uploadRes = await fileUpload(proofFile.value)
       if (uploadRes) finalImageUrl = uploadRes
@@ -512,6 +514,14 @@ onMounted(() => {
         <UButton
           v-if="canManageOtherBill"
           color="primary"
+          variant="solid"
+          icon="i-lucide-calendar-plus"
+          label="Bayar di Muka (Advance)"
+          @click="isAdvanceModalOpen = true"
+        />
+        <UButton
+          v-if="canManageOtherBill"
+          color="neutral"
           variant="outline"
           icon="i-lucide-plus"
           label="Tambah Tagihan Lainnya"
@@ -640,7 +650,7 @@ onMounted(() => {
             />
           </UFormField>
 
-          <UFormField name="proof" label="Bukti Bayar" required>
+          <UFormField name="proof" label="Bukti Bayar (Opsional)">
             <div class="w-full">
               <div
                 v-if="form.proof"
@@ -1011,6 +1021,14 @@ onMounted(() => {
               .join(' / ')
           : ''
       "
+    />
+
+    <!-- Modal Pembayaran di Muka (Advance Billing) -->
+    <AdvancePaymentModal
+      v-model="isAdvanceModalOpen"
+      :default-person-id="(userId as string)"
+      :default-person-name="(userName as string)"
+      @success="fetchDetail"
     />
 
     <!-- Dialog Konfirmasi Hapus -->

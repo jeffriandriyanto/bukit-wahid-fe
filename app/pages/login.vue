@@ -6,6 +6,8 @@ const router = useRouter()
 // const { startLoading, stopLoading } = useAppLoading()
 const { setTokens, setUser } = useAuth()
 const toast = useToast()
+const config = useRuntimeConfig()
+const apiBase = config.public.baseUrl
 
 definePageMeta({
   layout: 'blank'
@@ -30,7 +32,8 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
   isLoading.value = true
   // startLoading()
   try {
-    const response = await $fetch<any>('/api/auth/login', {
+    const response = await $fetch<any>('login', {
+      baseURL: apiBase,
       method: 'POST',
       body: {
         username: event.data.username,
@@ -40,7 +43,7 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
 
     const { auth, user: userData } = response.data
 
-    setTokens(auth.access_token, auth.refresh.token)
+    setTokens(auth.access_token, auth.refresh?.token || auth.refresh)
     setUser(userData)
 
     toast.add({ title: 'Login Berhasil', color: 'success' })

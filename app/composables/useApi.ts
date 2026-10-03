@@ -44,10 +44,9 @@ function getFetcher() {
       const url = (originalOptions as any)._url || ''
 
       const isAuthAction =
-        url.includes('/login') ||
-        url.includes('/refresh-token') ||
-        url.includes('/logout') ||
-        url.includes('/api/auth/refresh')
+        url.includes('login') ||
+        url.includes('refresh-token') ||
+        url.includes('logout')
 
       if (isAuthAction || (originalOptions as any)._retry) {
         throw response._data

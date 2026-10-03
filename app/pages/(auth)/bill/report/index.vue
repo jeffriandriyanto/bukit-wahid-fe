@@ -1,11 +1,21 @@
 <script setup lang="ts">
 import { watchWithFilter, debounceFilter } from '@vueuse/core'
 import { perPageLimit } from '~/const/utils'
+import AdvancePaymentModal from '~/components/bill/AdvancePaymentModal.vue'
+
+const { user } = useAuth()
 const { dropdownRT, getDropdownRT } = useApiDropdown()
 const { reveal: confirm } = useConfirmService()
 
 definePageMeta({
   middleware: ['auth']
+})
+
+// --- ROLE PERMISSION ---
+const canManageAdvancePayment = computed(() => {
+  const roles = user.value?.roles || []
+  const category = user.value?.person?.category
+  return roles.includes('sa') || roles.includes('em') || category === 'em'
 })
 
 // --- STATE ---
@@ -14,7 +24,8 @@ const selectedRT = ref()
 const loading = ref(false)
 const dataFinancialStatements = ref<any[]>([])
 const loadingBlast = ref(false)
-const toast = useToast() // Pastikan @nuxt/ui toast plugin aktif
+const toast = useToast()
+const isAdvanceModalOpen = ref(false)
 
 const pagination = ref({
   current_page: 1,
@@ -127,6 +138,11 @@ const navigateToTagihanDetail = () => {
   navigateTo('/bill/pdam')
 }
 
+const handleAdvanceSuccess = () => {
+  getData()
+  getDataBill()
+}
+
 watchWithFilter(
   search,
   () => {
@@ -182,13 +198,24 @@ onMounted(() => {
           <UInput
             v-model="search"
             icon="i-lucide-search"
-            placeholder="Cari Nama..."
+            placeholder="Cari nama atau username..."
             block
+            class="w-full md:w-64"
           />
         </UFormField>
       </div>
 
       <div class="flex flex-wrap gap-2">
+        <UButton
+          v-if="canManageAdvancePayment"
+          color="primary"
+          variant="solid"
+          icon="i-lucide-calendar-plus"
+          @click="isAdvanceModalOpen = true"
+        >
+          Bayar di Muka (Advance)
+        </UButton>
+
         <UButton
           color="success"
           variant="soft"
@@ -200,7 +227,8 @@ onMounted(() => {
         </UButton>
 
         <UButton
-          color="primary"
+          color="neutral"
+          variant="outline"
           icon="i-mdi-plus-circle-outline"
           @click="navigateToTagihanDetail"
         >
@@ -247,7 +275,15 @@ onMounted(() => {
         </template>
 
         <template #name-cell="{ row }">
-          <span class="font-medium text-gray-900">{{ row.original.name }}</span>
+          <div class="flex flex-col">
+            <span class="font-semibold text-gray-900">{{ row.original.name }}</span>
+            <span
+              v-if="row.original.username"
+              class="text-[11px] font-mono text-gray-500"
+            >
+              @{{ row.original.username }}
+            </span>
+          </div>
         </template>
 
         <template #total_ipl-cell="{ row }">
@@ -313,5 +349,11 @@ onMounted(() => {
         @update:page="handlePageChange"
       />
     </div>
+
+    <!-- Modal Pembayaran di Muka (Advance Billing) -->
+    <AdvancePaymentModal
+      v-model="isAdvanceModalOpen"
+      @success="handleAdvanceSuccess"
+    />
   </div>
 </template>
