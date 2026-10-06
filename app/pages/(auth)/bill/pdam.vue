@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { perPageLimit } from '~/const/utils'
 import { fileUploadFinance } from '~/services/files'
+import ManualPamModal from '~/components/bill/ManualPamModal.vue'
 
 definePageMeta({
   middleware: ['auth']
@@ -16,6 +17,7 @@ const selectedRT = ref()
 const loading = ref(false)
 const loadingExcel = ref(false)
 const publishing = ref(false)
+const isPamModalOpen = ref(false)
 const dataFinancialStatements = ref<any[]>([])
 
 const pagination = ref({
@@ -184,6 +186,15 @@ onMounted(() => {
         <UButton
           color="neutral"
           variant="subtle"
+          icon="i-lucide-droplets"
+          @click="isPamModalOpen = true"
+        >
+          + Tagihan Manual
+        </UButton>
+
+        <UButton
+          color="neutral"
+          variant="subtle"
           icon="i-mdi-download"
           @click="downloadTemplateHandler"
         >
@@ -275,5 +286,8 @@ onMounted(() => {
         @update:page="handlePageChange"
       />
     </div>
+
+    <!-- Modal Tambah Tagihan Air Manual -->
+    <ManualPamModal v-model="isPamModalOpen" @success="getData" />
   </div>
 </template>
