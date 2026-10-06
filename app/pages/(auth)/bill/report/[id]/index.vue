@@ -5,6 +5,7 @@ import { perPageLimit, mapCategoryLabel } from '~/const/utils'
 import { fileUpload } from '~/services/files'
 import ReceiptModal from '~/components/receipt/ReceiptModal.vue'
 import AdvancePaymentModal from '~/components/bill/AdvancePaymentModal.vue'
+import ManualPamModal from '~/components/bill/ManualPamModal.vue'
 
 definePageMeta({
   middleware: ['auth']
@@ -213,6 +214,61 @@ const handleDeleteOther = async (bill: any) => {
       toast.add({
         title: 'Berhasil',
         description: 'Tagihan lainnya berhasil dihapus',
+        color: 'success'
+      })
+      fetchDetail()
+    } else {
+      toast.add({
+        title: 'Gagal',
+        description: res.message || 'Gagal menghapus tagihan',
+        color: 'error'
+      })
+    }
+  } catch (err: any) {
+    toast.add({
+      title: 'Error',
+      description: err?.message || 'Terjadi kesalahan sistem',
+      color: 'error'
+    })
+  } finally {
+    loading.value = false
+  }
+}
+
+// --- MODAL MANUAL / EDIT PAM STATE ---
+const isPamModalOpen = ref(false)
+const selectedPamBillForEdit = ref<any>(null)
+
+const openAddPamModal = () => {
+  selectedPamBillForEdit.value = null
+  isPamModalOpen.value = true
+}
+
+const openEditPamModal = (bill: any) => {
+  selectedPamBillForEdit.value = bill
+  isPamModalOpen.value = true
+}
+
+const handleDeletePam = async (bill: any) => {
+  const confirmed = await confirm({
+    title: 'Hapus Tagihan Air Artetis',
+    description: `Apakah Anda yakin ingin menghapus tagihan Air Artetis sebesar ${formatCurrency(bill.amount)}? Tindakan ini tidak dapat dibatalkan.`,
+    confirmLabel: 'Ya, Hapus',
+    cancelLabel: 'Batal',
+    color: 'error'
+  })
+
+  if (!confirmed) return
+
+  loading.value = true
+  try {
+    const res = await useApi(`/finance/pdam/bill/${bill.id}`, {
+      method: 'DELETE'
+    })
+    if (res.status === 1) {
+      toast.add({
+        title: 'Berhasil',
+        description: 'Tagihan Air Artetis berhasil dihapus',
         color: 'success'
       })
       fetchDetail()
@@ -518,6 +574,14 @@ onMounted(() => {
           icon="i-lucide-calendar-plus"
           label="Bayar di Muka (Advance)"
           @click="isAdvanceModalOpen = true"
+        />
+        <UButton
+          v-if="canManageOtherBill"
+          color="neutral"
+          variant="outline"
+          icon="i-lucide-droplets"
+          label="+ Tagihan Air Artetis"
+          @click="openAddPamModal"
         />
         <UButton
           v-if="canManageOtherBill"
@@ -924,40 +988,73 @@ onMounted(() => {
 
         <template #action-cell="{ row }">
           <div class="flex items-center gap-1.5">
-            <template v-if="row.original.status === 'unpaid'">
-              <!-- Tombol Edit & Hapus khusus tagihan other dan role sa/em -->
-              <template
-                v-if="
-                  row.original.category === 'other' && canManageOtherBill
-                "
-              >
-                <UTooltip text="Edit Tagihan">
-                  <UButton
-                    size="sm"
-                    color="neutral"
-                    variant="subtle"
-                    icon="i-lucide-pencil"
-                    @click="openEditOtherModal(row.original)"
-                  />
-                </UTooltip>
-                <UTooltip text="Hapus Tagihan">
-                  <UButton
-                    size="sm"
-                    color="error"
-                    variant="subtle"
-                    icon="i-lucide-trash-2"
-                    @click="handleDeleteOther(row.original)"
-                  />
-                </UTooltip>
-              </template>
-              <UButton
-                label="Bayar"
-                color="success"
-                size="sm"
-                icon="i-lucide-receipt"
-                @click="handlePay(row.original)"
-              />
+            <!-- Tombol Edit & Hapus khusus tagihan PAM (bisa diedit jika unpaid ATAU nominalnya 0) -->
+            <template
+              v-if="
+                row.original.category === 'pam' &&
+                canManageOtherBill &&
+                (row.original.status === 'unpaid' || Number(row.original.amount) === 0)
+              "
+            >
+              <UTooltip text="Edit Tagihan Air">
+                <UButton
+                  size="sm"
+                  color="neutral"
+                  variant="subtle"
+                  icon="i-lucide-pencil"
+                  @click="openEditPamModal(row.original)"
+                />
+              </UTooltip>
+              <UTooltip text="Hapus Tagihan Air">
+                <UButton
+                  size="sm"
+                  color="error"
+                  variant="subtle"
+                  icon="i-lucide-trash-2"
+                  @click="handleDeletePam(row.original)"
+                />
+              </UTooltip>
             </template>
+
+            <!-- Tombol Edit & Hapus khusus tagihan other dan role sa/em (jika unpaid) -->
+            <template
+              v-if="
+                row.original.category === 'other' &&
+                canManageOtherBill &&
+                row.original.status === 'unpaid'
+              "
+            >
+              <UTooltip text="Edit Tagihan">
+                <UButton
+                  size="sm"
+                  color="neutral"
+                  variant="subtle"
+                  icon="i-lucide-pencil"
+                  @click="openEditOtherModal(row.original)"
+                />
+              </UTooltip>
+              <UTooltip text="Hapus Tagihan">
+                <UButton
+                  size="sm"
+                  color="error"
+                  variant="subtle"
+                  icon="i-lucide-trash-2"
+                  @click="handleDeleteOther(row.original)"
+                />
+              </UTooltip>
+            </template>
+
+            <!-- Tombol Bayar jika unpaid -->
+            <UButton
+              v-if="row.original.status === 'unpaid'"
+              label="Bayar"
+              color="success"
+              size="sm"
+              icon="i-lucide-receipt"
+              @click="handlePay(row.original)"
+            />
+
+            <!-- Tombol Kwitansi jika paid -->
             <UButton
               v-else
               label="Kwitansi"
@@ -1026,6 +1123,15 @@ onMounted(() => {
     <!-- Modal Pembayaran di Muka (Advance Billing) -->
     <AdvancePaymentModal
       v-model="isAdvanceModalOpen"
+      :default-person-id="(userId as string)"
+      :default-person-name="(userName as string)"
+      @success="fetchDetail"
+    />
+
+    <!-- Modal Manual / Edit PAM -->
+    <ManualPamModal
+      v-model="isPamModalOpen"
+      :edit-bill="selectedPamBillForEdit"
       :default-person-id="(userId as string)"
       :default-person-name="(userName as string)"
       @success="fetchDetail"
