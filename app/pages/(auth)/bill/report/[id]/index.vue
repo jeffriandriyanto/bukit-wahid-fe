@@ -988,66 +988,73 @@ onMounted(() => {
 
         <template #action-cell="{ row }">
           <div class="flex items-center gap-1.5">
-            <template v-if="row.original.status === 'unpaid'">
-              <!-- Tombol Edit & Hapus khusus tagihan other dan role sa/em -->
-              <template
-                v-if="
-                  row.original.category === 'other' && canManageOtherBill
-                "
-              >
-                <UTooltip text="Edit Tagihan">
-                  <UButton
-                    size="sm"
-                    color="neutral"
-                    variant="subtle"
-                    icon="i-lucide-pencil"
-                    @click="openEditOtherModal(row.original)"
-                  />
-                </UTooltip>
-                <UTooltip text="Hapus Tagihan">
-                  <UButton
-                    size="sm"
-                    color="error"
-                    variant="subtle"
-                    icon="i-lucide-trash-2"
-                    @click="handleDeleteOther(row.original)"
-                  />
-                </UTooltip>
-              </template>
-
-              <!-- Tombol Edit & Hapus khusus tagihan pam dan role sa/em -->
-              <template
-                v-if="
-                  row.original.category === 'pam' && canManageOtherBill
-                "
-              >
-                <UTooltip text="Edit Tagihan Air">
-                  <UButton
-                    size="sm"
-                    color="neutral"
-                    variant="subtle"
-                    icon="i-lucide-pencil"
-                    @click="openEditPamModal(row.original)"
-                  />
-                </UTooltip>
-                <UTooltip text="Hapus Tagihan Air">
-                  <UButton
-                    size="sm"
-                    color="error"
-                    variant="subtle"
-                    icon="i-lucide-trash-2"
-                    @click="handleDeletePam(row.original)"
-                  />
-                </UTooltip>
-              </template>
-              <UButton
-                label="Bayar"
-                color="success"
-                size="sm"
-                icon="i-lucide-receipt"
-                @click="handlePay(row.original)"
-              />
+            <!-- Tombol Edit & Hapus khusus tagihan PAM (bisa diedit jika unpaid ATAU nominalnya 0) -->
+            <template
+              v-if="
+                row.original.category === 'pam' &&
+                canManageOtherBill &&
+                (row.original.status === 'unpaid' || Number(row.original.amount) === 0)
+              "
+            >
+              <UTooltip text="Edit Tagihan Air">
+                <UButton
+                  size="sm"
+                  color="neutral"
+                  variant="subtle"
+                  icon="i-lucide-pencil"
+                  @click="openEditPamModal(row.original)"
+                />
+              </UTooltip>
+              <UTooltip text="Hapus Tagihan Air">
+                <UButton
+                  size="sm"
+                  color="error"
+                  variant="subtle"
+                  icon="i-lucide-trash-2"
+                  @click="handleDeletePam(row.original)"
+                />
+              </UTooltip>
             </template>
+
+            <!-- Tombol Edit & Hapus khusus tagihan other dan role sa/em (jika unpaid) -->
+            <template
+              v-if="
+                row.original.category === 'other' &&
+                canManageOtherBill &&
+                row.original.status === 'unpaid'
+              "
+            >
+              <UTooltip text="Edit Tagihan">
+                <UButton
+                  size="sm"
+                  color="neutral"
+                  variant="subtle"
+                  icon="i-lucide-pencil"
+                  @click="openEditOtherModal(row.original)"
+                />
+              </UTooltip>
+              <UTooltip text="Hapus Tagihan">
+                <UButton
+                  size="sm"
+                  color="error"
+                  variant="subtle"
+                  icon="i-lucide-trash-2"
+                  @click="handleDeleteOther(row.original)"
+                />
+              </UTooltip>
+            </template>
+
+            <!-- Tombol Bayar jika unpaid -->
+            <UButton
+              v-if="row.original.status === 'unpaid'"
+              label="Bayar"
+              color="success"
+              size="sm"
+              icon="i-lucide-receipt"
+              @click="handlePay(row.original)"
+            />
+
+            <!-- Tombol Kwitansi jika paid -->
             <UButton
               v-else
               label="Kwitansi"
