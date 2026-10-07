@@ -4,6 +4,8 @@ import type { FormSubmitEvent } from '@nuxt/ui'
 import { perPageLimit } from '~/const/utils'
 import { genderItems, religionOptions, nationalityOptions, maritalStatusOptions, educationOptions } from '~/const/dropdown'
 
+definePageMeta({ middleware: ['auth'] })
+
 const {
   dropdownRT,
   dropdownAddress,

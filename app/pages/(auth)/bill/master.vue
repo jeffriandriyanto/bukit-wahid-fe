@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { z } from 'zod'
 
+definePageMeta({ middleware: ['auth'] })
+
 const toast = useToast()
 const loading = ref(false)
 

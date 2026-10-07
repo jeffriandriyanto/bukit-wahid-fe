@@ -3,6 +3,8 @@ import { z } from 'zod'
 import type { FormSubmitEvent } from '@nuxt/ui'
 import { perPageLimit } from '~/const/utils'
 
+definePageMeta({ middleware: ['auth'] })
+
 const {
   dropdownRT,
   dropdownFamilyHead,

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+definePageMeta({ middleware: ['auth'] })
+
 // --- STATE ---
 const loading = ref(false)
 const recapData = ref<any[]>([])

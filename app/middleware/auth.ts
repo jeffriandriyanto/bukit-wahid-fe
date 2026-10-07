@@ -1,4 +1,4 @@
-export default defineNuxtRouteMiddleware(async (to, from) => {
+export default defineNuxtRouteMiddleware(async (_to, _from) => {
   if (import.meta.server) return
 
   const { token, refreshToken, user, refreshSession, logout } = useAuth()
@@ -13,10 +13,10 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
       }
 
       if (ok) {
-        if (user.value?.person?.category === 'security') {
+        if (!canAccessWebAdmin(user.value)) {
           useToast().add({
             title: 'Akses Ditolak',
-            description: 'Akun Security hanya dapat digunakan melalui aplikasi mobile.',
+            description: 'Hanya Super Admin, Estate Management (EM), dan Pengurus/Pejabat RW yang dapat mengakses web admin.',
             color: 'error'
           })
           return logout()
@@ -28,10 +28,10 @@ export default defineNuxtRouteMiddleware(async (to, from) => {
     return navigateTo('/login', { replace: true })
   }
 
-  if (user.value?.person?.category === 'security') {
+  if (!canAccessWebAdmin(user.value)) {
     useToast().add({
       title: 'Akses Ditolak',
-      description: 'Akun Security hanya dapat digunakan melalui aplikasi mobile.',
+      description: 'Hanya Super Admin, Estate Management (EM), dan Pengurus/Pejabat RW yang dapat mengakses web admin.',
       color: 'error'
     })
     return logout()

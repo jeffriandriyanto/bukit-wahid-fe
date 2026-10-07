@@ -4,6 +4,8 @@ import type { FormSubmitEvent } from '@nuxt/ui'
 import { watchWithFilter, debounceFilter } from '@vueuse/core'
 import { perPageLimit } from '~/const/utils'
 
+definePageMeta({ middleware: ['auth'] })
+
 // ===== 1. SCHEMAS =====
 const MajelisFormSchema = z.object({
   person: z.string().min(1, 'Person wajib dipilih')

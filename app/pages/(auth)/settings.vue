@@ -2,6 +2,8 @@
 import { z } from 'zod'
 import { fileUpload } from '~/services/files' // Pastikan service upload di-import
 
+definePageMeta({ middleware: ['auth'] })
+
 const toast = useToast()
 const loading = ref(false)
 const initialForm = ref<string>('')

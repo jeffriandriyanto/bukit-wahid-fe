@@ -4,6 +4,8 @@ import type { FormSubmitEvent } from '@nuxt/ui'
 import { fileUpload } from '~/services/files'
 import { perPageLimit } from '~/const/utils'
 
+definePageMeta({ middleware: ['auth'] })
+
 const { reveal: confirm } = useConfirmService()
 const toast = useToast()
 const { dropdownResidentAction, getDropdownResidentAction } = useApiDropdown()

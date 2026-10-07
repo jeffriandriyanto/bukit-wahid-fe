@@ -35,6 +35,9 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
     const response = await $fetch<any>('login', {
       baseURL: apiBase,
       method: 'POST',
+      headers: {
+        'X-Client-Platform': 'web'
+      },
       body: {
         username: event.data.username,
         password: event.data.password
@@ -42,6 +45,15 @@ const onSubmit = async (event: FormSubmitEvent<Schema>) => {
     })
 
     const { auth, user: userData } = response.data
+
+    if (!canAccessWebAdmin(userData)) {
+      toast.add({
+        title: 'Akses Ditolak',
+        description: 'Hanya Super Admin, Estate Management (EM), dan Pengurus/Pejabat RW yang dapat mengakses web admin.',
+        color: 'error'
+      })
+      return
+    }
 
     setTokens(auth.access_token, auth.refresh?.token || auth.refresh)
     setUser(userData)
