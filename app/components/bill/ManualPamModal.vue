@@ -206,7 +206,7 @@ const handleSubmit = async () => {
             {{ isEditMode ? 'Edit Tagihan Air Artetis' : 'Tambah Tagihan Air Artetis Manual' }}
           </h3>
           <p class="text-xs text-gray-500">
-            {{ isEditMode ? 'Sesuaikan angka meteran untuk tagihan yang belum lunas' : 'Buat tagihan PAM mandiri dengan kalkulasi otomatis' }}
+            {{ isEditMode ? 'Sesuaikan angka meteran untuk tagihan yang belum lunas' : 'Buat tagihan Air Artetis mandiri dengan kalkulasi otomatis' }}
           </p>
         </div>
       </div>
@@ -354,7 +354,7 @@ const handleSubmit = async () => {
             icon="i-lucide-check"
             :loading="loading"
           >
-            {{ isEditMode ? 'Simpan Perubahan' : 'Buat Tagihan PAM' }}
+            {{ isEditMode ? 'Simpan Perubahan' : 'Buat Tagihan Air Artetis' }}
           </UButton>
         </div>
       </form>

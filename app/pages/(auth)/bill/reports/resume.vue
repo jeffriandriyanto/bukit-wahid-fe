@@ -354,7 +354,7 @@ onMounted(() => {
           {{ formatCurrency(resumeData.estate_management.total_masuk) }}
         </div>
         <div class="text-[11px] text-emerald-600 font-medium mt-0.5">
-          IPL + PAM + Pendapatan Lain
+          IPL + Air Artetis + Pendapatan Lain
         </div>
       </div>
 

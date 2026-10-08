@@ -102,7 +102,7 @@ export const sidebarItems: SidebarItem[] = [
         to: '/bill/payment'
       },
       {
-        label: 'Pembayaran Tagihan Artetis',
+        label: 'Pembayaran Tagihan Air Artetis',
         icon: 'i-lucide-droplets',
         isHide: true,
         to: '/bill/pdam'

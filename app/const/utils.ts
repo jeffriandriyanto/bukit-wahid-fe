@@ -15,7 +15,7 @@ export const categories = [
 
 const categoryLabelMap: Record<string, string> = {
   DUES: 'Iuran RW',
-  PAM: 'Artetis',
+  PAM: 'Air Artetis',
   IPL: 'IPL',
   OTHER: 'Lainnya'
 }

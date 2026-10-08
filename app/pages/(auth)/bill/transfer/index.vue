@@ -645,7 +645,7 @@ onMounted(() => {
           <UFormField name="description" label="Keterangan / Catatan">
             <UTextarea
               v-model="form.description"
-              placeholder="Contoh: Setor uang tagihan IPL & PAM ke rekening Mandiri..."
+              placeholder="Contoh: Setor uang tagihan IPL & Air Artetis ke rekening Mandiri..."
               :rows="2"
             />
           </UFormField>

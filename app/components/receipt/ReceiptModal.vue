@@ -116,7 +116,7 @@ const downloadImage = async () => {
           variant="subtle"
           class="font-semibold text-xs"
         >
-          {{ currentTemplate === 'estate' ? 'Nota EM (IPL / PAM)' : 'Nota RW (Iuran / Lainnya)' }}
+          {{ currentTemplate === 'estate' ? 'Nota EM (IPL / Air Artetis)' : 'Nota RW (Iuran / Lainnya)' }}
         </UBadge>
       </div>
     </template>
