@@ -20,6 +20,7 @@ const selectedDetail = ref<any>(null)
 // Filter States
 const searchQuery = ref('')
 const now = new Date()
+const selectedDay = ref<number | null>(null)
 const selectedMonth = ref(now.getMonth() + 1)
 const selectedYear = ref(now.getFullYear())
 const selectedTag = ref<any>(null)
@@ -75,6 +76,17 @@ const yearOptions = computed(() => {
   return years
 })
 
+const dayOptions = computed(() => {
+  const totalDays = new Date(selectedYear.value, selectedMonth.value, 0).getDate()
+  const options: { label: string; value: number | null }[] = [
+    { label: 'Semua Tanggal', value: null }
+  ]
+  for (let d = 1; d <= totalDays; d++) {
+    options.push({ label: `Tanggal ${d}`, value: d })
+  }
+  return options
+})
+
 // --- TABLE COLUMNS ---
 const journalTable = [
   { accessorKey: 'date', header: 'Tanggal' },
@@ -93,7 +105,8 @@ const getSummary = async () => {
     const res = await useApi('/finance/journal/data', {
       params: {
         month: selectedMonth.value,
-        year: selectedYear.value
+        year: selectedYear.value,
+        day: selectedDay.value ?? ''
       }
     })
     if (res.status === 1) {
@@ -115,6 +128,7 @@ const getData = async () => {
         search: searchQuery.value,
         month: selectedMonth.value,
         year: selectedYear.value,
+        day: selectedDay.value ?? '',
         tag: selectedTag.value ?? ''
       }
     })
@@ -159,7 +173,14 @@ watch(
   }
 )
 
-watch([selectedMonth, selectedYear, selectedTag], () => {
+watch([selectedMonth, selectedYear], () => {
+  const maxDays = new Date(selectedYear.value, selectedMonth.value, 0).getDate()
+  if (selectedDay.value && selectedDay.value > maxDays) {
+    selectedDay.value = null
+  }
+})
+
+watch([selectedMonth, selectedYear, selectedDay, selectedTag], () => {
   pagination.value.current_page = 1
   getSummary()
   getData()
@@ -176,6 +197,7 @@ const handleExport = () => {
   const params = new URLSearchParams()
   params.set('month', selectedMonth.value.toString())
   params.set('year', selectedYear.value.toString())
+  if (selectedDay.value) params.set('day', selectedDay.value.toString())
   if (selectedTag.value) params.set('tag', selectedTag.value.toString())
   if (searchQuery.value) params.set('search', searchQuery.value)
   const url = `${config.public.baseUrl}finance/journal/export?${params.toString()}`
@@ -207,6 +229,13 @@ const handleExport = () => {
           placeholder="Semua Akun / Jurnal"
           searchable
           class="w-64"
+        />
+        <USelect
+          v-model="selectedDay"
+          :items="dayOptions"
+          label-key="label"
+          value-key="value"
+          class="w-36"
         />
         <USelect
           v-model="selectedMonth"
