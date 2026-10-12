@@ -351,6 +351,16 @@ const statusFilterOptions = [
                 >
                   {{ item.bill.description }}
                 </span>
+
+                <!-- Info Denda & Diskon jika ada -->
+                <div v-if="(item.bill?.penalty && Number(item.bill.penalty) > 0) || (item.bill?.discount && Number(item.bill.discount) > 0)" class="flex items-center gap-2 text-xs pt-0.5">
+                  <span v-if="item.bill?.penalty && Number(item.bill.penalty) > 0" class="text-rose-600 font-medium">
+                    + Denda: {{ formatCurrency(item.bill.penalty) }}
+                  </span>
+                  <span v-if="item.bill?.discount && Number(item.bill.discount) > 0" class="text-emerald-700 font-medium">
+                    - Diskon: {{ formatCurrency(item.bill.discount) }}
+                  </span>
+                </div>
               </div>
               <span class="font-bold text-gray-900">{{
                 formatCurrency(item.amount)

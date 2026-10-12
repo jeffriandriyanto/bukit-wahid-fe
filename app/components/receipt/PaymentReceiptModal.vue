@@ -70,6 +70,25 @@ const terbilangFormatted = computed(() => {
   return terbilang(props.payment?.amount || 0)
 })
 
+const totalPenalty = computed(() => {
+  if (!Array.isArray(props.payment?.details)) return 0
+  return props.payment.details.reduce((sum: number, d: any) => {
+    return sum + Number(d.bill?.penalty || 0)
+  }, 0)
+})
+
+const totalDiscount = computed(() => {
+  if (!Array.isArray(props.payment?.details)) return 0
+  return props.payment.details.reduce((sum: number, d: any) => {
+    return sum + Number(d.bill?.discount || 0)
+  }, 0)
+})
+
+const totalPokok = computed(() => {
+  const total = Number(props.payment?.amount || 0)
+  return total - totalPenalty.value + totalDiscount.value
+})
+
 const getPdfUrl = (download = false) => {
   if (!props.payment?.id) return ''
   const baseUrl = config.public.baseUrl.endsWith('/')
@@ -354,6 +373,12 @@ const handleDownloadImage = async () => {
                         <div class="text-[11px] text-neutral-600">
                           {{ detail.bill?.description || 'Iuran wajib bulanan warga RW XI Bukit Wahid Regency' }}
                         </div>
+                        <div v-if="detail.bill?.penalty && Number(detail.bill.penalty) > 0" class="text-rose-600 text-[11px] pt-0.5">
+                          + Denda: Rp {{ formatNumber(detail.bill.penalty) }}
+                        </div>
+                        <div v-if="detail.bill?.discount && Number(detail.bill.discount) > 0" class="text-emerald-700 text-[11px] pt-0.5">
+                          - Diskon: Rp {{ formatNumber(detail.bill.discount) }}
+                        </div>
                       </template>
 
                       <!-- Other Category -->
@@ -366,6 +391,12 @@ const handleDownloadImage = async () => {
                           <span v-if="detail.bill?.qty && detail.bill?.price" class="block text-[10px] text-neutral-500">
                             ({{ detail.bill.qty }} {{ detail.bill.unit || 'item' }} &times; Rp {{ formatNumber(detail.bill.price) }})
                           </span>
+                        </div>
+                        <div v-if="detail.bill?.penalty && Number(detail.bill.penalty) > 0" class="text-rose-600 text-[11px] pt-0.5">
+                          + Denda: Rp {{ formatNumber(detail.bill.penalty) }}
+                        </div>
+                        <div v-if="detail.bill?.discount && Number(detail.bill.discount) > 0" class="text-emerald-700 text-[11px] pt-0.5">
+                          - Diskon: Rp {{ formatNumber(detail.bill.discount) }}
                         </div>
                       </template>
                     </td>
@@ -395,7 +426,23 @@ const handleDownloadImage = async () => {
                 </p>
               </div>
 
-              <div class="sm:col-span-5 border-2 border-neutral-800 rounded bg-neutral-50/80 p-3 flex flex-col justify-between">
+              <div class="sm:col-span-5 border-2 border-neutral-800 rounded bg-neutral-50/80 p-3 flex flex-col justify-between space-y-1">
+                <!-- Breakdown if penalty or discount exists -->
+                <div v-if="totalPenalty > 0 || totalDiscount > 0" class="space-y-1 text-xs border-b border-neutral-200 pb-1.5 mb-1">
+                  <div class="flex items-center justify-between text-neutral-600">
+                    <span>Subtotal Pokok</span>
+                    <span class="font-medium">{{ formatCurrency(totalPokok) }}</span>
+                  </div>
+                  <div v-if="totalPenalty > 0" class="flex items-center justify-between text-rose-600">
+                    <span>Total Denda (+)</span>
+                    <span class="font-bold">+ {{ formatCurrency(totalPenalty) }}</span>
+                  </div>
+                  <div v-if="totalDiscount > 0" class="flex items-center justify-between text-emerald-700">
+                    <span>Total Diskon (-)</span>
+                    <span class="font-bold">- {{ formatCurrency(totalDiscount) }}</span>
+                  </div>
+                </div>
+
                 <div class="flex items-center justify-between text-xs text-neutral-600">
                   <span class="font-bold uppercase tracking-wider">TOTAL BAYAR</span>
                 </div>
