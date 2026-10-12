@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { perPageLimit, mapCategoryLabel } from '~/const/utils'
+import PaymentReceiptModal from '~/components/receipt/PaymentReceiptModal.vue'
 
 definePageMeta({
   middleware: ['auth']
@@ -23,6 +24,31 @@ const {
   openReview,
   submitReview
 } = usePayment()
+
+const isReceiptModalOpen = ref(false)
+const selectedReceiptPayment = ref<any>(null)
+const loadingReceipt = ref(false)
+
+const openReceiptModal = async (paymentItem: any) => {
+  if (paymentItem.details && paymentItem.details.length > 0 && paymentItem.details[0]?.bill) {
+    selectedReceiptPayment.value = paymentItem
+    isReceiptModalOpen.value = true
+    return
+  }
+
+  loadingReceipt.value = true
+  try {
+    const res = await useApi(`/finance/payment/show/${paymentItem.id}`)
+    if (res.status === 1) {
+      selectedReceiptPayment.value = res.data
+      isReceiptModalOpen.value = true
+    }
+  } catch (err) {
+    console.error('Gagal mengambil data pembayaran untuk struk', err)
+  } finally {
+    loadingReceipt.value = false
+  }
+}
 
 const statusFilterOptions = [
   { label: 'Belum Bayar', value: 'unpaid' },
@@ -139,14 +165,26 @@ const statusFilterOptions = [
         </template>
 
         <template #action-cell="{ row }">
-          <UButton
-            label="Review"
-            color="primary"
-            variant="soft"
-            size="sm"
-            icon="i-lucide-eye"
-            @click="openReview(row.original)"
-          />
+          <div class="flex items-center justify-end gap-1.5">
+            <UButton
+              label="Review"
+              color="primary"
+              variant="soft"
+              size="sm"
+              icon="i-lucide-eye"
+              @click="openReview(row.original)"
+            />
+            <UButton
+              v-if="row.original.status === 'approve' || row.original.status === 'paid'"
+              label="Struk"
+              color="neutral"
+              variant="outline"
+              size="sm"
+              icon="i-lucide-receipt"
+              :loading="loadingReceipt && selectedReceiptPayment?.id === row.original.id"
+              @click="openReceiptModal(row.original)"
+            />
+          </div>
         </template>
       </UTable>
 
@@ -245,6 +283,30 @@ const statusFilterOptions = [
             </div>
           </div>
 
+          <!-- Struk Action Banner jika Status Lunas / Diterima -->
+          <div
+            v-if="detail.status === 'approve' || detail.status === 'paid'"
+            class="flex items-center justify-between p-3.5 rounded-xl bg-emerald-50 border border-emerald-200"
+          >
+            <div class="flex items-center gap-2.5">
+              <div class="p-1.5 bg-emerald-100 text-emerald-700 rounded-lg">
+                <UIcon name="i-lucide-check-circle" class="w-5 h-5" />
+              </div>
+              <div>
+                <p class="text-xs font-bold text-emerald-900">Pembayaran Sah & Lunas</p>
+                <p class="text-[11px] text-emerald-700">Tersedia struk bukti bayar resmi format HVS / A4</p>
+              </div>
+            </div>
+            <UButton
+              label="Lihat / Cetak Struk"
+              color="success"
+              variant="solid"
+              size="sm"
+              icon="i-lucide-receipt"
+              @click="openReceiptModal(detail)"
+            />
+          </div>
+
           <div v-if="detail.details?.length" class="space-y-2">
             <span class="text-xs font-bold text-gray-400 uppercase"
               >Rincian Tagihan</span
@@ -252,10 +314,45 @@ const statusFilterOptions = [
             <div
               v-for="item in detail.details"
               :key="item.id"
-              class="flex justify-between text-sm bg-gray-50 rounded-lg px-3 py-2"
+              class="flex justify-between items-start text-sm bg-gray-50 rounded-lg px-3 py-2.5"
             >
-              <span class="text-gray-600 capitalize">{{ mapCategoryLabel(item.category) }}</span>
-              <span class="font-semibold">{{
+              <div class="space-y-0.5">
+                <span class="text-gray-900 font-semibold capitalize block">{{ mapCategoryLabel(item.category) }}</span>
+                <!-- Detail IPL -->
+                <span
+                  v-if="(item.category || item.bill?.category) === 'ipl' && item.bill?.qty"
+                  class="text-xs text-gray-500 block"
+                >
+                  <span
+                    v-if="item.bill?.residence?.type || item.bill?.residence?.kavling"
+                    class="font-semibold text-emerald-700 mr-1"
+                  >
+                    [{{ [item.bill.residence.type, item.bill.residence.kavling].filter(Boolean).join(' - ') }}]
+                  </span>
+                  Luas Tanah: {{ item.bill.qty }} {{ item.bill.unit || 'm²' }} &times; {{ formatCurrency(item.bill.price) }}
+                </span>
+                <!-- Detail PAM -->
+                <span
+                  v-else-if="(item.category || item.bill?.category) === 'pam' && item.bill?.pam_after !== undefined && item.bill?.pam_after !== null"
+                  class="text-xs text-gray-500 block"
+                >
+                  <span
+                    v-if="item.bill?.residence?.type || item.bill?.residence?.kavling"
+                    class="font-semibold text-sky-700 mr-1"
+                  >
+                    [{{ [item.bill.residence.type, item.bill.residence.kavling].filter(Boolean).join(' - ') }}]
+                  </span>
+                  Stan: {{ item.bill.pam_before ?? '-' }} s/d {{ item.bill.pam_after ?? '-' }} &bull; Pemakaian: {{ item.bill.qty }} m³ &times; {{ formatCurrency(item.bill.price || 3000) }}
+                </span>
+                <!-- Detail Lainnya / Dues -->
+                <span
+                  v-else-if="item.bill?.description"
+                  class="text-xs text-gray-500 block"
+                >
+                  {{ item.bill.description }}
+                </span>
+              </div>
+              <span class="font-bold text-gray-900">{{
                 formatCurrency(item.amount)
               }}</span>
             </div>
@@ -306,5 +403,11 @@ const statusFilterOptions = [
         </div>
       </template>
     </UModal>
+
+    <!-- Modal Struk Bukti Bayar (A4) -->
+    <PaymentReceiptModal
+      v-model="isReceiptModalOpen"
+      :payment="selectedReceiptPayment"
+    />
   </div>
 </template>
