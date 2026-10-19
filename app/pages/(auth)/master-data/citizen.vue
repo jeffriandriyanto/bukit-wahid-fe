@@ -29,6 +29,7 @@ const {
   passwordForm,
   getAge,
   getStatusActive,
+  getIsRegistered,
   getCategory,
   clearFile,
   getData,
@@ -304,6 +305,17 @@ const {
             {{ getCategory(row.original) }}
           </UBadge>
           <span v-else class="text-gray-300 italic">-</span>
+        </template>
+
+        <template #registred-cell="{ row }">
+          <UBadge
+            :color="getIsRegistered(row.original) ? 'success' : 'neutral'"
+            :variant="getIsRegistered(row.original) ? 'soft' : 'subtle'"
+            size="sm"
+            class="font-bold"
+          >
+            {{ getIsRegistered(row.original) ? 'Terdaftar' : 'Belum' }}
+          </UBadge>
         </template>
 
         <template #status-cell="{ row }">

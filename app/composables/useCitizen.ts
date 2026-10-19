@@ -56,6 +56,7 @@ const columnsFamilyTable = [
   { accessorKey: 'gender', header: 'L/P' },
   { accessorKey: 'blood_type', header: 'Gol. Darah', class: 'text-center' },
   { accessorKey: 'category', header: 'Kategori' },
+  { accessorKey: 'registred', header: 'Registrasi' },
   { accessorKey: 'status', header: 'Status' },
   { id: 'action', header: 'Aksi', class: 'text-right' }
 ]
@@ -161,6 +162,14 @@ export const useCitizen = () => {
   }
 
   const getStatusActive = (row: any) => !!row?.familly_member?.is_active
+
+  const getIsRegistered = (row: any) =>
+    row?.registred === true ||
+    row?.registred === '1' ||
+    row?.registred === 1 ||
+    row?.user?.registred === true ||
+    row?.user?.registred === '1' ||
+    row?.user?.registred === 1
 
   const getCategory = (row: any) =>
     row?.familly_member?.familly?.category ?? row?.category ?? null
@@ -503,6 +512,7 @@ export const useCitizen = () => {
     // Helpers
     getAge,
     getStatusActive,
+    getIsRegistered,
     getCategory,
     clearFile,
     // Data Actions
