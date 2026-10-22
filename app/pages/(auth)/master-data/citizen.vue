@@ -9,6 +9,7 @@ const {
   perPageLimit,
   genderItems,
   religionFilterOptions,
+  registeredFilterOptions,
   dropdownRT,
   isOpen,
   mode,
@@ -21,9 +22,14 @@ const {
   dataCitizen,
   pagination,
   search,
+  selectedRT,
+  selectedAgeGroup,
+  selectedReligion,
+  selectedRegistered,
   tempRT,
   tempAgeGroup,
   tempReligion,
+  tempRegistered,
   activeFilterCount,
   sortBy,
   sortOrder,
@@ -161,6 +167,105 @@ const {
       </div>
     </SharedHeaderBg>
 
+    <!-- Active Filter Chips -->
+    <div
+      v-if="activeFilterCount > 0"
+      class="flex flex-wrap items-center gap-2 px-1 text-xs"
+    >
+      <span class="font-semibold text-gray-500">Filter Aktif:</span>
+      <UBadge
+        v-if="selectedRegistered !== null && selectedRegistered !== undefined && selectedRegistered !== ''"
+        color="primary"
+        variant="subtle"
+        size="sm"
+        class="gap-1.5 font-semibold"
+      >
+        <span>Status: {{ selectedRegistered === 'true' ? 'Terdaftar' : 'Belum Terdaftar' }}</span>
+        <button
+          type="button"
+          class="hover:text-red-600 font-bold cursor-pointer ml-0.5"
+          @click="
+            selectedRegistered = null;
+            tempRegistered = null;
+            pagination.current_page = 1;
+            getData();
+          "
+        >
+          ✕
+        </button>
+      </UBadge>
+      <UBadge
+        v-if="selectedRT"
+        color="primary"
+        variant="subtle"
+        size="sm"
+        class="gap-1.5 font-semibold"
+      >
+        <span>RT: {{ dropdownRT.find((i: any) => i.key === selectedRT)?.label || selectedRT }}</span>
+        <button
+          type="button"
+          class="hover:text-red-600 font-bold cursor-pointer ml-0.5"
+          @click="
+            selectedRT = null;
+            tempRT = null;
+            pagination.current_page = 1;
+            getData();
+          "
+        >
+          ✕
+        </button>
+      </UBadge>
+      <UBadge
+        v-if="selectedAgeGroup"
+        color="primary"
+        variant="subtle"
+        size="sm"
+        class="gap-1.5 font-semibold"
+      >
+        <span>Usia: {{ ageGroupOptions.find((i: any) => i.key === selectedAgeGroup)?.label || selectedAgeGroup }}</span>
+        <button
+          type="button"
+          class="hover:text-red-600 font-bold cursor-pointer ml-0.5"
+          @click="
+            selectedAgeGroup = null;
+            tempAgeGroup = null;
+            pagination.current_page = 1;
+            getData();
+          "
+        >
+          ✕
+        </button>
+      </UBadge>
+      <UBadge
+        v-if="selectedReligion"
+        color="primary"
+        variant="subtle"
+        size="sm"
+        class="gap-1.5 font-semibold"
+      >
+        <span>Agama: {{ selectedReligion }}</span>
+        <button
+          type="button"
+          class="hover:text-red-600 font-bold cursor-pointer ml-0.5"
+          @click="
+            selectedReligion = null;
+            tempReligion = null;
+            pagination.current_page = 1;
+            getData();
+          "
+        >
+          ✕
+        </button>
+      </UBadge>
+      <button
+        type="button"
+        class="text-xs text-red-500 hover:text-red-700 underline font-semibold cursor-pointer ml-1"
+        @click="resetFilters"
+      >
+        Reset Semua
+      </button>
+    </div>
+
     <!-- Filter Modal -->
     <UModal
       v-model:open="isFilterModalOpen"
@@ -177,6 +282,18 @@ const {
 
       <template #body>
         <div class="space-y-6">
+          <UFormField label="Berdasarkan Status Registrasi">
+            <USelectMenu
+              v-model="tempRegistered"
+              :items="registeredFilterOptions"
+              value-key="key"
+              label-key="label"
+              placeholder="Semua Status"
+              size="xl"
+              class="w-full"
+            />
+          </UFormField>
+
           <UFormField label="Berdasarkan Wilayah RT">
             <USelectMenu
               v-model="tempRT"
@@ -368,6 +485,31 @@ const {
             {{ getCategory(row.original) }}
           </UBadge>
           <span v-else class="text-gray-300 italic">-</span>
+        </template>
+
+        <template #registred-header>
+          <button
+            type="button"
+            class="flex items-center gap-1.5 font-bold hover:text-primary-600 transition-colors select-none group cursor-pointer"
+            @click="handleSort('registred')"
+          >
+            <span>Registrasi</span>
+            <UIcon
+              :name="
+                sortBy === 'registred'
+                  ? sortOrder === 'asc'
+                    ? 'i-lucide-arrow-up'
+                    : 'i-lucide-arrow-down'
+                  : 'i-lucide-arrow-up-down'
+              "
+              class="w-3.5 h-3.5 transition-colors"
+              :class="
+                sortBy === 'registred'
+                  ? 'text-primary-600'
+                  : 'text-gray-400 opacity-60 group-hover:opacity-100'
+              "
+            />
+          </button>
         </template>
 
         <template #registred-cell="{ row }">

@@ -10,6 +10,12 @@ const religionFilterOptions = [
   ...religionOptions
 ]
 
+const registeredFilterOptions = [
+  { key: null, label: 'Semua Status' },
+  { key: 'true', label: 'Terdaftar' },
+  { key: 'false', label: 'Belum Terdaftar' }
+]
+
 export const CitizenFormSchema = z.object({
   name: z.string().min(1, 'Nama wajib diisi'),
   phone: z.string().optional().nullable(),
@@ -96,15 +102,17 @@ export const useCitizen = () => {
   const selectedRT = ref(null)
   const selectedAgeGroup = ref(null)
   const selectedReligion = ref(null)
+  const selectedRegistered = ref<string | null>(null)
   const tempRT = ref(null)
   const tempAgeGroup = ref(null)
   const tempReligion = ref(null)
+  const tempRegistered = ref<string | null>(null)
 
   // --- Sorting ---
-  const sortBy = ref<'name' | 'username'>('name')
+  const sortBy = ref<'name' | 'username' | 'registred'>('name')
   const sortOrder = ref<'asc' | 'desc'>('asc')
 
-  const handleSort = (field: 'name' | 'username') => {
+  const handleSort = (field: 'name' | 'username' | 'registred') => {
     if (sortBy.value === field) {
       sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
     } else {
@@ -142,6 +150,7 @@ export const useCitizen = () => {
     if (selectedRT.value) count++
     if (selectedAgeGroup.value) count++
     if (selectedReligion.value) count++
+    if (selectedRegistered.value !== null && selectedRegistered.value !== undefined && selectedRegistered.value !== '') count++
     return count
   })
 
@@ -230,6 +239,7 @@ export const useCitizen = () => {
           rt: selectedRT.value,
           age_group: selectedAgeGroup.value,
           religion: selectedReligion.value,
+          registred: selectedRegistered.value,
           sort_by: sortBy.value,
           sort_order: sortOrder.value,
           page: pagination.value.current_page,
@@ -390,6 +400,7 @@ export const useCitizen = () => {
     selectedRT.value = tempRT.value
     selectedAgeGroup.value = tempAgeGroup.value
     selectedReligion.value = tempReligion.value
+    selectedRegistered.value = tempRegistered.value
 
     pagination.value.current_page = 1
     getData()
@@ -400,10 +411,12 @@ export const useCitizen = () => {
     tempRT.value = null
     tempAgeGroup.value = null
     tempReligion.value = null
+    tempRegistered.value = null
 
     selectedRT.value = null
     selectedAgeGroup.value = null
     selectedReligion.value = null
+    selectedRegistered.value = null
 
     search.value = ''
     pagination.value.current_page = 1
@@ -419,6 +432,9 @@ export const useCitizen = () => {
     if (selectedRT.value) params.append('rt', selectedRT.value)
     if (selectedAgeGroup.value) params.append('age_group', selectedAgeGroup.value)
     if (selectedReligion.value) params.append('religion', selectedReligion.value)
+    if (selectedRegistered.value !== null && selectedRegistered.value !== undefined && selectedRegistered.value !== '') {
+      params.append('registred', selectedRegistered.value)
+    }
 
     const queryString = params.toString() ? `?${params.toString()}` : ''
     const url = `${config.public.baseUrl}resident/excel/export${queryString}`
@@ -497,6 +513,7 @@ export const useCitizen = () => {
     perPageLimit,
     genderItems,
     religionFilterOptions,
+    registeredFilterOptions,
     // Dropdown
     dropdownRT,
     // Modal State
@@ -519,9 +536,11 @@ export const useCitizen = () => {
     selectedRT,
     selectedAgeGroup,
     selectedReligion,
+    selectedRegistered,
     tempRT,
     tempAgeGroup,
     tempReligion,
+    tempRegistered,
     activeFilterCount,
     // Sorting
     sortBy,
