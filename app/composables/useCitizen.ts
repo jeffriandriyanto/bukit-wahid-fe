@@ -100,6 +100,21 @@ export const useCitizen = () => {
   const tempAgeGroup = ref(null)
   const tempReligion = ref(null)
 
+  // --- Sorting ---
+  const sortBy = ref<'name' | 'username'>('name')
+  const sortOrder = ref<'asc' | 'desc'>('asc')
+
+  const handleSort = (field: 'name' | 'username') => {
+    if (sortBy.value === field) {
+      sortOrder.value = sortOrder.value === 'asc' ? 'desc' : 'asc'
+    } else {
+      sortBy.value = field
+      sortOrder.value = 'asc'
+    }
+    pagination.value.current_page = 1
+    getData()
+  }
+
   // --- Form ---
   const form = reactive<CitizenFormSchema>({
     name: '',
@@ -215,6 +230,8 @@ export const useCitizen = () => {
           rt: selectedRT.value,
           age_group: selectedAgeGroup.value,
           religion: selectedReligion.value,
+          sort_by: sortBy.value,
+          sort_order: sortOrder.value,
           page: pagination.value.current_page,
           limit: pagination.value.per_page
         },
@@ -506,6 +523,10 @@ export const useCitizen = () => {
     tempAgeGroup,
     tempReligion,
     activeFilterCount,
+    // Sorting
+    sortBy,
+    sortOrder,
+    handleSort,
     // Form
     form,
     passwordForm,

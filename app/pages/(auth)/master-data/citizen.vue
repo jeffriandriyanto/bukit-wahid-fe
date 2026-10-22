@@ -25,6 +25,9 @@ const {
   tempAgeGroup,
   tempReligion,
   activeFilterCount,
+  sortBy,
+  sortOrder,
+  handleSort,
   form,
   passwordForm,
   getAge,
@@ -240,6 +243,66 @@ const {
         :columns="columnsFamilyTable"
         :loading="loading"
       >
+        <template #name-header>
+          <button
+            type="button"
+            class="flex items-center gap-1.5 font-bold hover:text-primary-600 transition-colors select-none group cursor-pointer"
+            @click="handleSort('name')"
+          >
+            <span>Informasi Warga</span>
+            <UIcon
+              :name="
+                sortBy === 'name'
+                  ? sortOrder === 'asc'
+                    ? 'i-lucide-arrow-up'
+                    : 'i-lucide-arrow-down'
+                  : 'i-lucide-arrow-up-down'
+              "
+              class="w-3.5 h-3.5 transition-colors"
+              :class="
+                sortBy === 'name'
+                  ? 'text-primary-600'
+                  : 'text-gray-400 opacity-60 group-hover:opacity-100'
+              "
+            />
+          </button>
+        </template>
+
+        <template #username-header>
+          <button
+            type="button"
+            class="flex items-center gap-1.5 font-bold hover:text-primary-600 transition-colors select-none group cursor-pointer"
+            @click="handleSort('username')"
+          >
+            <span>Username</span>
+            <UIcon
+              :name="
+                sortBy === 'username'
+                  ? sortOrder === 'asc'
+                    ? 'i-lucide-arrow-up'
+                    : 'i-lucide-arrow-down'
+                  : 'i-lucide-arrow-up-down'
+              "
+              class="w-3.5 h-3.5 transition-colors"
+              :class="
+                sortBy === 'username'
+                  ? 'text-primary-600'
+                  : 'text-gray-400 opacity-60 group-hover:opacity-100'
+              "
+            />
+          </button>
+        </template>
+
+        <template #username-cell="{ row }">
+          <span
+            v-if="row.original.user?.username || row.original.username"
+            class="font-mono text-sm font-semibold text-gray-800"
+          >
+            {{ row.original.user?.username || row.original.username }}
+          </span>
+          <span v-else class="text-gray-400 italic text-xs">-</span>
+        </template>
+
         <template #name-cell="{ row }">
           <div class="flex items-center gap-3 py-1">
             <UAvatar
