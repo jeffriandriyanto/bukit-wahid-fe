@@ -292,7 +292,9 @@ const handleDeletePam = async (bill: any) => {
 
 // --- PAYMENT FORM STATE ---
 const BillFormSchema = z.object({
-  payment_type: z.enum(['cash', 'transfer']).default('cash'),
+  payment_type: z.enum(['cash', 'transfer']).nullable().refine((val): val is 'cash' | 'transfer' => val !== null, {
+    message: 'Metode pembayaran wajib dipilih'
+  }),
   nominal: z.number().min(0, 'Nominal wajib diisi'),
   description: z.string().optional(),
   proof: z.string().optional()
@@ -301,14 +303,14 @@ const BillFormSchema = z.object({
 type BillFormSchema = z.infer<typeof BillFormSchema>
 
 interface BillFormState {
-  payment_type: 'cash' | 'transfer'
+  payment_type: 'cash' | 'transfer' | null
   nominal: number
   proof: string
   description: string
 }
 
 const form = reactive<BillFormState>({
-  payment_type: 'cash',
+  payment_type: null,
   nominal: 0,
   proof: '',
   description: ''
@@ -385,6 +387,24 @@ const fetchDetail = async () => {
 }
 
 const saveBill = async (_event?: FormSubmitEvent<BillFormSchema>) => {
+  if (!form.payment_type) {
+    toast.add({
+      title: 'Pilih Metode Pembayaran',
+      description: 'Harap pilih Kas Tunai atau Transfer Mandiri terlebih dahulu.',
+      color: 'warning'
+    })
+    return
+  }
+
+  if (form.payment_type === 'cash' && form.nominal < totalSelectedAmount.value) {
+    toast.add({
+      title: 'Uang Diterima Kurang',
+      description: 'Nominal uang yang diterima kurang dari total tagihan.',
+      color: 'error'
+    })
+    return
+  }
+
   try {
     loading.value = true
 
@@ -433,7 +453,7 @@ const saveBill = async (_event?: FormSubmitEvent<BillFormSchema>) => {
 
 // --- UTILS & COMPUTED ---
 const resetForm = () => {
-  form.payment_type = 'cash'
+  form.payment_type = null
   form.nominal = 0
   form.description = ''
   clearImage()
@@ -465,6 +485,7 @@ const totalSelectedAmount = computed(() => {
 })
 
 const returnAmount = computed(() => {
+  if (form.payment_type !== 'cash') return 0
   const diff = form.nominal - totalSelectedAmount.value
   return diff > 0 ? diff : 0
 })
@@ -477,7 +498,7 @@ const selectPaymentType = (type: 'cash' | 'transfer') => {
 
 const handlePay = (row: any) => {
   targetBills.value = [row]
-  form.payment_type = 'cash'
+  form.payment_type = null
   form.nominal = Number(row.amount)
   isOpen.value = true
 }
@@ -489,6 +510,7 @@ const handlePaySelected = () => {
   if (unpaidSelection.length === 0) return
 
   targetBills.value = unpaidSelection
+  form.payment_type = null
   form.nominal = totalSelectedAmount.value
   isOpen.value = true
 }
@@ -642,15 +664,15 @@ onMounted(() => {
           </div>
 
           <!-- Pilihan Metode Pembayaran -->
-          <UFormField label="Metode Pembayaran" required>
+          <UFormField name="payment_type" label="Metode Pembayaran" required>
             <div class="grid grid-cols-2 gap-3">
               <button
                 type="button"
                 :class="[
                   'flex items-center justify-center gap-2 p-3 rounded-xl border-2 text-sm font-bold transition-all cursor-pointer',
                   form.payment_type === 'cash'
-                    ? 'border-emerald-600 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-600/20'
-                    : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                    ? 'border-emerald-600 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-600/20 shadow-sm'
+                    : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50'
                 ]"
                 @click="selectPaymentType('cash')"
               >
@@ -665,8 +687,8 @@ onMounted(() => {
                 :class="[
                   'flex items-center justify-center gap-2 p-3 rounded-xl border-2 text-sm font-bold transition-all cursor-pointer',
                   form.payment_type === 'transfer'
-                    ? 'border-blue-600 bg-blue-50 text-blue-800 ring-2 ring-blue-600/20'
-                    : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                    ? 'border-blue-600 bg-blue-50 text-blue-800 ring-2 ring-blue-600/20 shadow-sm'
+                    : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50'
                 ]"
                 @click="selectPaymentType('transfer')"
               >
@@ -674,14 +696,29 @@ onMounted(() => {
                 <span>🏦 Transfer Mandiri</span>
               </button>
             </div>
-            <p class="text-xs text-gray-500 mt-1.5">
-              <span v-if="form.payment_type === 'cash'"
-                >Uang fisik diterima langsung oleh pengurus / kasir (Masuk Kas
-                Fisik - Akun 1000).</span
+
+            <!-- Warning Alert jika metode belum dipilih -->
+            <div
+              v-if="!form.payment_type"
+              class="mt-2.5 flex items-start gap-2.5 p-3 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs shadow-xs"
+            >
+              <UIcon name="i-lucide-alert-triangle" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <p class="font-bold">⚠️ Wajib pilih metode pembayaran!</p>
+                <p class="text-amber-700 mt-0.5">
+                  Klik <strong>Kas Tunai (Fisik)</strong> jika uang diterima cash (masuk Kas 1000), atau <strong>Transfer Mandiri</strong> jika warga transfer via bank (masuk Bank 1100).
+                </p>
+              </div>
+            </div>
+
+            <p v-else class="text-xs mt-2">
+              <span v-if="form.payment_type === 'cash'" class="text-emerald-700 font-medium flex items-center gap-1.5"
+                ><UIcon name="i-lucide-check-circle" class="w-3.5 h-3.5 shrink-0" />
+                Uang fisik diterima langsung oleh pengurus / kasir (Masuk Kas Fisik - Akun 1000).</span
               >
-              <span v-else
-                >Warga mentransfer langsung ke Rekening Mandiri RW (Masuk Bank
-                Mandiri - Akun 1100).</span
+              <span v-else class="text-blue-700 font-medium flex items-center gap-1.5"
+                ><UIcon name="i-lucide-check-circle" class="w-3.5 h-3.5 shrink-0" />
+                Warga mentransfer langsung ke Rekening Mandiri RW (Masuk Bank Mandiri - Akun 1100).</span
               >
             </p>
           </UFormField>
@@ -754,10 +791,12 @@ onMounted(() => {
               type="submit"
               color="primary"
               :loading="loading"
+              :disabled="!form.payment_type"
               block
               class="flex-1"
-              >Simpan Pembayaran</UButton
             >
+              {{ form.payment_type ? 'Simpan Pembayaran' : 'Pilih Metode Pembayaran Dahulu' }}
+            </UButton>
           </div>
         </UForm>
       </template>

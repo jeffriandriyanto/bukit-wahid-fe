@@ -52,7 +52,7 @@ const previewData = ref<{
 const previewError = ref<string | null>(null)
 
 // Payment Form
-const paymentType = ref<'cash' | 'transfer'>('cash')
+const paymentType = ref<'cash' | 'transfer' | null>(null)
 const nominal = ref<number>(0)
 const description = ref<string>('')
 const proof = ref<string>('')
@@ -72,7 +72,7 @@ function clearImage() {
 function resetState() {
   previewData.value = null
   previewError.value = null
-  paymentType.value = 'cash'
+  paymentType.value = null
   nominal.value = 0
   description.value = ''
   clearImage()
@@ -275,6 +275,14 @@ async function handleSubmit() {
   }
   if (!previewData.value || !previewData.value.items?.length) {
     toast.add({ title: 'Tidak ada tagihan yang valid untuk diproses', color: 'error' })
+    return
+  }
+  if (!paymentType.value) {
+    toast.add({
+      title: 'Pilih Metode Pembayaran',
+      description: 'Harap pilih Kas Tunai atau Transfer Mandiri terlebih dahulu.',
+      color: 'warning'
+    })
     return
   }
   if (paymentType.value === 'cash' && nominal.value < totalAmount.value) {
@@ -605,10 +613,10 @@ async function handleSubmit() {
                 :class="[
                   'flex items-center justify-center gap-2 p-3 rounded-xl border-2 text-sm font-bold transition-all cursor-pointer',
                   paymentType === 'cash'
-                    ? 'border-emerald-600 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-600/20'
-                    : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                    ? 'border-emerald-600 bg-emerald-50 text-emerald-800 ring-2 ring-emerald-600/20 shadow-sm'
+                    : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50'
                 ]"
-                @click="paymentType = 'cash'"
+                @click="paymentType = 'cash'; if (!nominal) nominal = totalAmount"
               >
                 <UIcon name="i-lucide-banknote" class="w-5 h-5 text-emerald-600" />
                 <span>💵 Kas Tunai (Fisik)</span>
@@ -618,8 +626,8 @@ async function handleSubmit() {
                 :class="[
                   'flex items-center justify-center gap-2 p-3 rounded-xl border-2 text-sm font-bold transition-all cursor-pointer',
                   paymentType === 'transfer'
-                    ? 'border-blue-600 bg-blue-50 text-blue-800 ring-2 ring-blue-600/20'
-                    : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                    ? 'border-blue-600 bg-blue-50 text-blue-800 ring-2 ring-blue-600/20 shadow-sm'
+                    : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50'
                 ]"
                 @click="paymentType = 'transfer'"
               >
@@ -627,9 +635,30 @@ async function handleSubmit() {
                 <span>🏦 Transfer Mandiri</span>
               </button>
             </div>
-            <p class="text-xs text-gray-500 mt-1.5">
-              <span v-if="paymentType === 'cash'">Uang fisik diterima kasir/pengurus ➡️ Masuk Akun Kas Fisik (1000).</span>
-              <span v-else>Warga mentransfer ke Bank Mandiri RW ➡️ Masuk Akun Bank Mandiri (1100).</span>
+
+            <!-- Warning jika belum dipilih -->
+            <div
+              v-if="!paymentType"
+              class="mt-2.5 flex items-start gap-2.5 p-3 rounded-xl bg-amber-50 border border-amber-300 text-amber-900 text-xs shadow-xs"
+            >
+              <UIcon name="i-lucide-alert-triangle" class="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+              <div>
+                <p class="font-bold">⚠️ Wajib pilih metode pembayaran!</p>
+                <p class="text-amber-700 mt-0.5">
+                  Klik <strong>Kas Tunai (Fisik)</strong> jika uang diterima cash (masuk Kas 1000), atau <strong>Transfer Mandiri</strong> jika warga transfer via bank (masuk Bank 1100).
+                </p>
+              </div>
+            </div>
+
+            <p v-else class="text-xs mt-2">
+              <span v-if="paymentType === 'cash'" class="text-emerald-700 font-medium flex items-center gap-1.5"
+                ><UIcon name="i-lucide-check-circle" class="w-3.5 h-3.5 shrink-0" />
+                Uang fisik diterima kasir/pengurus ➡️ Masuk Akun Kas Fisik (1000).</span
+              >
+              <span v-else class="text-blue-700 font-medium flex items-center gap-1.5"
+                ><UIcon name="i-lucide-check-circle" class="w-3.5 h-3.5 shrink-0" />
+                Warga mentransfer ke Bank Mandiri RW ➡️ Masuk Akun Bank Mandiri (1100).</span
+              >
             </p>
           </UFormField>
 
@@ -714,8 +743,8 @@ async function handleSubmit() {
             color="primary"
             icon="i-lucide-check-circle-2"
             :loading="submitting"
-            :disabled="!previewData?.items?.length || loadingPreview"
-            label="Proses & Lunaskan Pembayaran"
+            :disabled="!previewData?.items?.length || loadingPreview || !paymentType"
+            :label="paymentType ? 'Proses & Lunaskan Pembayaran' : 'Pilih Metode Pembayaran Dahulu'"
             @click="handleSubmit"
           />
         </div>
