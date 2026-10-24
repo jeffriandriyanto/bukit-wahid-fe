@@ -14,8 +14,10 @@ type BadgeColor = 'error' | 'primary' | 'secondary' | 'success' | 'info' | 'warn
 const statusMap: Record<string, { label: string; color: BadgeColor }> = {
   unpaid: { label: 'Belum Bayar', color: 'warning' },
   approve: { label: 'Diterima', color: 'success' },
+  paid: { label: 'Diterima', color: 'success' },
   unvalid: { label: 'Tidak Valid', color: 'error' },
-  pending: { label: 'Menunggu', color: 'neutral' }
+  pending: { label: 'Menunggu', color: 'neutral' },
+  cancelled: { label: 'Dibatalkan', color: 'neutral' }
 }
 
 export const usePayment = () => {
@@ -133,6 +135,14 @@ export const usePayment = () => {
 
   watch(
     () => pagination.value.per_page,
+    () => {
+      pagination.value.current_page = 1
+      getData()
+    }
+  )
+
+  watch(
+    selectedStatus,
     () => {
       pagination.value.current_page = 1
       getData()

@@ -51,6 +51,7 @@ const openReceiptModal = async (paymentItem: any) => {
 }
 
 const statusFilterOptions = [
+  { label: 'Menunggu', value: 'pending' },
   { label: 'Belum Bayar', value: 'unpaid' },
   { label: 'Diterima', value: 'approve' },
   { label: 'Tidak Valid', value: 'unvalid' }
@@ -96,12 +97,6 @@ const statusFilterOptions = [
             clear
             size="md"
             class="w-48"
-            @change="
-              () => {
-                pagination.current_page = 1
-                getData()
-              }
-            "
           />
         </div>
       </div>
