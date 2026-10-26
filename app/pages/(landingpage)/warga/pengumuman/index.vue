@@ -89,7 +89,7 @@ const loadMore = () => {
           @click="navigateTo(`/warga/pengumuman/${post.id}`)"
         >
           <div class="aspect-[16/10] overflow-hidden relative">
-            <NuxtImg
+            <img
               :src="post.image"
               :alt="post.title"
               format="avif,webp"

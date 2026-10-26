@@ -38,8 +38,8 @@
             @click="navigateTo(`/warga/galeri/${album.id}`)"
           >
             <div class="aspect-video overflow-hidden relative bg-neutral-100">
-              <NuxtImg
-                :src="album.cover || '/images/placeholder-gallery.jpg'"
+              <img
+                :src="album.cover || '/images/cover.jpg'"
                 :alt="album.title"
                 format="avif,webp"
                 sizes="sm:100vw md:50vw lg:400px"

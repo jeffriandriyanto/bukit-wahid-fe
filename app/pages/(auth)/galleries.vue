@@ -286,7 +286,7 @@ definePageMeta({ middleware: ['auth'] })
                   :key="idx"
                   class="relative group aspect-square"
                 >
-                  <NuxtImg
+                  <img
                     :src="img"
                     class="h-full w-full object-cover rounded-lg border"
                   />

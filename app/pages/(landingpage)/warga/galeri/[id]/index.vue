@@ -132,7 +132,7 @@ definePageMeta({ layout: 'landingpage' })
           :style="{ 'animation-delay': idx * 0.1 + 's' }"
           @click="openLightbox(idx)"
         >
-          <NuxtImg
+          <img
             :src="img"
             format="avif,webp"
             sizes="sm:100vw md:80vw lg:600px"
@@ -191,7 +191,7 @@ definePageMeta({ layout: 'landingpage' })
           </div>
 
           <div class="relative flex flex-col items-center gap-6 w-full">
-            <NuxtImg
+            <img
               :src="selectedImg"
               loading="eager"
               class="w-full max-h-[75vh] object-contain rounded-2xl"

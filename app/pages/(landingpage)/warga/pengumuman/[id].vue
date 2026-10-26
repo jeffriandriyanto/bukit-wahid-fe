@@ -136,7 +136,7 @@ const shareContent = async () => {
           <div
             class="relative aspect-video rounded-[2.5rem] overflow-hidden shadow-2xl bg-neutral-100 border border-neutral-100"
           >
-            <NuxtImg
+            <img
               :src="post.image"
               fetchpriority="high"
               format="avif,webp"

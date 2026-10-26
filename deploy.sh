@@ -44,6 +44,15 @@ ssh $SERVER_USER@$SERVER_IP << EOF
     # Hapus file archive biar hemat space
     rm build-output.tar.gz
 
+    # Fix native binding sharp: build lokal di Mac membawa binary
+    # darwin-arm64, sedangkan server Linux butuh binary linux-x64.
+    # 1. Buang entri darwin dari package.json hasil build (kalau tidak,
+    #    npm di Linux gagal EBADPLATFORM).
+    # 2. Install ulang di server supaya dapat binary linux-x64.
+    # Note: pakai subshell (...) agar working directory tetap di $SERVER_PATH.
+    npm --prefix .output/server pkg delete dependencies.@img/sharp-darwin-arm64 dependencies.@img/sharp-libvips-darwin-arm64
+    (cd .output/server && npm install --omit=dev)
+
     # Jalankan ulang PM2
     pm2 delete "$APP_NAME" || true
     pm2 start .output/server/index.mjs --name "$APP_NAME" --node-args="--max-old-space-size=512"

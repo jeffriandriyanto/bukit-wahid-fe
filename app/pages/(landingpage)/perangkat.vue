@@ -25,7 +25,7 @@
               <div
                 class="aspect-[3/4] overflow-hidden rounded-[3rem] bg-neutral-100 border-4 border-white shadow-2xl relative z-10 group-hover:border-primary-50 transition-colors duration-700"
               >
-                <NuxtImg
+                <img
                   v-if="leader?.incumbent?.avatar"
                   :src="leader.incumbent.avatar"
                   :alt="leader?.incumbent?.name || 'Ketua'"
@@ -68,7 +68,7 @@
               <div
                 class="aspect-[3/4] overflow-hidden rounded-[2.5rem] bg-neutral-100 border border-neutral-200 transition-all duration-500 group-hover:border-primary-200 group-hover:shadow-premium-hover group-hover:-translate-y-2"
               >
-                <NuxtImg
+                <img
                   v-if="member?.incumbent?.avatar"
                   :src="member.incumbent.avatar"
                   :alt="member?.incumbent?.name || 'Pengurus'"

@@ -98,7 +98,7 @@ definePageMeta({
       class="relative h-screen w-full overflow-hidden flex items-center border-b border-neutral-100"
     >
       <div class="absolute inset-0 z-0">
-        <NuxtImg
+        <img
           :src="pageData.hero.bgImage"
           :alt="pageData.hero.title"
           fetchpriority="high"
@@ -232,7 +232,7 @@ definePageMeta({
               <UIcon name="i-lucide-quote" class="text-white w-7 h-7" />
             </div>
 
-            <NuxtImg
+            <img
               :src="pageData.welcome.image"
               alt="Ketua RW 11 Bukit Wahid Regency"
               sizes="sm:100vw md:50vw lg:400px"
@@ -332,7 +332,7 @@ definePageMeta({
             @click="navigateTo(`/warga/pengumuman/${item.slug}`)"
           >
             <div class="overflow-hidden aspect-16/10">
-              <NuxtImg
+              <img
                 :src="item.image"
                 sizes="sm:100vw md:50vw lg:350px"
                 format="avif,webp"
@@ -558,17 +558,17 @@ definePageMeta({
               <div
                 class="flex gap-1 relative z-10 transform rotate-2 hover:rotate-0 transition-transform duration-700"
               >
-                <NuxtImg
+                <img
                   src="/images/app-2.png"
                   alt="App Mockup"
                   class="w-full max-w-30 max-h-max mx-auto drop-shadow-[0_35px_35px_rgba(0,0,0,0.5)]"
                 />
-                <NuxtImg
+                <img
                   src="/images/app-1.png"
                   alt="App Mockup"
                   class="w-full max-w-30 max-h-max mx-auto drop-shadow-[0_35px_35px_rgba(0,0,0,0.5)]"
                 />
-                <NuxtImg
+                <img
                   src="/images/app-3.png"
                   alt="App Mockup"
                   class="w-full max-w-30 max-h-max mx-auto drop-shadow-[0_35px_35px_rgba(0,0,0,0.5)]"
@@ -656,8 +656,8 @@ definePageMeta({
             </div>
 
             <div class="aspect-3/4 overflow-hidden bg-neutral-900">
-              <NuxtImg
-                :src="item.files?.[0] || '/images/placeholder-gallery.jpg'"
+              <img
+                :src="item.files?.[0] || '/images/cover.jpg'"
                 :alt="item.name"
                 sizes="sm:100vw md:50vw lg:300px"
                 format="avif,webp"
