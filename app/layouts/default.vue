@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { sidebarItems } from '~/const/sidebar'
 const { user, logout } = useAuth()
+const { checkAndShow } = useBillingReminder()
 const open = ref(false)
 const route = useRoute()
 const isChangePasswordOpen = ref(false)
@@ -47,6 +48,10 @@ const displayName = computed(() => {
 })
 
 const userActive = computed(() => user.value)
+
+onMounted(() => {
+  checkAndShow()
+})
 
 const userMenuItems = computed(() => [
   [
@@ -152,6 +157,10 @@ const userMenuItems = computed(() => [
         </template>
 
         <template #body>
+          <ClientOnly>
+            <BillingReminderBanner />
+            <BillingReminderModal />
+          </ClientOnly>
           <slot />
         </template>
       </UDashboardPanel>
